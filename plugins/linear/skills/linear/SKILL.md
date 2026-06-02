@@ -63,7 +63,7 @@ Don't silently skip these checks. A user who hits an MCP error mid-task without 
 - **Workspace Team Key:** `GAL`
 - **Team Size:** 2 members
 - **Sprint Cycle:** 2 weeks
-- **Stack:** Nuxt 3 / Vue (frontend + Nitro API backend)
+- **Stack:** Nuxt 4 (Vue frontend + Nitro backend)
 - **Work Type:** Client/agency projects
 
 ### Team Roles
