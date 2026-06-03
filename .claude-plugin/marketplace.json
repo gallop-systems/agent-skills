@@ -24,15 +24,15 @@
       "version": "1.0.0"
     },
     {
-      "name": "setup-permissions",
-      "source": "./plugins/setup-permissions",
-      "description": "Set up Claude Code read-only permissions and analyze session history",
-      "version": "1.0.0"
-    },
-    {
       "name": "linear",
       "source": "./plugins/linear",
       "description": "Create, triage, and manage Linear issues following Gallop team conventions, with a GraphQL CLI for operations the Linear MCP server doesn't expose",
+      "version": "1.0.0"
+    },
+    {
+      "name": "doctl",
+      "source": "./plugins/doctl",
+      "description": "Manage DigitalOcean App Platform deployments with the doctl CLI: auth contexts, listing apps, monitoring deployments, and checking logs",
       "version": "1.0.0"
     }
   ]

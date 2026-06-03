@@ -15,7 +15,6 @@ Then install the skills you want:
 /plugin install nuxt-nitro-api@gallop-systems-claude-skills
 /plugin install nitro-testing@gallop-systems-claude-skills
 /plugin install linear@gallop-systems-claude-skills
-/plugin install setup-permissions@gallop-systems-claude-skills
 ```
 
 ## Updating
@@ -29,6 +28,45 @@ Update a specific skill to the latest version:
 1. Run `/plugin` and select **Marketplaces**
 2. Choose `gallop-systems-claude-skills`
 3. Select **Enable auto-update**
+
+## Install as an npm dependency (per-repo)
+
+For JS/TS repos, you can pin the skills to a version via your lockfile instead of
+the marketplace. Add the package as a dev dependency:
+
+```
+yarn add -D @gallopsystems/agent-skills
+```
+
+On install, a `postinstall` script symlinks the package's content into the
+project's `.claude/` directory:
+
+- **skills** — each directory containing a `SKILL.md` → `.claude/skills/<name>`
+- **commands** — each `.md` file under any `commands/` directory → `.claude/commands/<name>.md`
+
+Updating is just a version bump:
+
+```
+yarn up @gallopsystems/agent-skills
+```
+
+These links are generated artifacts (they point into `node_modules` and are
+recreated on every install), so ignore them in `.gitignore`:
+
+```
+.claude/skills
+.claude/commands
+```
+
+Notes:
+- The script never clobbers a real `.claude/skills/<name>` or `.claude/commands/<name>`
+  you authored, and only removes symlinks it created. Run `yarn unlink-skills` to
+  remove all managed links.
+- Works out of the box with Yarn (Classic, or Berry with `nodeLinker: node-modules`)
+  and npm. **pnpm** (v10+) blocks dependency build scripts by default — add the
+  package to `pnpm.onlyBuiltDependencies` for the `postinstall` to run.
+- Yarn Berry with the default **PnP** linker is not supported (no `node_modules`
+  folder to link from); use `nodeLinker: node-modules`.
 
 ## Available Skills
 

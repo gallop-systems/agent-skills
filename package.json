@@ -1,0 +1,26 @@
+{
+  "name": "@gallopsystems/agent-skills",
+  "version": "1.0.0",
+  "description": "Gallop Systems Claude Code skills, symlinked into .claude/skills on install.",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gallop-systems/claude-skills.git"
+  },
+  "files": [
+    "plugins",
+    "scripts/link-skills.mjs",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "postinstall": "node scripts/link-skills.mjs",
+    "link-skills": "node scripts/link-skills.mjs",
+    "unlink-skills": "node scripts/link-skills.mjs --unlink"
+  },
+  "engines": {
+    "node": ">=16"
+  }
+}
