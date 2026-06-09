@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.2.0...agent-skills-v1.3.0) (2026-06-09)
+
+
+### Features
+
+* contribute-back loop — /contribute-skill command and skill footers ([a9e4f3b](https://github.com/gallop-systems/agent-skills/commit/a9e4f3b68a43c2ec6e123355d98604cf274cef77))
+* contribute-back loop with /contribute-skill command and skill footers ([#13](https://github.com/gallop-systems/agent-skills/issues/13)) ([a9e4f3b](https://github.com/gallop-systems/agent-skills/commit/a9e4f3b68a43c2ec6e123355d98604cf274cef77))
+
 ## [1.2.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.1.0...agent-skills-v1.2.0) (2026-06-09)
 
 
