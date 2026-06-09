@@ -82,3 +82,4 @@ Do not bypass failing hooks with `--no-verify` unless the user says to.
 - **Repair ladders** — rejected pushes, blocked checkouts, rebase/conflict recovery, shallow clones, worktrees: [getting-unstuck.md](getting-unstuck.md)
 - **gh api recipes** — PR comments, reading files without checkout, repo settings, PAT gotchas: [gh-api-recipes.md](gh-api-recipes.md)
 - **Releases & publishing** — tags, gh release, npm Trusted Publishing, release-please: [releases.md](releases.md)
+- **External review loop** — using the codex CLI as an adversarial pre-merge reviewer: [external-review.md](external-review.md)
