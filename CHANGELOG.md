@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.6.1...agent-skills-v1.7.0) (2026-06-14)
+
+
+### Features
+
+* **kysely-postgres:** window functions, set ops, lateral joins, locking, FTS ([#28](https://github.com/gallop-systems/agent-skills/issues/28)) ([046a392](https://github.com/gallop-systems/agent-skills/commit/046a39234308cf34d42ace29cab4b6f79cb43fcf))
+
 ## [1.6.1](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.6.0...agent-skills-v1.6.1) (2026-06-14)
 
 
