@@ -71,6 +71,17 @@ or date logic by hand:
   Still route date-fns calls through `useFormatters` (or a shared util) rather than
   importing and calling them inline everywhere — same single-source-of-truth reason.
 
+## DATE columns vs timestamps: keep date-only values as strings
+
+Postgres `timestamp`/`timestamptz` values are serialized as ISO strings over the
+wire — rehydrate them with a `useFetch` `transform` (or `parseISO` at the edge) so
+the rest of the app holds real `Date`s. But a **`DATE` column** (a calendar day
+with no time — a due date, a birthday) must stay a plain `"2026-06-14"` string:
+wrapping it in `new Date("2026-06-14")` parses it as **UTC midnight**, which
+renders as the *previous day* in any negative-offset timezone. Format date-only
+strings with `parseISO` (which treats them as local), never `new Date`, and don't
+let a blanket "convert all date fields to Date" transform touch DATE columns.
+
 ## Where to put the formatters
 
 Pick the location by what the formatter needs (see [composables-utils.md](./composables-utils.md)):

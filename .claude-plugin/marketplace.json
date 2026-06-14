@@ -52,6 +52,12 @@
       "source": "./plugins/volt-primevue",
       "description": "Volt (unstyled PrimeVue + Tailwind) UI: adding components, pt: pass-through styling, the surface-* vs semantic-token color model, and prefers-color-scheme dark mode",
       "version": "1.0.0"
+    },
+    {
+      "name": "vue-nuxt",
+      "source": "./plugins/vue-nuxt",
+      "description": "Vue 3 component authoring inside a Nuxt 4 app: auto-import rules, props/emits/withDefaults, v-model/defineModel, reactivity, when watch is a smell, and template idioms",
+      "version": "1.0.0"
     }
   ]
 }

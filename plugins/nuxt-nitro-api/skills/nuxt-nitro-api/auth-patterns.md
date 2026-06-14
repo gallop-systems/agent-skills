@@ -226,3 +226,4 @@ NUXT_OAUTH_GOOGLE_CLIENT_SECRET=...
 4. **setUserSession merges** - Use `replaceUserSession` to replace
 5. **requireUserSession throws** - Use getUserSession for null
 6. **Cannot use with `nuxt generate`** - Requires running server
+7. **`navigateTo` external routes need `{ external: true }`** - In-app routes: `navigateTo('/dashboard')`. Server/OAuth endpoints that aren't Vue routes (e.g. `/api/auth/google`, `/api/auth/preview-login`) must pass `navigateTo('/api/auth/google', { external: true })`, or Vue Router tries to resolve them as client routes and fails. Build query routes with `navigateTo({ path, query })` and `String()` any numeric ids.

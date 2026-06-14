@@ -160,3 +160,4 @@ const handleSave = async () => {
 3. **Pages are entry points** - Think of them as "controllers" that compose "views"
 4. **Middleware for auth** - Use `definePageMeta({ middleware: 'auth' })`, not inline checks
 5. **Layouts for shared UI** - Headers, footers, sidebars go in `/layouts`, not repeated in pages
+6. **Remount on query-only change** - Vue reuses the page component across `?tab=` / `?id=` changes (same route), so `onMounted`/setup won't re-run. Force a clean remount with `definePageMeta({ key: (route) => route.fullPath })` when a page must re-initialize on a query change.

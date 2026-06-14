@@ -176,4 +176,5 @@ export function formatCurrency(amount: number) {
 2. **Don't use Vue APIs in utils** - Keeps them testable and portable
 3. **Server utils can't use Vue** - Different runtime
 4. **Auto-import scoping** - `/utils` is client-only, `/server/utils` is server-only
-5. **Composables call order matters** - Call at top of `<script setup>`, not in callbacks
+5. **Composables call order matters** - Call at top of `<script setup>`, not in callbacks, and **never inside a template expression** - a composable invoked from the template (or a callback) runs outside the request/setup scope and throws "must be called at the top of setup". Call it once in setup, then use the returned helpers/refs in the template.
+6. **Guard possibly-null data when deriving** - Composables like `useUserSession` expose refs that can be `null` (logged out, still loading). Derive display state through a `computed` with a null guard (`computed(() => user.value ? getInitials(user.value) : '')`), not a bare property access that assumes presence.
