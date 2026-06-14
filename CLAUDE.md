@@ -47,3 +47,17 @@ Because PRs are **squash-merged**, the footer must land in the **squash commit
 body** — put it in the PR description (and confirm the squash commit includes it;
 `gh pr merge --squash --body "…Release-As: X.Y.Z"` guarantees it). A `Release-As`
 footer in a branch commit that gets squashed away will be lost.
+
+## After a release: bump the template
+
+These skills ship to the [nuxt-copier-template](https://github.com/gallop-systems/nuxt-copier-template),
+which pins `@gallopsystems/agent-skills` in `template/package.json.jinja` so every
+generated/updated project gets them. **Whenever a skills release publishes a new
+version, bump that pinned floor in the template** — otherwise descendants stay on
+the old skills until someone notices.
+
+So the full chain for any skill change is: merge here → release-please publishes a
+new `agent-skills` version → **bump `@gallopsystems/agent-skills` in the template,
+then tag + release a new template version**. The template-side procedure (PR, tag,
+GitHub release) lives in the `copier-template` skill →
+[Releasing a Template Version](plugins/copier-template/skills/copier-template/SKILL.md#releasing-a-template-version).
