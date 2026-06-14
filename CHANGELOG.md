@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.4.0...agent-skills-v1.5.0) (2026-06-14)
+
+
+### Features
+
+* Add volt-primevue skill ([#17](https://github.com/gallop-systems/agent-skills/issues/17)) ([dc04c61](https://github.com/gallop-systems/agent-skills/commit/dc04c61e75ea3e8c76bc40c30ce25c3eb8b50051))
+
 ## [1.4.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.3.0...agent-skills-v1.4.0) (2026-06-12)
 
 
