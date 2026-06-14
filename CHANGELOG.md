@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.8.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.7.0...agent-skills-v1.8.0) (2026-06-14)
+
+
+### Features
+
+* **tailwind-v4:** add Tailwind v4 skill; audit zod v3-&gt;v4 in nuxt-nitro-api ([9bc3486](https://github.com/gallop-systems/agent-skills/commit/9bc3486bdea2e5769222d903e9ec3b559a08fd40))
+* **tailwind-v4:** Tailwind v4 skill + zod v3→v4 audit ([#30](https://github.com/gallop-systems/agent-skills/issues/30)) ([9bc3486](https://github.com/gallop-systems/agent-skills/commit/9bc3486bdea2e5769222d903e9ec3b559a08fd40))
+
 ## [1.7.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.6.1...agent-skills-v1.7.0) (2026-06-14)
 
 
