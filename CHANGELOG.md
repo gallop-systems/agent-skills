@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.6.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.5.0...agent-skills-v1.6.0) (2026-06-14)
+
+
+### Features
+
+* **nuxt-nitro-api:** Nitro v2 pin + state/error/caching/storage/route-rules references ([#20](https://github.com/gallop-systems/agent-skills/issues/20)) ([b5fe249](https://github.com/gallop-systems/agent-skills/commit/b5fe249bdeda0e25d3f5c3659dcdb7d3a0ce50e3))
+* **volt-primevue:** correct vendoring framing; add pt/state/config references ([#21](https://github.com/gallop-systems/agent-skills/issues/21)) ([ac02720](https://github.com/gallop-systems/agent-skills/commit/ac0272014bccceaf7a529f7647ec2ee0b35dba52))
+* **vue-nuxt:** add skill + frontend nuggets for nuxt-nitro-api ([#19](https://github.com/gallop-systems/agent-skills/issues/19)) ([34c796c](https://github.com/gallop-systems/agent-skills/commit/34c796c637a31e95a29558280196b0c92455ece2))
+
 ## [1.5.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.4.0...agent-skills-v1.5.0) (2026-06-14)
 
 
