@@ -28,12 +28,13 @@ descending order of weight:
    0–950 ramp — subtle fills, two border weights, icon idle vs hover, elevation
    layering. To express all of Volt in tokens you'd expand them until they *are*
    the ramp, at which point you've just renamed `surface-*`.
-2. **Regeneration convenience.** `volt-vue add` scaffolds a component in the
-   upstream `surface-*` + `dark:` convention. Restyle it and you own that file —
-   re-adding or pulling a newer version later means redoing your edits. Leaving
-   Volt as-generated keeps that escape hatch cheap. (This is a convenience cost,
-   not "you diverge from upstream forever" — there's no continuous sync; you add
-   once and own it either way.)
+2. **Consistency with newly-added siblings.** `volt-vue add` always scaffolds in
+   the upstream `surface-*` + `dark:` convention, so keeping existing components on
+   it means every Volt file reads the same way and a freshly-added one drops in
+   without restyling. This is a mild *consistency* benefit, **not** a regeneration
+   one: there's no `volt-vue update` and no continuous sync — you own each file the
+   moment you add it, edits or not. (Upstream behavior fixes ride the `primevue`
+   version bump, not a re-add.)
 3. **The convention they ship in.** As generated, `--p-surface-0…950` are fixed
    (never flipped), so a Volt component flips by *picking the dark end* with
    `dark:bg-surface-900` — not by a value that changes. Semantic tokens flip the
@@ -100,6 +101,19 @@ Different namespaces, no collision: `bg-surface-0` (primeui, numbered) and
 `bg-surface` (your token, bare) coexist. Dark values for **both** sit in the same
 `prefers-color-scheme` block — your `--color-*` overrides next to Volt's `--p-*`
 overrides.
+
+## Ignore styled-mode theming (`definePreset`, `theme.preset`)
+
+Most PrimeVue theming docs describe **styled** mode — `definePreset`, `theme: {
+preset: Aura }`, component design tokens like `button.background`. Volt runs
+PrimeVue with **`unstyled: true`**, which turns all of that **off**: the built-in
+CSS and preset machinery aren't loaded, so a `definePreset`/`theme.preset` config
+does nothing here. If you're following a primevue.org theming tutorial and it
+reaches for `definePreset`, stop — that's the wrong layer. Your knobs are the
+`--p-*` variables in `:root` (Volt's way) plus the Tailwind `@theme` tokens above.
+
+(The `--p-*` variable **prefix** still applies — `tailwindcss-primeui` reads it.
+It's the preset/design-token *machinery* that's inert, not the variables.)
 
 ## The naming trap (this one bites)
 

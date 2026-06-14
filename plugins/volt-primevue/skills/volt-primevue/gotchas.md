@@ -64,3 +64,52 @@ const props = withDefaults(defineProps<{ responsive?: boolean }>(), { responsive
 Not Volt-specific, but it bit the `SlidingTabs` responsive collapse, so it lives
 here. Any "defaults to on" boolean prop must use `withDefaults` (or invert it to
 an opt-out flag that naturally defaults false).
+
+## The class merge lives in `src/volt/utils.ts` (`ptViewMerge`)
+
+When a `pt:` class won't override, or you want to change how a component's own
+classes combine with yours, the lever is **not** a global PrimeVue config — it's a
+local helper. Every vendored component sets `:ptOptions="{ mergeProps: ptViewMerge }"`,
+and `ptViewMerge` (in `src/volt/utils.ts`) does `twMerge(globalClass, selfClass)`
+then Vue `mergeProps`:
+
+```ts
+export const ptViewMerge = (globalPTProps = {}, selfPTProps = {}, datasets) => {
+  const { class: globalClass, ...globalRest } = globalPTProps;
+  const { class: selfClass, ...selfRest } = selfPTProps;
+  return mergeProps({ class: twMerge(globalClass, selfClass) }, globalRest, selfRest, datasets);
+};
+```
+
+That `twMerge` is why a conflicting `pt:` utility wins (last-writer in the merge)
+and a plain `class` may not. Debugging an override that won't take? Look here, not
+at a config flag.
+
+## Reaching internals from CSS: `data-pc-name` / `data-pc-section`
+
+When `pt:` class styling isn't enough — you need to style a component's internals
+from a parent `<style>` block or third-party CSS — PrimeVue stamps stable
+`data-pc-name="<component>"` and `data-pc-section="<section>"` attributes on its
+DOM. Target those instead of brittle structural selectors:
+
+```css
+[data-pc-name="select"] [data-pc-section="dropdown"] { /* … */ }
+```
+
+## Styling a nested child component: the `pc`-prefixed section
+
+When one PrimeVue component renders another inside it, the inner one's `pt`
+section name is prefixed **`pc`** (e.g. a Badge embedded in another component is
+`pcBadge`). Address it through the prefix; a flat section name silently fails:
+
+```vue
+<VoltSomething pt:pcBadge:root:class="bg-red-500" />
+```
+
+## We don't use `@primevue/forms`
+
+This stack validates with **zod + manual wiring**, not `@primevue/forms`. The
+package's `zodResolver` looks tempting given how much zod is already around, but
+its ergonomics weren't worth the workarounds. Don't reach for it — drive
+validation from the zod schema directly (`safeParse` in the submit handler, or a
+small `useFormState`-style composable).
