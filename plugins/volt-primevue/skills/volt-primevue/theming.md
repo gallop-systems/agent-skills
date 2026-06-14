@@ -81,6 +81,26 @@ block, dark values overriding the same `--color-*` vars inside the
 The dark `fg-muted` / `fg-subtle` are **lifted** off a strict mirror-invert —
 the perfectly-inverted values are too dark to read on near-black.
 
+### Where each layer lives (and why it's not fighting Volt)
+
+[Volt's Nuxt setup](https://volt.primevue.org/nuxt/#css-variables) prescribes the
+`--p-*` palette + semantic tokens in **`:root`**, with dark mode via
+`@media (prefers-color-scheme: dark)`. Keep that exactly as-is — don't move
+`--p-*` into `@theme`; the `tailwindcss-primeui` plugin already turns them into
+`surface-*` / `primary-*` utilities.
+
+Your semantic tokens go in **`@theme`** instead, because that's the Tailwind v4
+mechanism that generates the utilities (`--color-canvas` → `bg-canvas`). Defining
+them only in `:root` would set the variable but produce **no class**. So:
+
+- `--p-*` → `:root` (Volt's way; plugin generates `surface-*`)
+- `--color-*` → `@theme` (Tailwind's way; generates `bg-surface`, `text-fg`, …)
+
+Different namespaces, no collision: `bg-surface-0` (primeui, numbered) and
+`bg-surface` (your token, bare) coexist. Dark values for **both** sit in the same
+`prefers-color-scheme` block — your `--color-*` overrides next to Volt's `--p-*`
+overrides.
+
 ## The naming trap (this one bites)
 
 In Tailwind v4 the utility name is the **full** variable suffix:
