@@ -1,0 +1,8 @@
+{
+  "name": "volt-primevue",
+  "description": "Volt (unstyled PrimeVue + Tailwind) UI: adding components, pt: pass-through styling, the surface-* vs semantic-token color model, and prefers-color-scheme dark mode",
+  "version": "1.0.0",
+  "author": {
+    "name": "yeedle"
+  }
+}

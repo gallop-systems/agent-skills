@@ -46,6 +46,12 @@
       "source": "./plugins/copier-template",
       "description": "Maintain a Copier project template and propagate updates to generated repos: template anatomy, testing changes, releasing versions, and applying copier update with conflict resolution",
       "version": "1.0.0"
+    },
+    {
+      "name": "volt-primevue",
+      "source": "./plugins/volt-primevue",
+      "description": "Volt (unstyled PrimeVue + Tailwind) UI: adding components, pt: pass-through styling, the surface-* vs semantic-token color model, and prefers-color-scheme dark mode",
+      "version": "1.0.0"
     }
   ]
 }
