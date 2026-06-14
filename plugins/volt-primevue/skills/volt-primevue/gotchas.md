@@ -106,6 +106,31 @@ section name is prefixed **`pc`** (e.g. a Badge embedded in another component is
 <VoltSomething pt:pcBadge:root:class="bg-red-500" />
 ```
 
+## State styling: use `tailwindcss-primeui`'s `p-*` variants, not edited source
+
+`tailwindcss-primeui` registers component-state variants — `p-selected:`,
+`p-focus:`, `p-disabled:`, `p-invalid:`, `p-editable:` — that key off PrimeVue's
+internal state. Reach for these via `pt:` instead of editing vendored component
+source to style a state:
+
+```vue
+<VoltSelect pt:option:class="p-selected:bg-highlight p-focus:bg-surface-100" />
+```
+
+## PrimeIcons `.pi` is `display:inline-block` — it beats `hidden`
+
+PrimeIcons sets `display: inline-block` on `.pi`, which has higher specificity
+than Tailwind's `hidden` (`display:none`). Toggling an icon's visibility with bare
+`hidden`/`inline-block` silently fails — the icon stays visible. Use the `!`
+important variant:
+
+```vue
+<!-- ❌ stays visible -->
+<i class="pi pi-x hidden sm:inline-block" />
+<!-- ✅ -->
+<i class="pi pi-x !hidden sm:!inline-block" />
+```
+
 ## We don't use `@primevue/forms`
 
 This stack validates with **zod + manual wiring**, not `@primevue/forms`. The

@@ -33,7 +33,7 @@ Tasks live in `server/tasks/`. Directory structure = task name with colons:
 import { z } from "zod";
 
 const PayloadSchema = z.object({
-  to: z.string().email(),
+  to: z.email(), // Zod 4: top-level, not z.string().email()
   subject: z.string(),
   body: z.string(),
 });
