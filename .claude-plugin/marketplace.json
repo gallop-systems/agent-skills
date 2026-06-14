@@ -54,6 +54,12 @@
       "version": "1.0.0"
     },
     {
+      "name": "tailwind-v4",
+      "source": "./plugins/tailwind-v4",
+      "description": "Tailwind CSS v4 CSS-first model: @import/@theme/@source config, no tailwind.config.js, prefers-color-scheme dark mode, design tokens, and the v3->v4 traps that silently break classes",
+      "version": "1.0.0"
+    },
+    {
       "name": "vue-nuxt",
       "source": "./plugins/vue-nuxt",
       "description": "Vue 3 component authoring inside a Nuxt 4 app: auto-import rules, props/emits/withDefaults, v-model/defineModel, reactivity, when watch is a smell, and template idioms",

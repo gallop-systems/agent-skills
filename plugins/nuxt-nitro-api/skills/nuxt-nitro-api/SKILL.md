@@ -76,7 +76,7 @@ From nuxt-auth-utils:
 - `hashPassword`, `verifyPassword`
 - `defineOAuth*EventHandler` (Google, GitHub, etc.)
 
-**Need to import:** `z` from "zod", `fromZodError` from "zod-validation-error"
+**Need to import:** `z` from "zod" (zod 4 — error formatting is built in via `z.prettifyError()`; no `zod-validation-error` needed)
 
 ### Client-side
 
@@ -104,7 +104,7 @@ const query = await getValidatedQuery(event, z.object({
 }));
 
 const body = await readValidatedBody(event, z.object({
-  email: z.string().email(),
+  email: z.email(), // Zod 4: top-level, not z.string().email()
   name: z.string().min(1),
 }));
 ```

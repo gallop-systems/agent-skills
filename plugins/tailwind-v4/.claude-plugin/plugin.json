@@ -1,0 +1,8 @@
+{
+  "name": "tailwind-v4",
+  "description": "Tailwind CSS v4 (CSS-first): @import/@theme/@source config, the no-tailwind.config.js model, prefers-color-scheme dark mode, and the v3->v4 traps an LLM trained on v3 falls into",
+  "version": "1.0.0",
+  "author": {
+    "name": "yeedle"
+  }
+}
