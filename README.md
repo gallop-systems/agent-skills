@@ -95,7 +95,6 @@ Covers:
 - useFetch vs $fetch vs useAsyncData
 - Type inference (don't add manual types!)
 - nuxt-auth-utils (OAuth, WebAuthn, middleware)
-- Page structure (keep pages thin)
 - Composables vs utils
 - SSR + localStorage patterns
 - Deep linking (URL params sync)

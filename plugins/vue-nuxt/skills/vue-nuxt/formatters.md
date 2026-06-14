@@ -84,7 +84,8 @@ let a blanket "convert all date fields to Date" transform touch DATE columns.
 
 ## Where to put the formatters
 
-Pick the location by what the formatter needs (see [composables-utils.md](./composables-utils.md)):
+Pick the location by what the formatter needs (the composable-vs-util decision
+tree lives in the `nuxt-nitro-api` skill's `composables-utils.md`):
 
 - **Needs Nuxt/Vue context** (e.g. reads locale/currency from `useRuntimeConfig()`,
   `useI18n()`, or user preferences) → **composable** `useFormatters` in
