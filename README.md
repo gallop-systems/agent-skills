@@ -18,6 +18,7 @@ Then install the skills you want:
 /plugin install doctl@gallop-systems-agent-skills
 /plugin install git-github@gallop-systems-agent-skills
 /plugin install copier-template@gallop-systems-agent-skills
+/plugin install volt-primevue@gallop-systems-agent-skills
 ```
 
 ## Updating
