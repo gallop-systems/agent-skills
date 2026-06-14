@@ -241,6 +241,27 @@ const filteredProducts = await db
   .execute();
 
 // ============================================
+// DYNAMIC COLUMN REFERENCES (db.dynamic)
+// ============================================
+
+// When a column name is only known at runtime (e.g. a user-chosen sort field),
+// db.dynamic.ref() injects it as a properly-quoted identifier — NOT as a value,
+// and without dropping to sql``. Validate the name against an allowlist first;
+// dynamic refs bypass the compile-time column check.
+const sortable = ["first_name", "last_name", "email"] as const;
+type Sortable = (typeof sortable)[number];
+
+async function getUsersSortedBy(column: Sortable) {
+  const { ref } = db.dynamic;
+  return db
+    .selectFrom("user")
+    .select(["id", "email"])
+    .orderBy(ref(column)) // runtime column, still quoted as an identifier
+    .execute();
+}
+// ref("first_name") -> "first_name" (an identifier), never a bound parameter
+
+// ============================================
 // KEY PATTERNS SUMMARY
 // ============================================
 
@@ -269,4 +290,9 @@ const filteredProducts = await db
 6. Expression<SqlBool>[] arrays:
    - Build conditions dynamically
    - Combine with eb.and([...]) or eb.or([...])
+
+7. Dynamic column references: db.dynamic.ref(name)
+   - For runtime-chosen columns (e.g. sort fields)
+   - Emits a quoted identifier, not a bound value
+   - Bypasses the compile-time column check — allowlist the name first
 */

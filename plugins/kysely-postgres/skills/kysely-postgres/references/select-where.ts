@@ -122,6 +122,59 @@ const complexFilter = await db
   .execute();
 
 // ============================================
+// BETWEEN — use eb.between(), NOT the "between" operator
+// ============================================
+
+// CORRECT: eb.between(col, lo, hi) / eb.betweenSymmetric(col, lo, hi)
+const midPriced = await db
+  .selectFrom("product")
+  .selectAll()
+  .where((eb) => eb.between("price", "50", "100"))
+  .execute();
+// SQL: where "price" between $1 and $2
+
+// betweenSymmetric handles bounds given in either order (swaps if lo > hi)
+const inRange = await db
+  .selectFrom("product")
+  .selectAll()
+  .where((eb) => eb.betweenSymmetric("price", "100", "50"))
+  .execute();
+// SQL: where "price" between symmetric $1 and $2
+
+// GOTCHA: the string-operator form generates INVALID SQL — do NOT use it.
+//   .where("price", "between", ["50", "100"])
+// compiles to:  "price" between ($1, $2)   -- a tuple, which is a Postgres
+// syntax error ("between (a, b)" is not "between a and b"). Always use
+// eb.between() / eb.betweenSymmetric() instead.
+
+// ============================================
+// ANY (array / subquery membership)
+// ============================================
+
+// value = ANY(array_column) — type-safe with eb.fn.any
+const taggedPremium = await db
+  .selectFrom("product")
+  .selectAll()
+  .where((eb) => eb(eb.val("premium"), "=", eb.fn.any("tags")))
+  .execute();
+// SQL: where $1 = any("tags")
+
+// value = ANY(subquery)
+const ownersOfDogs = await db
+  .selectFrom("user")
+  .selectAll()
+  .where((eb) =>
+    eb(
+      eb.val("dog"),
+      "=",
+      eb.fn.any(
+        eb.selectFrom("pet").select("species").whereRef("pet.owner_id", "=", "user.id")
+      )
+    )
+  )
+  .execute();
+
+// ============================================
 // KEY PATTERNS SUMMARY
 // ============================================
 
@@ -143,4 +196,10 @@ const complexFilter = await db
 4. eb() inside where callbacks
    - eb("column", "=", value) creates comparison
    - Returns Expression<SqlBool> for composability
+
+5. BETWEEN: use eb.between(col, lo, hi) / eb.betweenSymmetric(...)
+   - The "between" string operator emits invalid SQL ("between (a, b)") — avoid.
+
+6. ANY: eb(eb.val(x), "=", eb.fn.any("array_col" | subquery))
+   - Membership test against an array column or a subquery result.
 */

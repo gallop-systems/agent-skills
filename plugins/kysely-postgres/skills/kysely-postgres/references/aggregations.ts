@@ -3,6 +3,7 @@
  * COUNT, SUM, AVG, GROUP BY, HAVING
  */
 import { db } from "./db";
+import { sql } from "kysely";
 
 // ============================================
 // BASIC AGGREGATIONS
@@ -110,6 +111,44 @@ const groupsWithNoUnsigned = await db
   .execute();
 
 // ============================================
+// ADVANCED GROUPING (ROLLUP / CUBE / GROUPING SETS)
+// ============================================
+
+// Kysely has no builder for these grouping constructs, so pass them to
+// .groupBy() as a sql`` fragment. The SELECT list stays fully typed; only the
+// grouping spec is raw. Rows with NULL in a grouped column are the subtotals.
+
+// ROLLUP — hierarchical subtotals + grand total
+// (type, region) -> (type) -> ()
+const rollup = await db
+  .selectFrom("order")
+  .select((eb) => [
+    "status",
+    eb.fn.sum("total_amount").as("total"),
+  ])
+  .groupBy(sql`rollup("status")`)
+  .execute();
+// SQL: group by rollup("status")
+
+// CUBE — all combinations of the grouped columns
+const cube = await db
+  .selectFrom("order_item")
+  .select((eb) => [
+    "order_id",
+    "product_id",
+    eb.fn.sum("quantity").as("qty"),
+  ])
+  .groupBy(sql`cube("order_id", "product_id")`)
+  .execute();
+
+// GROUPING SETS — pick exactly which groupings to compute
+const sets = await db
+  .selectFrom("order")
+  .select((eb) => ["status", "user_id", eb.fn.sum("total_amount").as("total")])
+  .groupBy(sql`grouping sets (("status"), ("user_id"), ())`)
+  .execute();
+
+// ============================================
 // AGGREGATE FUNCTIONS REFERENCE
 // ============================================
 
@@ -164,4 +203,9 @@ const productStats = await db
    - Replaces CASE WHEN ... inside aggregates for conditional aggregation
    - Works as the first argument to .having() for filtered aggregate conditions
    - Example: eb.fn.count("id").filterWhere("status", "=", "active").as("active_count")
+
+6. ROLLUP / CUBE / GROUPING SETS (no builder):
+   - Pass to .groupBy() as a sql`` fragment: .groupBy(sql`rollup("a", "b")`)
+   - SELECT list stays typed; subtotal rows have NULL in the rolled-up columns
+   - Windowed aggregates (sum/count/... .over()) live in window-functions.ts
 */
