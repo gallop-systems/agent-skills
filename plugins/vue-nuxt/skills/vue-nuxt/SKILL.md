@@ -1,15 +1,15 @@
 ---
 name: vue-nuxt
-description: Author Vue 3 components inside a Nuxt 4 app. Covers Nuxt auto-import rules, component authoring (props/emits/withDefaults/generics), v-model/defineModel, reactivity, when watch is a code smell, and Vue-shaped template idioms.
+description: Author Vue 3 components inside a Nuxt 4 app. Covers Nuxt auto-import rules, component authoring (props/emits/withDefaults/generics), v-model/defineModel, slots, composables, reactivity, when watch is a code smell, page structure, display formatting, and Vue-shaped template idioms.
 ---
 
 # Vue-in-Nuxt component authoring
 
 Patterns for writing Vue 3 `<script setup>` components inside a Nuxt 4 app. This
 is the **frontend authoring** slice — the data layer (`useFetch`/`$fetch`, SSR
-storage, hydration, `definePageMeta`/auth, formatters) lives in the
-`nuxt-nitro-api` skill; Volt/PrimeVue styling and dark mode live in
-`volt-primevue`. This skill cross-links to those rather than restating them.
+storage, hydration, `definePageMeta`/auth) lives in the `nuxt-nitro-api` skill;
+Volt/PrimeVue styling and dark mode live in `volt-primevue`. This skill
+cross-links to those rather than restating them.
 
 ## When to Use This Skill
 
@@ -19,6 +19,8 @@ storage, hydration, `definePageMeta`/auth, formatters) lives in the
 - Wiring `v-model` on a component
 - Designing a component's content API — props vs slots, named/scoped slots
 - Authoring a composable — argument shape, what to return, cleanup
+- Structuring a page — thin pages, components own the data + logic
+- Formatting display values (currency/date/number) consistently
 - Anything reactivity-shaped: `computed` vs `watch`, prop→state sync, DOM measurement
 - You see `watch` and want to know if it should be something else
 
@@ -32,6 +34,8 @@ storage, hydration, `definePageMeta`/auth, formatters) lives in the
 - [reactivity.md](./reactivity.md) — `ref` over `reactive`, `useTemplateRef`, pure computeds, mutate-don't-reassign, DOM-measure + `ResizeObserver`, `shallowRef`, watch-getter prop sync, `:key` remount, listener cleanup
 - [watch.md](./watch.md) — **`watch` is the escape hatch, not the default**: when it's right, and the four smell shapes (with refactors) found auditing 159 real watchers
 - [template-idioms.md](./template-idioms.md) — duplicate-`@keyup` TS error, `:deep()`/`:slotted()`/`:global()`, click-outside marker class, `NuxtLink`/thin `app.vue`, `useHead`, `v-bind` shorthand, `useId`, `<Teleport>`/`<KeepAlive>`, `v-memo`/`v-once`, file-input reset
+- [page-structure.md](./page-structure.md) — keep pages thin: route-param parsing + layout in the page, data/logic/forms in components
+- [formatters.md](./formatters.md) — never inline a currency/date/number formatter; centralize in `useFormatters`, prefer Intl/date-fns
 
 ## Core Principles
 

@@ -31,9 +31,7 @@ For detailed patterns, see these topic-focused reference files:
 - [auth-patterns.md](./auth-patterns.md) - nuxt-auth-utils, OAuth, WebAuthn, middleware
 - [error-handling.md](./error-handling.md) - createError (fatal), error.vue, clearError, NuxtErrorBoundary
 - [state-management.md](./state-management.md) - useState (never a module-scope ref), clearNuxtState, callOnce
-- [page-structure.md](./page-structure.md) - Keep pages thin, components do the work
 - [composables-utils.md](./composables-utils.md) - composables vs utils, runtimeConfig public/private, runWithContext
-- [formatters.md](./formatters.md) - Centralize currency/date/number formatters in useFormatters, never inline
 - [ssr-client.md](./ssr-client.md) - SSR + localStorage, hydration, useRequestURL/Headers, useCookie, VueUse
 - [deep-linking.md](./deep-linking.md) - URL params sync with filters and useFetch
 - [caching.md](./caching.md) - defineCachedFunction/EventHandler, SWR, per-key invalidation (Nitro v2)
@@ -62,7 +60,7 @@ Working examples from a Nuxt project:
 2. **Use h3 validation** - `getValidatedQuery()`, `readValidatedBody()` with Zod schemas
 3. **Composables for context, utils for pure functions** - Composables access Nuxt context, utils are pure
 4. **SSR-safe code** - Guard browser APIs with `import.meta.client` or `onMounted`
-5. **Keep pages thin** - Pages = layout + route params + components. Components own data fetching and logic.
+5. **Keep pages thin** - Pages = layout + route params + components. Components own data fetching and logic. (Page composition + display formatting now live in the `vue-nuxt` skill.)
 
 ## Auto-Imports Quick Reference
 
