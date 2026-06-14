@@ -64,15 +64,15 @@ If newer, it pushes a **static branch name** (e.g. `chore/template-update`) with
 
 ## Branch Protection in Descendants
 
-A template **cannot** enable branch protection for the repos it generates — GitHub reads required status checks from repo config, never from committed workflow files. So every descendant starts with nothing gating merges until someone sets it once (after the first CI run, so the check name is known):
+A template **cannot** enable branch protection for the repos it generates — GitHub reads required status checks from repo config, never from committed workflow files. So every descendant starts with nothing gating merges until someone sets it once (after the first CI run, so the check is known). This template's CI exposes a **`ci-success`** summary job to be exactly that gate — require it on `main`:
 
 ```bash
-echo '{"required_status_checks":{"strict":false,"contexts":["<gate-context>"]},"enforce_admins":false,"required_pull_request_reviews":null,"restrictions":null}' \
-  | gh api -X PUT repos/<owner>/<repo>/branches/<branch>/protection --input -
+echo '{"required_status_checks":{"strict":false,"contexts":["ci-success"]},"enforce_admins":false,"required_pull_request_reviews":null,"restrictions":null}' \
+  | gh api -X PUT repos/<owner>/<repo>/branches/main/protection --input -
 ```
 
-- **Require a single stable aggregate context, not individual job names.** If CI uses a matrix (e.g. sharded tests), the per-leg check names embed the matrix size (`test (shard 1/4)`) and change as the project grows — protection pinned to them blocks every PR the moment the count shifts. Have CI expose one summary job (`needs:` all gating jobs, `if: always()`, fail unless every `needs.*.result` is `success`) and require only that. `needs.<matrix-job>.result` rolls the whole matrix into one value, so it stays correct at any shard count.
-- **Exclude non-gating jobs** (e.g. a coverage report) from that aggregate so they never block a merge.
+- **Require the single `ci-success` context, not individual job names.** CI shards the test suite, so the per-leg check names embed the matrix size (`test (shard 1/4)`) and change as the project grows — protection pinned to them blocks every PR the moment the count shifts. `ci-success` is a summary job (`needs:` all gating jobs, `if: always()`, fails unless every `needs.*.result` is `success`); `needs.test.result` rolls the whole matrix into one value, so it stays correct at any shard count. If you add a template whose CI lacks such a job, create one rather than requiring the matrix legs directly.
+- **`coverage` is deliberately excluded** from `ci-success` so the report never blocks a merge — don't add it to the required contexts.
 - The PUT body must include `required_status_checks`, `enforce_admins`, `required_pull_request_reviews`, and `restrictions` (any may be `null`) or the call 422s. Needs admin on the repo.
 - A Conventional-Commits **PR-title check is only worth requiring on repos something actually reads the title** — i.e. a published package with release-please/changelog automation. A private app (no release tooling, `"private": true`, no version) gains nothing from it; don't gate on it there.
 
