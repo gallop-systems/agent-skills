@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.6.1](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.6.0...agent-skills-v1.6.1) (2026-06-14)
+
+
+### Code Refactoring
+
+* **skills:** move page-structure + formatters from nuxt-nitro-api to vue-nuxt ([#24](https://github.com/gallop-systems/agent-skills/issues/24)) ([cbbbeb3](https://github.com/gallop-systems/agent-skills/commit/cbbbeb356f100bc61a5613549159227045f5d540))
+* **skills:** move page-structure + formatters to vue-nuxt ([cbbbeb3](https://github.com/gallop-systems/agent-skills/commit/cbbbeb356f100bc61a5613549159227045f5d540))
+
+
+### Continuous Integration
+
+* **release-please:** release on every conventional type except chore ([#25](https://github.com/gallop-systems/agent-skills/issues/25)) ([8ea6953](https://github.com/gallop-systems/agent-skills/commit/8ea695313f76c477e7bf0eb6b45b29b4250039ca))
+
 ## [1.6.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.5.0...agent-skills-v1.6.0) (2026-06-14)
 
 
