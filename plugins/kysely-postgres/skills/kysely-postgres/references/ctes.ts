@@ -133,6 +133,44 @@ const categoryHierarchy = await db
   .execute();
 
 // ============================================
+// MATERIALIZED / NOT MATERIALIZED (PostgreSQL)
+// ============================================
+
+// PostgreSQL can inline a CTE into the outer query (so the planner optimizes
+// across the boundary) or materialize it once into a temp result. Force either
+// with a name-builder callback as the first arg to .with():
+//   (cte) => cte("name").materialized()      -> WITH "name" AS MATERIALIZED (...)
+//   (cte) => cte("name").notMaterialized()   -> WITH "name" AS NOT MATERIALIZED (...)
+
+// MATERIALIZED: compute the CTE once and reuse it (good when it's expensive and
+// referenced multiple times, or to deliberately create an optimization fence).
+const expensiveOnce = await db
+  .with(
+    (cte) => cte("active_products").materialized(),
+    (db) =>
+      db
+        .selectFrom("product")
+        .select(["id", "name", "price"])
+        .where("is_active", "=", true)
+  )
+  .selectFrom("active_products")
+  .selectAll()
+  .execute();
+// SQL: with "active_products" as materialized (select ...) select * from ...
+
+// NOT MATERIALIZED: let the planner inline it (often lets index conditions from
+// the outer query push down into the CTE).
+const inlined = await db
+  .with(
+    (cte) => cte("recent_orders").notMaterialized(),
+    (db) =>
+      db.selectFrom("order").select(["id", "user_id"]).where("status", "=", "pending")
+  )
+  .selectFrom("recent_orders")
+  .selectAll()
+  .execute();
+
+// ============================================
 // KEY PATTERNS SUMMARY
 // ============================================
 
@@ -156,7 +194,12 @@ const categoryHierarchy = await db
    - Base case UNION ALL recursive case
    - Recursive case joins to the CTE itself
 
-5. When to use CTEs:
+5. MATERIALIZED / NOT MATERIALIZED (PostgreSQL):
+   - First arg becomes a callback: (cte) => cte("name").materialized()
+   - materialized(): compute once (expensive + reused, or optimization fence)
+   - notMaterialized(): let the planner inline it (push predicates down)
+
+6. When to use CTEs:
    - Complex multi-step aggregations
    - Reusing a subquery multiple times
    - Breaking down complex logic

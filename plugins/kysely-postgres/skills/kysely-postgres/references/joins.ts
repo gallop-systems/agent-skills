@@ -184,6 +184,53 @@ const usersWithSummary = await db
   .execute();
 
 // ============================================
+// LATERAL JOINS (PostgreSQL)
+// ============================================
+
+// A LATERAL subquery can reference columns from earlier tables in the FROM
+// clause via whereRef — the subquery runs once per outer row. Use the
+// *Lateral methods + join.onTrue() (the join condition lives inside the
+// subquery, so the ON is just "true").
+
+// Top-N-per-group with a per-row LIMIT — the classic LATERAL use case.
+// Get each user's 3 most recent orders.
+const usersWithRecentOrders = await db
+  .selectFrom("user as u")
+  .innerJoinLateral(
+    (eb) =>
+      eb
+        .selectFrom("order as o")
+        .select(["o.id", "o.total_amount", "o.created_at"])
+        .whereRef("o.user_id", "=", "u.id") // references the outer row
+        .orderBy("o.created_at", "desc")
+        .limit(3)
+        .as("recent"),
+    (join) => join.onTrue()
+  )
+  .select(["u.email", "recent.id", "recent.total_amount", "recent.created_at"])
+  .execute();
+// SQL: from "user" as "u" inner join lateral (... where "o"."user_id" = "u"."id"
+//      order by "o"."created_at" desc limit $1) as "recent" on true
+
+// leftJoinLateral keeps outer rows even when the subquery returns nothing.
+const usersWithMaybeOrder = await db
+  .selectFrom("user as u")
+  .leftJoinLateral(
+    (eb) =>
+      eb
+        .selectFrom("order as o")
+        .select(["o.id", "o.total_amount"])
+        .whereRef("o.user_id", "=", "u.id")
+        .orderBy("o.created_at", "desc")
+        .limit(1)
+        .as("latest"),
+    (join) => join.onTrue()
+  )
+  .select(["u.email", "latest.id", "latest.total_amount"]) // null if no orders
+  .execute();
+// crossJoinLateral also exists (no ON clause at all).
+
+// ============================================
 // KEY PATTERNS SUMMARY
 // ============================================
 
@@ -203,4 +250,9 @@ const usersWithSummary = await db
 
 4. Cross joins: join.on(sql`true`, "=", sql`true`)
    - For joining unrelated data (like CTE summaries)
+
+5. Lateral joins: .innerJoinLateral((eb) => eb...whereRef(outer).as("x"),
+   (join) => join.onTrue())
+   - Subquery can reference outer rows; runs per row.
+   - Best tool for top-N-per-group with a per-row LIMIT.
 */

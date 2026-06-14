@@ -19,15 +19,19 @@ Use this skill when:
 
 For detailed examples, see these topic-focused reference files:
 
-- [select-where.ts](references/select-where.ts) - Basic SELECT patterns, WHERE clauses, AND/OR conditions
-- [joins.ts](references/joins.ts) - Simple joins, callback joins, subquery joins, cross joins
-- [aggregations.ts](references/aggregations.ts) - COUNT, SUM, AVG, GROUP BY, HAVING
+- [select-where.ts](references/select-where.ts) - Basic SELECT patterns, WHERE clauses, AND/OR, BETWEEN, ANY
+- [joins.ts](references/joins.ts) - Simple joins, callback joins, subquery joins, cross joins, lateral joins
+- [aggregations.ts](references/aggregations.ts) - COUNT, SUM, AVG, GROUP BY, HAVING, ROLLUP/CUBE/GROUPING SETS
+- [window-functions.ts](references/window-functions.ts) - ROW_NUMBER/RANK, LAG/LEAD, windowed aggregates, frames
 - [orderby-pagination.ts](references/orderby-pagination.ts) - ORDER BY, NULLS handling, DISTINCT, pagination
-- [ctes.ts](references/ctes.ts) - Common Table Expressions, multiple CTEs, recursive CTEs
+- [ctes.ts](references/ctes.ts) - Common Table Expressions, multiple CTEs, recursive CTEs, MATERIALIZED
+- [set-operations.ts](references/set-operations.ts) - UNION, INTERSECT, EXCEPT (and *All variants)
 - [json-arrays.ts](references/json-arrays.ts) - JSONB handling, array columns, jsonBuildObject, jsonAgg
 - [relations.ts](references/relations.ts) - jsonArrayFrom, jsonObjectFrom for nested data
+- [full-text-search.ts](references/full-text-search.ts) - tsvector/tsquery matching with @@, ranking
+- [locking.ts](references/locking.ts) - FOR UPDATE/SHARE, SKIP LOCKED, NOWAIT, job-queue pattern
 - [mutations.ts](references/mutations.ts) - INSERT, UPDATE, DELETE, UPSERT, INSERT FROM SELECT
-- [expressions.ts](references/expressions.ts) - CASE, $if, subqueries, eb.val/lit/not, standalone expressionBuilder
+- [expressions.ts](references/expressions.ts) - CASE, $if, subqueries, eb.val/lit/not, standalone eb, dynamic refs
 
 ## Core Principles
 
@@ -176,6 +180,9 @@ const user = await db.selectFrom("user").selectAll()
 .where("role", "in", ["admin", "manager"])
 .where("name", "like", "%search%")
 .where("deleted_at", "is", null)
+
+// BETWEEN - use eb.between(), NOT the "between" operator (see Pitfall #8)
+.where((eb) => eb.between("age", 18, 65))
 
 // Multiple conditions (chained = AND)
 .where("is_active", "=", true)
@@ -750,6 +757,115 @@ await db
   .executeTakeFirst();
 ```
 
+## Window Functions
+
+Two builders cover almost everything. See [window-functions.ts](references/window-functions.ts) for the full set.
+
+```typescript
+// Named window functions (no dedicated helper): eb.fn.agg<T>("NAME", [args])
+.select((eb) => [
+  eb.fn.agg<number>("ROW_NUMBER")
+    .over((ob) => ob.partitionBy("category_id").orderBy("price", "desc"))
+    .as("rank"),
+  // LAG/LEAD args go in the array; wrap literals in sql.lit()
+  eb.fn.agg<number | null>("LAG", ["total_amount", sql.lit(1)])
+    .over((ob) => ob.partitionBy("user_id").orderBy("created_at"))
+    .as("prev_amount"),
+])
+
+// Windowed aggregates: .over() on sum/count/avg/min/max
+.select((eb) => [
+  eb.fn.sum<number>("total_amount").over((ob) => ob.orderBy("created_at")).as("running_total"),
+  eb.fn.avg<number>("price").over().as("grand_avg"),               // empty OVER ()
+  // .filterWhere() and .distinct() compose with .over()
+  eb.fn.countAll<number>().filterWhere("status", "=", "completed")
+    .over((ob) => ob.partitionBy("user_id")).as("completed_for_user"),
+])
+```
+
+**Filtering on a window result** (e.g. `row_number = 1`) needs a CTE/subquery — windows are computed after `WHERE`, so rank in a CTE then filter the outer query.
+
+**Window frames (`ROWS`/`RANGE BETWEEN`) require raw SQL.** Kysely's `OverBuilder` exposes only `partitionBy`/`orderBy` — there is no frame node in its AST at all (true through 0.28, 0.29, and `main`), and `.over()` rejects a raw `sql` argument. Frame support is the open feature request [kysely-org/kysely#505](https://github.com/kysely-org/kysely/issues/505). Write the frame as raw SQL but keep column refs typed via `eb.ref()`:
+
+```typescript
+// Only the function name + frame keywords are raw; columns stay validated.
+sql<number>`avg(${eb.ref("total_amount")}) over (
+  order by ${eb.ref("created_at")} rows between 2 preceding and current row
+)`.as("moving_avg_3")
+```
+
+## Set Operations (UNION / INTERSECT / EXCEPT)
+
+Combine two compatible queries. Plain forms dedupe; `*All` forms keep duplicates (and are cheaper). See [set-operations.ts](references/set-operations.ts).
+
+```typescript
+db.selectFrom("order").select("user_id")
+  .except(db.selectFrom("review").select("user_id"))   // orders, never reviewed
+  .execute();
+// .union/.unionAll, .intersect/.intersectAll, .except/.exceptAll
+// Both branches must select matching columns/names — align with `as` aliases.
+```
+
+## LATERAL Joins (PostgreSQL)
+
+A `LATERAL` subquery can reference earlier tables via `whereRef` and runs per outer row — the best tool for **top-N-per-group with a per-row LIMIT**. Use `*Lateral` + `join.onTrue()`. See [joins.ts](references/joins.ts).
+
+```typescript
+// Each user's 3 most recent orders
+db.selectFrom("user as u")
+  .innerJoinLateral(
+    (eb) => eb.selectFrom("order as o")
+      .select(["o.id", "o.total_amount", "o.created_at"])
+      .whereRef("o.user_id", "=", "u.id")
+      .orderBy("o.created_at", "desc").limit(3).as("recent"),
+    (join) => join.onTrue()
+  )
+  .select(["u.email", "recent.id", "recent.total_amount"])
+  .execute();
+// leftJoinLateral / crossJoinLateral also exist.
+```
+
+## Row Locking (FOR UPDATE / SKIP LOCKED)
+
+Pessimistic locks for read-modify-write and job queues (run inside a transaction). See [locking.ts](references/locking.ts).
+
+```typescript
+// Job-queue worker: grab the next pending jobs, skipping rows other workers hold
+db.selectFrom("job").selectAll()
+  .where("status", "=", "pending")
+  .orderBy("created_at").limit(10)
+  .forUpdate().skipLocked()
+  .execute();
+// Lock strength: forKeyShare < forShare < forNoKeyUpdate < forUpdate
+// Wait behavior: .skipLocked() (skip) or .noWait() (error instead of blocking)
+```
+
+## Full-Text Search (PostgreSQL)
+
+`@@` is a real Kysely operator — keep it as the operator and put the FTS functions on each side as `sql` fragments. See [full-text-search.ts](references/full-text-search.ts).
+
+```typescript
+db.selectFrom("document").selectAll()
+  .where(
+    sql`to_tsvector('english', ${sql.ref("body")})`,
+    "@@",
+    sql`websearch_to_tsquery('english', ${userInput})`,
+  )
+  .execute();
+// A stored tsvector column can be the typed LHS directly:
+// .where("search_vector", "@@", sql`plainto_tsquery('english', ${userInput})`)
+```
+
+## Advanced Grouping (ROLLUP / CUBE / GROUPING SETS)
+
+No builder exists — pass the grouping spec to `.groupBy()` as a `sql` fragment; the SELECT list stays typed. See [aggregations.ts](references/aggregations.ts).
+
+```typescript
+.groupBy(sql`rollup("status")`)                              // hierarchical subtotals
+.groupBy(sql`cube("order_id", "product_id")`)               // all combinations
+.groupBy(sql`grouping sets (("status"), ("user_id"), ())`)  // explicit sets
+```
+
 ## Migrations
 
 ### Configuration (kysely.config.ts)
@@ -979,6 +1095,19 @@ npx kysely-codegen \
 Now DATE columns return strings like `"2025-01-01"` and the frontend can parse/format respecting the user's timezone.
 
 **Note**: This applies to DATE columns only. TIMESTAMPTZ columns already handle timezones correctly by storing UTC and converting on read.
+
+### 8. Don't Use the `between` String Operator — It Emits Invalid SQL
+
+The `"between"` operator looks like it should work but compiles to a tuple, which is a PostgreSQL syntax error:
+
+```typescript
+// WRONG - compiles to: "age" between ($1, $2)  -> Postgres syntax error
+.where("age", "between", [18, 65])
+
+// RIGHT - use the expression-builder helpers
+.where((eb) => eb.between("age", 18, 65))            // "age" between $1 and $2
+.where((eb) => eb.betweenSymmetric("age", 65, 18))   // swaps bounds if needed
+```
 
 ## PostgreSQL Helpers Summary
 
