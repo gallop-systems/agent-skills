@@ -8,20 +8,42 @@ manifests).
 
 Releases are automated via release-please, which derives version bumps from
 [Conventional Commits](https://www.conventionalcommits.org/) — using the **PR title**
-(squash merge) and commit messages.
+(squash merge) and commit messages. Scope the type to the plugin where practical,
+e.g. `docs(nuxt-nitro-api): ...`.
 
-Because there is no code in this package, the usual code/docs split does not apply.
-**Any new skill, or update to an existing skill, must use `feat` in the PR title**
-(and ideally the commit message) so it produces a user-facing release.
+**Every type ships a release except `chore`** (see the config in
+`release-please-config.json` — all `changelog-sections` are visible, only `chore`
+is `hidden: true`). So a skill is the product: edit it under the type that matches
+the *size* of the change, and it will publish. There is no "this won't ship"
+problem for content — pick the honest type.
 
-- `feat(<plugin>): ...` — adding a skill, or adding/changing/expanding skill content
-  (new reference files, new guidance, meaningful edits). This is the default for
-  skill work.
-- `fix(<plugin>): ...` — correcting wrong or broken skill content.
-- `chore:` / `docs:` — reserve for genuine repo-meta changes (CI, tooling, this file,
-  top-level README housekeeping) that should **not** ship as a skill release.
+| PR title type | Version bump | Use for |
+|---|---|---|
+| `feat(<plugin>): …` | **minor** (x.**Y**.0) | A new skill, or a new capability / reference file. |
+| `fix(<plugin>): …` | patch | Correcting wrong or broken skill content. |
+| `docs(<plugin>): …` | patch | Edits, clarifications, new guidance within existing skills. |
+| `refactor(<plugin>): …` | patch | Reorganizing/moving skill content. |
+| `perf` / `style` / `test` / `build` / `ci` | patch | Their literal meaning (mostly repo tooling). |
+| `chore: …` | **no release** | Repo-meta that must not ship. Also the type release-please uses for its own release PRs — shipping it would loop, which is why it's the one excluded type. |
+| `feat!:` or a `BREAKING CHANGE:` footer | **major** | A breaking change to a skill's contract. |
 
-Do **not** use `docs:` for skill content even though it is Markdown — to the consumers
-of this repo, a skill *is* the product, so changes to it are `feat`/`fix`.
+Default for routine skill edits is now `docs`/`fix`/`refactor` (a **patch**) — do
+**not** reflexively use `feat`, or every edit cuts a full minor. Reserve `feat`
+for a genuinely new skill or a new reference file.
 
-Scope the type to the plugin where practical, e.g. `feat(nuxt-nitro-api): ...`.
+## Controlling the exact version: `Release-As`
+
+release-please reads a **`Release-As: X.Y.Z`** footer and bumps to exactly that
+version, overriding the type-derived bump. Use it to keep a change to a patch when
+the type would otherwise over-bump, or to set a deliberate version.
+
+```
+docs(vue-nuxt): expand the slots reference and add three idioms
+
+Release-As: 1.7.1
+```
+
+Because PRs are **squash-merged**, the footer must land in the **squash commit
+body** — put it in the PR description (and confirm the squash commit includes it;
+`gh pr merge --squash --body "…Release-As: X.Y.Z"` guarantees it). A `Release-As`
+footer in a branch commit that gets squashed away will be lost.
