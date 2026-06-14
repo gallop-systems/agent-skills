@@ -161,6 +161,35 @@ export function formatCurrency(amount: number) {
 // - /pages/invoice.vue
 ```
 
+## `useRuntimeConfig`: `public` on the client, private on the server
+
+Only `config.public.*` exists in client code. Reading a private (top-level) key
+in the browser returns an empty string — a silent bug, not an error:
+
+```typescript
+const config = useRuntimeConfig();
+config.public.apiBase;   // ✅ client + server
+config.apiSecret;        // ✅ server only — ❌ empty on the client
+```
+
+Env binding follows the split: `NUXT_*` → server keys, `NUXT_PUBLIC_*` → public
+keys. Put anything a browser must never see under a private (non-`public`) key.
+
+## Calling a composable after `await`: `runWithContext`
+
+Composables and `navigateTo` must run in Nuxt's context. After an `await`, that
+context can be lost — the classic **"Nuxt instance unavailable"** error. Restore
+it with `nuxtApp.runWithContext`:
+
+```typescript
+const nuxtApp = useNuxtApp();
+const result = await someAsyncWork();
+return nuxtApp.runWithContext(() => navigateTo("/next"));  // ✅ context restored post-await
+```
+
+(Capture `useNuxtApp()`/the composable result *before* the await when you can;
+`runWithContext` is the escape hatch for when you can't.)
+
 ## Summary Table
 
 | Location | Naming | Vue APIs | Auto-imported | Use Case |

@@ -121,6 +121,24 @@ const handleDelete = async (id: number) => {
 };
 ```
 
+## Invalidating after a mutation
+
+`refresh()` re-pulls a single `useFetch`. When a mutation affects data loaded by
+**other** components, use the global `refreshNuxtData(keys?)` instead of wiring
+cross-component refresh plumbing — it re-runs every matching `useFetch`/
+`useAsyncData` payload:
+
+```typescript
+await $fetch("/api/invoices", { method: "POST", body });
+await refreshNuxtData(["invoices", "invoice-summary"]);  // re-pull by explicit key
+// refreshNuxtData() with no args refetches everything (use sparingly)
+```
+
+For this to target precisely, give the fetches explicit keys
+(`useAsyncData("invoices", …)` / `useFetch("/api/invoices", { key: "invoices" })`).
+`clearNuxtData(keys?)` drops cached payload + error state without refetching (e.g.
+reset a wizard's loaded data on cancel).
+
 ## Type Inference
 
 Template literals preserve type inference (fixed late 2024):
