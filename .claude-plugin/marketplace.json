@@ -14,7 +14,7 @@
     {
       "name": "nuxt-nitro-api",
       "source": "./plugins/nuxt-nitro-api",
-      "description": "Nuxt 3 / Nitro API patterns: validation, auth, SSR, tasks, SSE",
+      "description": "Nuxt 4 / Nitro API patterns: validation, auth, SSR, tasks, SSE",
       "version": "1.0.0"
     },
     {

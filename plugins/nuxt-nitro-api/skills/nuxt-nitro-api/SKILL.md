@@ -1,9 +1,9 @@
 ---
 name: nuxt-nitro-api
-description: Build type-safe Nuxt 3 applications with Nitro API patterns. Covers validation, fetch patterns, auth, SSR, composables, background tasks, and real-time features.
+description: Build type-safe Nuxt 4 applications with Nitro API patterns. Covers validation, fetch patterns, auth, SSR, composables, background tasks, and real-time features.
 ---
 
-# Nuxt 3 / Nitro API Patterns
+# Nuxt 4 / Nitro API Patterns
 
 This skill provides patterns for building type-safe Nuxt applications with Nitro backends.
 
@@ -16,7 +16,7 @@ This skill provides patterns for building type-safe Nuxt applications with Nitro
 ## When to Use This Skill
 
 Use this skill when:
-- Working in a Nuxt 3 project with TypeScript
+- Working in a Nuxt 4 project with TypeScript
 - Building API endpoints with Nitro
 - Implementing authentication with nuxt-auth-utils
 - Handling SSR + client-side state
