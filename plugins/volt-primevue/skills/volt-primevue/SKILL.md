@@ -36,6 +36,14 @@ Hand-writing one means you've guessed the PrimeVue part structure and the
 `surface-*`/`dark:` conventions; the generator gets both right and stays
 consistent with upstream.
 
+**`volt-vue add` is a one-time fetch, not a sync channel.** Volt's docs are
+explicit that vendored components [aren't meant to be updated](https://volt.primevue.org/overview/)
+— once added, the file is yours and editing it is the *expected* path, not a
+fallback. There's no `volt-vue update`. Upstream **behavior/structure** fixes
+arrive by bumping the **`primevue`** version (the unstyled logic is imported from
+it); the **styling** is yours to keep. So "edit the vendored source" carries no
+hidden regeneration penalty — that escape hatch was never there to lose.
+
 ## Customization — `pt:` pass-through
 
 Volt uses PrimeVue's pass-through API. Target a component's internal section with
@@ -58,6 +66,27 @@ differ in precedence:
 So `<VoltInputText pt:root:class="bg-primary" />` works; `<VoltInputText
 class="bg-primary" />` may silently not.
 
+Both paths run through **`ptViewMerge` in `src/volt/utils.ts`**
+(`twMerge(globalClass, selfClass)` + Vue `mergeProps`), wired onto every component
+via `:ptOptions="{ mergeProps: ptViewMerge }"`. That local helper — not a global
+config — is the actual override point; it's *why* `pt:` reliably wins. To change
+merge behavior across components, edit `utils.ts`. See [gotchas.md](./gotchas.md).
+
+### Restyle component states with `p-*` variants
+
+Per-state styling (active, focus, disabled, invalid) is expressed declaratively in
+the class string via `tailwindcss-primeui` variants — `p-selected:`, `p-focus:`,
+`p-disabled:`, `p-editable:`, `p-invalid:` (you'll see them throughout the
+vendored sources). They're plain Tailwind variants, so you can **override a state's
+look through `pt:`** without touching DOM or source:
+
+```vue
+<VoltSelect pt:option:class="p-selected:bg-highlight p-focus:bg-surface-100" />
+```
+
+Reach for these before editing vendored source — restyling the *active* or
+*disabled* appearance rarely needs a source edit.
+
 What `pt:` **can't** do is change DOM — it only restyles sections the component
 already renders. To add an element the component doesn't have (e.g. an animated
 overlay), you have two honest options, because Volt components are **vendored and
@@ -72,30 +101,33 @@ components are **vendored and editable**, so "the component doesn't do X" has
 three answers, not two: restyle via `pt:`, **edit the source in `src/volt/`**, or
 build standalone.
 
-Worked example — **segmented toggle** (`SelectButton` vs a custom `SlidingTabs`):
+Worked example — **segmented toggle** (`SelectButton` vs a custom `SlidingTabs`).
+*Illustrative:* `SelectButton` isn't vendored in every project (e.g. not in this
+repo's `src/volt/` by default) — you'd `npx volt-vue add SelectButton` first.
 
 - `VoltSelectButton` ships v-model, single/multi-select, label+icon options, and
   proper radiogroup a11y, with a *highlighted-active* look.
 - A custom `SlidingTabs` adds an **animated indicator** (a single shared element
   that measures the active button and slides), responsive label collapse, and
   token-matched styling.
-- The slide **can't** come from `pt:` — `SelectButton` toggles a background class
-  per button and has no shared, position-measured overlay, and `pt:` changes
-  classes, not DOM. But that doesn't force a rewrite: since the source lives in
-  `src/volt/SelectButton.vue`, adding the indicator **there** is a legitimate
-  option (you keep its a11y + selection model).
+- The active/focus/disabled *look* **is** `pt:`-reachable (via the `p-selected:`/
+  `p-focus:` variants above). What `pt:` can't add is the **shared sliding
+  element** — `SelectButton` toggles a per-button background and has no single
+  position-measured overlay, and `pt:` changes classes, not DOM. Adding that
+  indicator means editing the vendored `SelectButton.vue` (you keep its a11y +
+  selection model) or building standalone.
 
 So the real decision:
 
 - **No animation needed → `SelectButton` as-is** (`pt:` to match your design).
   Free a11y + multi-select; don't reinvent it.
 - **Animated indicator / responsive collapse needed →** either **edit the
-  vendored `SelectButton`** (keep its a11y, accept that you now own that file and
-  lose easy `volt-vue add` regeneration) **or build a standalone `SlidingTabs`**
-  (clean and decoupled, but you owe the a11y yourself — `role="group"` +
-  `aria-pressed` at minimum). Standalone wins when it's a *filter* toggle rather
-  than a form field; editing the source wins when you want the full input
-  semantics.
+  vendored `SelectButton`** (keep its a11y; you own the file — which is true the
+  moment you `volt-vue add` it anyway, so there's no regeneration to forfeit) **or
+  build a standalone `SlidingTabs`** (clean and decoupled, but you owe the a11y
+  yourself — `role="group"` + `aria-pressed` at minimum). Standalone wins when
+  it's a *filter* toggle rather than a form field; editing the source wins when
+  you want the full input semantics.
 
 ## Theming & dark mode
 
@@ -124,3 +156,15 @@ See **[gotchas.md](./gotchas.md)** — the ones that cost real debugging time:
   reactive `prefers-color-scheme` palette.
 - A bare `boolean` prop casts to `false` when absent — default it with
   `withDefaults`, never rely on `undefined`.
+- The class merge lives in `ptViewMerge` (`src/volt/utils.ts`) — the lever when a
+  `pt:` override won't take.
+- `data-pc-name` / `data-pc-section` to reach internals from CSS; `pc`-prefixed
+  section names (`pt:pcBadge:…`) for nested child components.
+- We deliberately **don't** use `@primevue/forms` — zod + manual wiring instead.
+
+## Plugin config
+
+See **[config.md](./config.md)** for PrimeVue plugin options beyond colors —
+global `pt` defaults, `ptOptions` merge behavior, `zIndex` overlay stacking, and
+`locale`. (Keep `unstyled: true`; styled-mode `definePreset`/`theme.preset` are
+inert — see [theming.md](./theming.md).)
