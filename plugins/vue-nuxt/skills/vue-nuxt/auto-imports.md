@@ -26,7 +26,7 @@ PascalCased filename:
 
 ## What auto-imports (no `import` line)
 
-- **Vue reactivity & lifecycle:** `ref`, `reactive`, `computed`, `watch`, `watchEffect`, `onMounted`, `onBeforeUnmount`/`onUnmounted`, `nextTick`, `defineProps`/`defineEmits`/`defineModel`/`withDefaults`, `resolveComponent`.
+- **Vue reactivity & lifecycle:** `ref`, `shallowRef`, `reactive`, `computed`, `watch`, `watchEffect`, `onWatcherCleanup`, `toValue`/`toRef`/`toRefs`, `useTemplateRef`, `useId`, `effectScope`/`onScopeDispose`, `onMounted`, `onBeforeUnmount`/`onUnmounted`, `nextTick`, `defineProps`/`defineEmits`/`defineModel`/`withDefaults`/`defineOptions`, `resolveComponent`.
 - **Nuxt helpers:** `useRoute`, `useRouter`, `navigateTo`, `useFetch`, `$fetch`, `useAsyncData`, `useState`, `useCookie`, `useRuntimeConfig`, `useHead`, `definePageMeta`, `useNuxtApp`.
 - **Your `app/composables`** (`useFoo`) and **`app/utils`** (pure helpers, by bare name) — app-wide.
 - **`<NuxtLink>`, `<NuxtPage>`, `<NuxtLayout>`, `<ClientOnly>`, `<Teleport>`** in templates.

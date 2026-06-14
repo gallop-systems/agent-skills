@@ -74,6 +74,39 @@ Only when the effect crosses **out of** the reactive graph:
 - **Clone a server prop into a locally-editable draft** —
   `watch(() => props.record, (r) => { if (r) form.value = structuredClone(toRaw(r)) }, { immediate: true })`.
 
+### Cancel stale work with `onWatcherCleanup`
+
+A watcher that starts async work (a keyed `$fetch`, a timer) must cancel the
+previous run, or out-of-order responses clobber state — the #1 correctness bug in
+keyed-fetch watchers. Vue 3.5's `onWatcherCleanup(fn)` registers teardown that
+runs before the next fire and on stop:
+
+```ts
+import { onWatcherCleanup } from 'vue'
+
+watch(query, async (q) => {
+  const ctrl = new AbortController()
+  onWatcherCleanup(() => ctrl.abort())   // abort the in-flight request if q changes again
+  results.value = await $fetch('/api/search', { query: { q }, signal: ctrl.signal })
+})
+```
+
+Gotcha: `onWatcherCleanup` only registers **synchronously, before the first
+`await`**. For teardown decided after an await, use the callback's third arg
+instead — `watch(src, (v, _old, onCleanup) => { … onCleanup(fn) })`.
+
+### `flush: 'post'` runs the callback after the DOM patches
+
+When a watcher reacts to a change by reading/scrolling the **updated** DOM, give
+it `{ flush: 'post' }` so it runs after Vue patches — no manual `await nextTick()`.
+They're ~one microtask apart and interchangeable; pick by clarity (prefer
+`flush: 'post'` for an effect that *reacts to reactive change*, `nextTick` for a
+one-shot after an imperative toggle).
+
+```ts
+watch(activeId, () => scrollActiveIntoView(), { flush: 'post' })  // DOM already updated
+```
+
 ## Smell catalog (with refactors)
 
 | Smell | Tell | Reach for |
@@ -112,6 +145,16 @@ check, so it gets costly on large structures. Before reaching for it:
 - For deriving from a few keys of a nested object, a `computed` (or `watchEffect`)
   tracks **only the keys actually read**, avoiding the full traversal a deep watch
   pays for.
+
+**Deep-watch aliasing trap:** in a deep watch the callback's `oldValue` and
+`newValue` are the **same reference** (Vue mutated the object in place), so you
+*cannot* diff old-vs-new inside the callback — `if (next.x !== prev.x)` is always
+false. Watch a derived getter instead, so old/new are distinct primitives:
+
+```ts
+// ❌ watch(items, (next, prev) => { if (next.length !== prev.length) … }, { deep: true })  // never fires
+// ✅ watch(() => items.value.length, (next, prev) => { if (next > prev) onAdded() })
+```
 
 ## `watch` vs `watchEffect`
 

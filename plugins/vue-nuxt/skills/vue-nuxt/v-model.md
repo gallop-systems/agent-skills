@@ -21,6 +21,23 @@ const months = defineModel<string>('months')
 // parent: <DurationInput v-model:years="y" v-model:months="m" />
 ```
 
+**Transform on the boundary with `get`/`set`.** For a component's *own* model,
+`defineModel` takes `get`/`set` transformers directly — no separate writable
+`computed` needed (reserve that for forwarding *someone else's* model, below):
+
+```ts
+const model = defineModel<string>({ get: (v) => v.toUpperCase(), set: (v) => v.trim() })
+```
+
+**Custom `v-model` modifiers** (`v-model.capitalize`) arrive via the
+`[model, modifiers]` tuple:
+
+```ts
+const [model, modifiers] = defineModel<string>({
+  set: (v) => (modifiers.capitalize ? v[0].toUpperCase() + v.slice(1) : v),
+})
+```
+
 ## The computed-proxy — for forwarding an existing model
 
 When you wrap a component that already has its own `v-model` (a Volt/PrimeVue
@@ -34,10 +51,11 @@ const visible = computed({ get: () => props.visible, set: (v) => emit('update:vi
 //   <Dialog v-model:visible="visible" />
 ```
 
-A `computed({ get, set })` is also how you **transform** a child value shape
-(date string ↔ `Date`) before writing back. See
-[watch.md](./watch.md) — do NOT reach for two mirror `watch`es to do this; that's
-the `prop-sync` smell.
+A `computed({ get, set })` transforms a *forwarded* value shape (date string ↔
+`Date`) before writing back — for a component's **own** model, prefer
+`defineModel`'s `get`/`set` (above) over a separate computed. Either way, do NOT
+reach for two mirror `watch`es to do this; that's the `prop-sync` smell (see
+[watch.md](./watch.md)).
 
 ## Mutually-exclusive paired fields
 
@@ -51,6 +69,29 @@ function setYears(v: string) { emit('update:years', v); emit('update:months', nu
 ```
 
 A single `v-model` can't express "set A, clear B" atomically.
+
+## Controlled / uncontrolled: work standalone OR be parent-driven
+
+For a component that should manage its own state **unless** a parent supplies the
+value (a toggle that works alone but a parent can override), detect whether the
+control prop was passed and fall back to internal state per render:
+
+```ts
+const props = defineProps<{ open?: boolean }>()        // undefined ⇒ uncontrolled
+const emit = defineEmits<{ 'update:open': [v: boolean] }>()
+const internal = ref(false)
+const controlled = computed(() => props.open !== undefined)
+const open = computed(() => (controlled.value ? props.open! : internal.value))
+function toggle() {
+  if (controlled.value) emit('update:open', !props.open)
+  else internal.value = !internal.value
+}
+```
+
+This relies on `undefined` meaning "unset", so the control prop must **not** be a
+bare `boolean` (the Boolean-casting trap coerces absent → `false`; see
+[component-authoring.md](./component-authoring.md)) — type it `boolean | undefined`
+and give it no `withDefaults` default.
 
 ## Reset / lazy-load on open
 

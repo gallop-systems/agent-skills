@@ -24,6 +24,37 @@ later programmatic writes to the old reference are lost:
 Object.assign(form.value, next)     // or per-key assignment
 ```
 
+## Default to `ref`; reach for `reactive` rarely
+
+`ref` is the default for all state. Use `reactive` only to **group** tightly
+related fields or to wrap a non-Vue object (`Map`/`Set`). `reactive`'s traps are
+why: it loses reactivity when **destructured** (the keys become plain values —
+`toRefs` to recover) and when **reassigned wholesale** (the proxy identity swaps).
+A `ref` has neither problem — `.value` is always the live cell.
+
+```ts
+const state = reactive({ count: 0 })
+const { count } = state          // ❌ plain number now, not reactive
+const { count } = toRefs(state)  // ✅ if you must destructure a reactive
+// Rule: default ref(); reactive() only to group state or wrap Map/Set.
+```
+
+## Template refs: prefer `useTemplateRef`
+
+To reach a DOM element or child component, use **`useTemplateRef('name')`** (Vue
+3.5 / Nuxt 4) — pass the string that matches `ref="name"` in the template. It
+self-documents that the value is an element/component handle, infers the type, and
+lets a composable own the ref internally. The legacy "declare `const el =
+ref(null)` whose variable name must match `ref="el"`" form still works but is
+fragile to rename drift — prefer `useTemplateRef` in new code.
+
+```ts
+const input = useTemplateRef('input')          // <input ref="input">
+onMounted(() => input.value?.focus())
+// v-for: useTemplateRef returns an ARRAY, and its order is NOT guaranteed —
+// key/sort yourself rather than trusting index alignment.
+```
+
 ## DOM-measured computeds need a re-measure signal
 
 DOM size isn't reactive, so a `computed` reading live geometry
@@ -31,9 +62,10 @@ DOM size isn't reactive, so a `computed` reading live geometry
 an explicit version ref and bump it from a `ResizeObserver`:
 
 ```ts
+const container = useTemplateRef('container')   // <div ref="container">
 const layoutVersion = ref(0)
 let ro: ResizeObserver | null = null
-onMounted(() => { ro = new ResizeObserver(() => layoutVersion.value++); ro.observe(el.value!) })
+onMounted(() => { ro = new ResizeObserver(() => layoutVersion.value++); ro.observe(container.value!) })
 onBeforeUnmount(() => ro?.disconnect())
 
 const indicator = computed(() => {
@@ -72,6 +104,10 @@ emit-back is the `prop-sync` smell — use `defineModel`; see [v-model.md](./v-m
 Bind `:key` to the **identifying value** so the component remounts cleanly when
 identity changes. Do NOT abuse an incrementing `:key="bump++"` to force a data
 re-pull — that destroys child state/scroll; use a watcher or `refresh()` instead.
+When a *full remount* genuinely is the goal (reset all of a child's internal
+state), bumping `:key` is the right tool — and `$forceUpdate()` is the wrong one
+(it re-renders but skips computeds and bypasses the reactivity graph; if you
+"need" it, you have a reactivity bug to fix instead).
 
 ## Always pair setup with teardown
 
@@ -79,3 +115,19 @@ Anything started in `onMounted` — `addEventListener`, `setInterval`,
 `ResizeObserver`, `MutationObserver` — must be torn down in
 `onUnmounted`/`onBeforeUnmount` (`removeEventListener`, `clearInterval`,
 `disconnect`). Keep the handle in a module-scope `let` so teardown can reach it.
+Inside a **composable**, register teardown with `onScopeDispose` instead so it
+also fires for a detached `effectScope` — see [composables.md](./composables.md).
+
+## `shallowRef` for large or wholesale-replaced data
+
+Deep reactivity has a cost: `ref`/`reactive` recursively proxy every nested
+property. For a large list, a third-party class instance (a `Map`, an editor/map
+object you drive imperatively), or data you always **replace wholesale** rather
+than mutate, use `shallowRef` (or `shallowReactive`) — only `.value` reassignment
+triggers, nested mutation does not.
+
+```ts
+const rows = shallowRef<Row[]>([])
+rows.value = [...rows.value, next]   // ✅ replace .value — triggers
+// rows.value.push(next)             // ❌ no trigger under shallowRef (use triggerRef if you must mutate)
+```

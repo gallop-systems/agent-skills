@@ -80,6 +80,60 @@ const SEV: Record<Status, string> = { paid: 'success', overdue: 'danger' }
 const sev = (s: Status) => SEV[s] || 'secondary'
 ```
 
+## `v-bind` same-name shorthand
+
+When a bound attribute matches the variable name (Vue 3.4+), drop the value —
+`:src` expands to `:src="src"`. Terser, and worth recognizing when reading code:
+
+```vue
+<img :src :alt />   <!-- ≡ :src="src" :alt="alt" -->
+```
+
+## `useId()` for stable, SSR-safe element IDs
+
+Wiring `<label for>` / `aria-describedby` needs an ID that's stable across SSR and
+hydration — a hand-rolled counter or `Math.random()` causes a hydration mismatch.
+`useId()` (Vue 3.5, auto-imported) gives an app-unique, hydration-stable ID:
+
+```ts
+const id = useId()   // <label :for="id">Email</label> <input :id :aria-describedby="`${id}-help`">
+```
+
+## `<Teleport>` overlays out to `body`
+
+Render modals/dropdowns/toasts to `<body>` so they escape a parent's
+`overflow: hidden`, `z-index`, or `transform` stacking context (the usual cause of
+a dialog clipped inside a scrolling panel):
+
+```vue
+<Teleport to="body"><div class="modal">…</div></Teleport>
+```
+
+`<Teleport>` is auto-imported. (Volt/PrimeVue overlays already teleport
+internally; this is for your own hand-rolled overlays.)
+
+## `<KeepAlive>` caches toggled-component state
+
+Wrap a dynamic `<component>`/`v-if` swap in `<KeepAlive>` to preserve a toggled
+child's state (a half-filled form, scroll position) instead of remounting it.
+Teardown gotcha: a cached component fires `onActivated`/`onDeactivated`, **not**
+`onMounted`/`onUnmounted` — put pause/resume logic there, not in the mount hooks:
+
+```vue
+<KeepAlive :include="['EditForm']"><component :is="currentTab" /></KeepAlive>
+```
+
+## `v-memo` / `v-once` for expensive render subtrees
+
+Declarative render-skipping for big lists/tables. `v-once` renders a subtree once
+and never updates it; `v-memo="[deps]"` skips a `v-for` row's re-render unless a
+dep changes. Reach for these only when a large grid actually shows up in a profile
+— not by default.
+
+```vue
+<div v-for="row in rows" :key="row.id" v-memo="[row.id === selectedId]">…</div>
+```
+
 ## One-off caveats (not general conventions)
 
 These surfaced once each — apply only if they bite, don't treat as rules:

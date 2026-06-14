@@ -32,6 +32,41 @@ Handy for forwarding `$attrs`/`$props` straight through a thin wrapper component
 (`<Inner v-bind="$attrs" />`). Be deliberate, though — spreading a large object
 binds *every* key, which can pass props the child didn't ask for.
 
+When you forward `$attrs` onto a specific inner element, set `inheritAttrs: false`
+via **`defineOptions`** so Vue doesn't *also* dump them on the root — the only
+`<script setup>`-native way to set component options (`name`, `inheritAttrs`):
+
+```ts
+defineOptions({ inheritAttrs: false })
+// then: <input v-bind="$attrs" />   — attrs land only where you put them
+```
+
+## Defaulting props: reactive destructure (3.5) vs `withDefaults`
+
+As of Vue 3.5, you can **destructure** `defineProps` and give defaults with `=`.
+The compiler rewrites each reference back to `props.x`, so reactivity is
+preserved, and — unlike `withDefaults` — **non-primitive defaults need no
+factory**. This is now the idiomatic way to default props:
+
+```ts
+const { responsive = true, size = 'md', items = [] } = defineProps<{
+  responsive?: boolean; size?: 'sm' | 'md'; items?: Item[]
+}>()
+// items = [] is safe here — no shared-reference leak, no factory needed
+```
+
+One gotcha: passing a destructured prop into a `watch` source or a standalone
+function **snapshots** it (you destructured a value, not a ref), losing
+reactivity. Wrap it in a getter:
+
+```ts
+watch(() => responsive, onChange)   // ✅   watch(responsive, …) ❌ passes a bool, never re-fires
+```
+
+`withDefaults(defineProps<…>(), {…})` remains correct and is what you'll see in
+existing code — match the file you're in. The two sections below describe the
+traps `withDefaults` has that destructure defaults sidestep.
+
 ## The Boolean prop trap (the most-cited authoring gotcha)
 
 A bare `boolean` prop is subject to Vue's **Boolean casting**: when the attribute
@@ -47,8 +82,10 @@ const on = props.responsive !== false // always false when not passed
 const props = withDefaults(defineProps<{ responsive?: boolean }>(), { responsive: true })
 ```
 
-Any boolean that should default **on** MUST go through `withDefaults` (or be
-inverted to an opt-*out* flag that naturally defaults `false`).
+Any boolean that should default **on** MUST be defaulted explicitly — via
+destructure (`const { responsive = true } = defineProps<…>()`) or `withDefaults`
+— or be inverted to an opt-*out* flag that naturally defaults `false`. (The
+Boolean casting still happens; the default just gives the absent case a value.)
 
 ## Factory defaults for arrays/objects
 
@@ -63,7 +100,9 @@ withDefaults(defineProps<{ items?: Item[]; config?: Cfg }>(), {
 // ❌ { items: [] } — one array shared across all instances, leaks state
 ```
 
-Bare literals are only safe for primitives (`isAdmin: false`, `size: 'md'`).
+Bare literals are only safe for primitives (`isAdmin: false`, `size: 'md'`). This
+factory requirement is a `withDefaults`-ism — reactive destructure defaults
+(`{ items = [] } = defineProps(…)`) take a plain literal safely.
 
 ## Generic components
 
