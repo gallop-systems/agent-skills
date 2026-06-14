@@ -126,7 +126,9 @@ const basis = useCookie<"accrual" | "cash">("basis", { default: () => "accrual" 
 ```
 
 For SSR-shared state that needn't persist across reloads, use `useState` (it
-serializes the server value to the client, so both render identically):
+serializes the server value to the client, so both render identically). See
+[state-management.md](./state-management.md) for the full `useState` story
+(including the never-export-a-module-`ref` rule):
 
 ```typescript
 const expanded = useState("nav-expanded", () => false);
@@ -139,6 +141,37 @@ the server's choice is serialized:
 ```typescript
 const variant = useState("hero-variant", () => Math.floor(Math.random() * 3)); // server picks once, client reuses
 ```
+
+### `useCookie` options worth knowing
+
+- **Nested writes need `watch: 'deep'`** — the default shallow watch won't
+  persist a mutation to a nested property of a cookie object.
+- **`httpOnly` cookies are unreadable client-side** — reading one in setup yields
+  different values on server vs client → hydration mismatch.
+- **`refreshCookie(name)`** re-syncs the ref if the cookie changed out-of-band
+  (e.g. set by an API response).
+- 4 KB size limit (see gotcha below).
+
+## SSR-safe URL & request headers
+
+`window.location` and request headers don't exist during SSR. Don't guard them
+away — use the universal composables that work on both sides:
+
+- **`useRequestURL()`** → a `URL` object available on server *and* client. Use it
+  for `origin`/`hostname`/`searchParams` instead of `window.location`:
+
+  ```typescript
+  const url = useRequestURL();
+  const origin = url.origin;   // works during SSR; window.location would throw
+  ```
+
+- **`useRequestHeaders(['cookie'])`** → inbound request headers on the server
+  (`{}` on the client). The canonical way to **forward auth** when an SSR
+  `useFetch` calls an endpoint that needs the session cookie:
+
+  ```typescript
+  const { data } = await useFetch("/api/me", { headers: useRequestHeaders(["cookie"]) });
+  ```
 
 ## Hydration Mismatch Prevention
 

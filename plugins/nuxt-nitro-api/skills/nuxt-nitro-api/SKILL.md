@@ -5,7 +5,13 @@ description: Build type-safe Nuxt 3 applications with Nitro API patterns. Covers
 
 # Nuxt 3 / Nitro API Patterns
 
-This skill provides patterns for building type-safe Nuxt 3 applications with Nitro backends.
+This skill provides patterns for building type-safe Nuxt applications with Nitro backends.
+
+> **Version note:** Nitro's version follows Nuxt — **Nuxt 4.x ships Nitro v2**
+> (`nitropack ^2.x`, via `@nuxt/nitro-server`; you have no direct `nitropack`
+> dependency). `nitro.build` now documents **Nitro v3**, which renames core APIs;
+> copying its examples verbatim breaks here. See [server-runtime.md](./server-runtime.md)
+> for the v2↔v3 mapping.
 
 ## When to Use This Skill
 
@@ -21,13 +27,20 @@ Use this skill when:
 For detailed patterns, see these topic-focused reference files:
 
 - [validation.md](./validation.md) - Zod validation with h3, Standard Schema, error handling
-- [fetch-patterns.md](./fetch-patterns.md) - useFetch vs $fetch vs useAsyncData
+- [fetch-patterns.md](./fetch-patterns.md) - useFetch vs $fetch vs useAsyncData, refreshNuxtData
 - [auth-patterns.md](./auth-patterns.md) - nuxt-auth-utils, OAuth, WebAuthn, middleware
+- [error-handling.md](./error-handling.md) - createError (fatal), error.vue, clearError, NuxtErrorBoundary
+- [state-management.md](./state-management.md) - useState (never a module-scope ref), clearNuxtState, callOnce
 - [page-structure.md](./page-structure.md) - Keep pages thin, components do the work
-- [composables-utils.md](./composables-utils.md) - When to use composables vs utils
+- [composables-utils.md](./composables-utils.md) - composables vs utils, runtimeConfig public/private, runWithContext
 - [formatters.md](./formatters.md) - Centralize currency/date/number formatters in useFormatters, never inline
-- [ssr-client.md](./ssr-client.md) - SSR + localStorage, hydration, VueUse
+- [ssr-client.md](./ssr-client.md) - SSR + localStorage, hydration, useRequestURL/Headers, useCookie, VueUse
 - [deep-linking.md](./deep-linking.md) - URL params sync with filters and useFetch
+- [caching.md](./caching.md) - defineCachedFunction/EventHandler, SWR, per-key invalidation (Nitro v2)
+- [storage.md](./storage.md) - useStorage / unstorage KV layer, mounts
+- [route-rules.md](./route-rules.md) - declarative cache/headers/redirect/proxy/CORS per path
+- [server-runtime.md](./server-runtime.md) - **Nitro v2 vs v3 version pin**, middleware order, useEvent, internal-$fetch auth, WebSockets
+- [layers.md](./layers.md) - sharing components/composables/config across repos via extends
 - [nitro-tasks.md](./nitro-tasks.md) - Background jobs, scheduled tasks, job queues
 - [sse.md](./sse.md) - Server-Sent Events for real-time streaming
 - [server-services.md](./server-services.md) - Third-party service integration patterns
@@ -72,7 +85,7 @@ From nuxt-auth-utils:
 All auto-imported:
 - Vue: `ref`, `computed`, `watch`, `onMounted`, etc.
 - VueUse: `refDebounced`, `useLocalStorage`, `useUrlSearchParams`, etc.
-- Nuxt: `useFetch`, `useAsyncData`, `useRoute`, `useRouter`, `useState`, `navigateTo`
+- Nuxt: `useFetch`, `useAsyncData`, `useRoute`, `useRouter`, `useState`, `navigateTo`, `callOnce`, `refreshNuxtData`, `clearNuxtState`, `useRequestURL`, `useRequestHeaders`, `useCookie`, `createError`, `showError`, `clearError`, `useNuxtApp`
 
 ### Shared (`/shared` directory - Nuxt 3.14+)
 
@@ -209,6 +222,8 @@ Needs Nuxt/Vue context (useRuntimeConfig, useRoute, refs)?
 8. **Cookie size limit is 4096 bytes** - Store only essential session data.
 9. **Ambiguous routes need type assertion** - See below.
 10. **Never use generic type params with useFetch/$fetch** - See below.
+11. **Never export a module-scope `ref` for shared state** - Leaks across SSR requests; use `useState`. See [state-management.md](./state-management.md).
+12. **Internal server `$fetch` doesn't forward cookies** - Pass `headers` explicitly or the callee sees no session. See [server-runtime.md](./server-runtime.md).
 
 ### Ambiguous Route Type Inference
 
