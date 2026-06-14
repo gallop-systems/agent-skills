@@ -113,6 +113,33 @@ With `@vueuse/nuxt`, these are auto-imported:
 - `useFetch` - use Nuxt's version
 - `useHead` - use Nuxt's version
 
+## `useCookie` / `useState` for SSR-shared state
+
+`useLocalStorage` reads only on the client, so state that must be **correct in the
+first server-rendered paint** (a theme, sidebar-collapsed flag, accounting-basis
+toggle) flickers if stored in localStorage. Persist it in a cookie instead — the
+server sees it and renders the right thing immediately:
+
+```typescript
+const basis = useCookie<"accrual" | "cash">("basis", { default: () => "accrual" });
+// readable during SSR; writes sync to the cookie. No onMounted flicker.
+```
+
+For SSR-shared state that needn't persist across reloads, use `useState` (it
+serializes the server value to the client, so both render identically):
+
+```typescript
+const expanded = useState("nav-expanded", () => false);
+```
+
+`useState` is also the fix for **SSR-nondeterministic values** — anything from
+`Math.random()` / `Date.now()` rendered into markup mismatches on hydration unless
+the server's choice is serialized:
+
+```typescript
+const variant = useState("hero-variant", () => Math.floor(Math.random() * 3)); // server picks once, client reuses
+```
+
 ## Hydration Mismatch Prevention
 
 **Problem:** Server renders with default, client reads different value = mismatch.
