@@ -88,7 +88,7 @@ Covers:
 
 ### nuxt-nitro-api
 
-Nuxt 3 / Nitro API patterns for building type-safe full-stack applications. Automatically activates when working in Nuxt 3 projects.
+Nuxt 4 / Nitro API patterns for building type-safe full-stack applications. Automatically activates when working in Nuxt 4 projects.
 
 Covers:
 - Zod validation with h3 (Standard Schema support)
