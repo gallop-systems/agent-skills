@@ -18,6 +18,20 @@ const emit = defineEmits<{
 
 Use the runtime/object form only when you need `withDefaults`.
 
+### Forward many props / handlers at once
+
+Spread a whole object of props with `v-bind="obj"`, or a map of handlers with
+`v-on="handlers"`, instead of listing each:
+
+```vue
+<UserCard v-bind="user" v-on="cardHandlers" />
+<!-- equivalent to :name="user.name" :email="user.email" … @edit="…" @delete="…" -->
+```
+
+Handy for forwarding `$attrs`/`$props` straight through a thin wrapper component
+(`<Inner v-bind="$attrs" />`). Be deliberate, though — spreading a large object
+binds *every* key, which can pass props the child didn't ask for.
+
 ## The Boolean prop trap (the most-cited authoring gotcha)
 
 A bare `boolean` prop is subject to Vue's **Boolean casting**: when the attribute

@@ -17,6 +17,7 @@ storage, hydration, `definePageMeta`/auth, formatters) lives in the
 - Deciding how a component is named / auto-imported
 - Typing props & emits, defaulting props, building a generic component
 - Wiring `v-model` on a component
+- Designing a component's content API — props vs slots, named/scoped slots
 - Anything reactivity-shaped: `computed` vs `watch`, prop→state sync, DOM measurement
 - You see `watch` and want to know if it should be something else
 
@@ -25,6 +26,7 @@ storage, hydration, `definePageMeta`/auth, formatters) lives in the
 - [auto-imports.md](./auto-imports.md) — what auto-imports (components with dir-prefix names, composables, utils, Vue/Nuxt APIs) and what does NOT (third-party, types, test files)
 - [component-authoring.md](./component-authoring.md) — type-only `defineProps`/`defineEmits`, `withDefaults`, the Boolean-prop trap, factory defaults, generic components, `defineExpose`, what to extract into a shared component
 - [v-model.md](./v-model.md) — `defineModel` vs the props+emit+computed proxy, named models, paired fields
+- [slots.md](./slots.md) — slots vs props for markup, named/scoped slots, `defineSlots`/`useSlots`, avoiding empty wrappers, forwarding, slot transitions
 - [reactivity.md](./reactivity.md) — pure computeds, mutate-don't-reassign, DOM-measure + `ResizeObserver`, watch-getter prop sync, `:key` remount, listener cleanup
 - [watch.md](./watch.md) — **`watch` is the escape hatch, not the default**: when it's right, and the four smell shapes (with refactors) found auditing 159 real watchers
 - [template-idioms.md](./template-idioms.md) — duplicate-`@keyup` TS error, `:deep()`, click-outside marker class, `NuxtLink`/thin `app.vue`, `useHead`, file-input reset

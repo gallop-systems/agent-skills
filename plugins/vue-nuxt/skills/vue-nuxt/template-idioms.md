@@ -14,16 +14,22 @@ property"**, and only one wires up at runtime. Use a single handler and branch:
 <!-- function onKey(e) { if (e.key === 'Enter') submit(); else if (e.key === 'Escape') cancel() } -->
 ```
 
-## `:deep()` for child-rendered HTML
+## Scoped-CSS reach: `:deep()`, `:slotted()`, `:global()`
 
-Scoped CSS adds a data attribute that doesn't reach dynamically-injected
-descendants (markdown tables, a rich-text body). Style them with `:deep()`:
+Scoped CSS adds a data attribute that only matches the component's own elements.
+Three pseudo-selectors reach past that boundary:
 
 ```vue
 <style scoped>
-.prose :deep(table) { @apply w-full; }   /* plain `table {}` won't match */
+.prose :deep(table) { @apply w-full; } /* child/3rd-party-rendered HTML (markdown, rich text) */
+:slotted(p) { @apply mt-2; }            /* content the PARENT passed into a <slot> */
+:global(body) { @apply antialiased; }   /* escape scope to a global rule */
 </style>
 ```
+
+`:deep()` for descendants the component renders dynamically, `:slotted()` for
+slot content the caller supplied (scoped styles don't reach it by default), and
+`:global()` for the occasional global rule without a second `<style>` block.
 
 ## Click-outside: match a unique marker class
 
