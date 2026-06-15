@@ -10,6 +10,7 @@
   "files": [
     "plugins",
     "commands",
+    "skills",
     "scripts/link-skills.mjs",
     "README.md"
   ],
