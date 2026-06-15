@@ -39,6 +39,11 @@ cross-links to those rather than restating them.
 - [page-structure.md](./page-structure.md) — keep pages thin: route-param parsing + layout in the page, data/logic/forms in components
 - [formatters.md](./formatters.md) — never inline a currency/date/number formatter; centralize in `useFormatters`, prefer Intl/date-fns
 
+Testing note: when a Vue/Nuxt refactor changes component behavior, route/query
+state, or a composable with lifecycle hooks, use the Nuxt frontend testing
+guidance in `nitro-testing`'s [frontend-testing.md](../../../../nitro-testing/skills/nitro-testing/frontend-testing.md)
+instead of testing those pieces as plain Vue functions.
+
 ## Core Principles
 
 1. **Lean on auto-imports.** `app/components`, `app/composables`, `app/utils`, and the Vue/Nuxt APIs all auto-import. Add an explicit `import` only for third-party symbols and TS types. A nested component's tag carries its directory as a prefix (`components/customers/ProfileCard.vue` → `<CustomersProfileCard>`).

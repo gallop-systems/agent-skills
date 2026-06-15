@@ -69,12 +69,12 @@ Only when the effect crosses **out of** the reactive graph:
 - **Persist** — a `localStorage`/`useCookie` write, debounced auto-save of a
   deep-watched form.
 - **URL sync** — `router.replace({ query: { ...route.query, tab } })`. For a single
-  ref ↔ one query param, prefer `useRouteQuery` (see below). A write-back watch is
-  the right tool only when the URL can't model the state: a ref with **two distinct
-  "empty" states** (e.g. a filter that defaults to `"Open"` on load but clears to
-  `null` — an absent param can map to only one of them), or a **composite object
-  fanning out to many params** (a PrimeVue filter object) that a one-ref-per-param
-  `useRouteQuery` can't express.
+  ref ↔ one query param, install `@vueuse/router` and prefer `useRouteQuery` (see
+  below). A write-back watch is the right tool only when the URL can't model the
+  state: a ref with **two distinct "empty" states** (e.g. a filter that defaults to
+  `"Open"` on load but clears to `null` — an absent param can map to only one of
+  them), or a **composite object fanning out to many params** (a PrimeVue filter
+  object) that a one-ref-per-param `useRouteQuery` can't express.
 - **Re-seed local state on dialog open** — `watch(visible, (v) => { if (v) initForm() })`.
   The single most common legit pattern. Its one-liner is `whenever(visible, initForm)`
   (see `vueuse.md`); a compound guard keeps its inner half —
