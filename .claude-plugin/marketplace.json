@@ -64,6 +64,12 @@
       "source": "./plugins/vue-nuxt",
       "description": "Vue 3 component authoring inside a Nuxt 4 app: auto-import rules, props/emits/withDefaults, v-model/defineModel, reactivity, when watch is a smell, and template idioms",
       "version": "1.0.0"
+    },
+    {
+      "name": "contribute-skill",
+      "source": "./plugins/contribute-skill",
+      "description": "Contribute a lesson learned this session back to the gallop-systems/agent-skills repo as a PR: distill the generic rule, privacy-sweep it, and open a PR against the right skill",
+      "version": "1.0.0"
     }
   ]
 }

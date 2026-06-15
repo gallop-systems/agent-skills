@@ -1,1 +1,0 @@
-../skills/contribute-skill/SKILL.md

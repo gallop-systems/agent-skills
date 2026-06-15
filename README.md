@@ -48,14 +48,13 @@ project, for both Claude Code and Codex:
 
 - **skills** — each directory containing a `SKILL.md` → `.claude/skills/<name>`
   (Claude Code) **and** `.agents/skills/<name>` (Codex). The `SKILL.md` format is
-  identical for both agents, so each skill dir is linked verbatim. A skill whose name
-  matches a command is the exception: it's excluded from Claude's skills (there it
-  ships as the command) but still linked for Codex, which has no command dir.
+  identical for both agents, so each skill dir is linked verbatim. Everything ships
+  as a skill: in current Claude Code a skill is both slash-invocable (`/<name>`) and
+  model-invocable, so `contribute-skill`, for example, gives you `/contribute-skill`
+  *and* gets auto-offered when relevant — no separate command needed.
 - **commands** — each `.md` file under any `commands/` directory →
-  `.claude/commands/<name>.md` (Claude only). `contribute-skill` is a workflow both
-  agents need: it lives as a single source at `skills/contribute-skill/SKILL.md`, with
-  `commands/contribute-skill.md` symlinked to it — so Claude gets it as the
-  `/contribute-skill` command and Codex gets the same file as a skill.
+  `.claude/commands/<name>.md` (Claude only; Codex has no project command dir). Kept
+  for legacy/Claude-only commands; this package ships none today.
 
 Updating is just a version bump:
 
@@ -172,8 +171,8 @@ Covers:
 
 Every skill ends with a **Contributing Back** section: when Claude works through
 something the skill didn't cover, it offers to contribute the lesson upstream. The
-`/contribute-skill` command (Claude Code, symlinked into `.claude/commands/`) — or
-the equivalent `contribute-skill` skill on Codex — automates the flow: distill the generic lesson,
+`contribute-skill` skill (run `/contribute-skill` on Claude Code, or let either agent
+invoke it when relevant) automates the flow: distill the generic lesson,
 privacy-sweep it, clone or fork this repo, and open a PR against the right skill
 file. PRs from forks are welcome — content must be generic (placeholders only, no
 project-specific names, IDs, or domains).
