@@ -74,6 +74,20 @@ Only when the effect crosses **out of** the reactive graph:
 - **Clone a server prop into a locally-editable draft** —
   `watch(() => props.record, (r) => { if (r) form.value = structuredClone(toRaw(r)) }, { immediate: true })`.
 
+> **Before hand-rolling the external-world cases, check VueUse.** Most of the
+> bullets above (DOM, timers, persist, URL) are exactly what VueUse wraps — and a
+> VueUse composable bundles the *teardown* with the reactive effect, so it
+> retires the manual-`onUnmounted` footgun, not just the watch:
+>
+> - **DOM / body scroll** — `useScrollLock(document.body)` over a watch toggling `document.body.style.overflow`.
+> - **Timers** — `useIntervalFn` / `useTimeoutFn` / `useTimeoutPoll` auto-clear on unmount (no manual `clearInterval`); `useDebounceFn` / `refDebounced` for debounce.
+> - **Persist** — `useLocalStorage` / `useStorage`: a reactive ref mirrored to storage, no write-back watch.
+> - **URL sync** — `useRouteQuery` (from `@vueuse/router`) for a ref bound to a query param.
+>
+> Nuxt caveats: cookies use the built-in `useCookie`, **not** VueUse's
+> `@vueuse/integrations` `useCookies`; data fetching stays on
+> `useFetch`/`useAsyncData`. Auto-import the rest via the `@vueuse/nuxt` module.
+
 ### Cancel stale work with `onWatcherCleanup`
 
 A watcher that starts async work (a keyed `$fetch`, a timer) must cancel the
