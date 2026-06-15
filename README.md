@@ -44,10 +44,18 @@ yarn add -D @gallopsystems/agent-skills
 ```
 
 On install, a `postinstall` script symlinks the package's content into the
-project's `.claude/` directory:
+project, for both Claude Code and Codex:
 
 - **skills** — each directory containing a `SKILL.md` → `.claude/skills/<name>`
-- **commands** — each `.md` file under any `commands/` directory → `.claude/commands/<name>.md`
+  (Claude Code) **and** `.agents/skills/<name>` (Codex). The `SKILL.md` format is
+  identical for both agents, so each skill dir is linked verbatim. A skill whose name
+  matches a command is the exception: it's excluded from Claude's skills (there it
+  ships as the command) but still linked for Codex, which has no command dir.
+- **commands** — each `.md` file under any `commands/` directory →
+  `.claude/commands/<name>.md` (Claude only). `contribute-skill` is a workflow both
+  agents need: it lives as a single source at `skills/contribute-skill/SKILL.md`, with
+  `commands/contribute-skill.md` symlinked to it — so Claude gets it as the
+  `/contribute-skill` command and Codex gets the same file as a skill.
 
 Updating is just a version bump:
 
@@ -61,12 +69,13 @@ recreated on every install), so ignore them in `.gitignore`:
 ```
 .claude/skills
 .claude/commands
+.agents/skills
 ```
 
 Notes:
-- The script never clobbers a real `.claude/skills/<name>` or `.claude/commands/<name>`
-  you authored, and only removes symlinks it created. Run `yarn unlink-skills` to
-  remove all managed links.
+- The script never clobbers a real `.claude/skills/<name>`, `.agents/skills/<name>`,
+  or `.claude/commands/<name>` you authored, and only removes symlinks it created.
+  Run `yarn unlink-skills` to remove all managed links.
 - Works out of the box with Yarn (Classic, or Berry with `nodeLinker: node-modules`)
   and npm. **pnpm** (v10+) blocks dependency build scripts by default — add the
   package to `pnpm.onlyBuiltDependencies` for the `postinstall` to run.
@@ -163,8 +172,8 @@ Covers:
 
 Every skill ends with a **Contributing Back** section: when Claude works through
 something the skill didn't cover, it offers to contribute the lesson upstream. The
-`/contribute-skill` command (shipped in this package and symlinked into
-`.claude/commands/` on install) automates the flow: distill the generic lesson,
+`/contribute-skill` command (Claude Code, symlinked into `.claude/commands/`) — or
+the equivalent `contribute-skill` skill on Codex — automates the flow: distill the generic lesson,
 privacy-sweep it, clone or fork this repo, and open a PR against the right skill
 file. PRs from forks are welcome — content must be generic (placeholders only, no
 project-specific names, IDs, or domains).
