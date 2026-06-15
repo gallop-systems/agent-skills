@@ -68,9 +68,18 @@ Only when the effect crosses **out of** the reactive graph:
   polling `setInterval` (clear it in `onUnmounted`).
 - **Persist** — a `localStorage`/`useCookie` write, debounced auto-save of a
   deep-watched form.
-- **URL sync** — `router.replace({ query: { ...route.query, tab } })`.
+- **URL sync** — `router.replace({ query: { ...route.query, tab } })`. For a single
+  ref ↔ one query param, prefer `useRouteQuery` (see below). A write-back watch is
+  the right tool only when the URL can't model the state: a ref with **two distinct
+  "empty" states** (e.g. a filter that defaults to `"Open"` on load but clears to
+  `null` — an absent param can map to only one of them), or a **composite object
+  fanning out to many params** (a PrimeVue filter object) that a one-ref-per-param
+  `useRouteQuery` can't express.
 - **Re-seed local state on dialog open** — `watch(visible, (v) => { if (v) initForm() })`.
-  The single most common legit pattern.
+  The single most common legit pattern. Its one-liner is `whenever(visible, initForm)`
+  (see `vueuse.md`); a compound guard keeps its inner half —
+  `watch(visible, (v) => { if (v && !props.x) reset() })` →
+  `whenever(visible, () => { if (!props.x) reset() })`.
 - **Clone a server prop into a locally-editable draft** —
   `watch(() => props.record, (r) => { if (r) form.value = structuredClone(toRaw(r)) }, { immediate: true })`.
 
@@ -129,6 +138,22 @@ watch(activeId, () => scrollActiveIntoView(), { flush: 'post' })  // DOM already
 | **prop-sync** | local `ref(props.x)` kept in sync by a watch (often + a 2nd watch emitting back) | `defineModel` or a writable `computed` |
 | **side-effect-in-handler** | watching a value that only changes via one control, to clear a dependent field | that control's `@update:model-value` handler |
 | **manual-refetch** | watching filter refs to call a function that calls `useFetch` | a `computed` `query` passed to `useFetch` |
+
+**An external source doesn't legitimize a deriving watch.** The
+watch-vs-`computed` decision turns on whether the *body* leaves the reactive
+graph — **not** on whether the *source* came from outside it. A watcher whose
+source is a composable/library ref (`useEventSource`'s `status`, a store getter,
+a `useWindowSize`) but whose body only assigns a derived value is still a
+`computed`. "The source is external state" is the most common excuse for keeping
+such a watch, and it's wrong — it's still derivation.
+
+```ts
+// ❌ a library ref as source tempts a watch, but the body only derives
+const isConnected = ref(false)
+watch(status, (s) => { isConnected.value = s === 'OPEN' })   // status from useEventSource
+// ✅ derivation is a computed, regardless of where status came from
+const isConnected = computed(() => status.value === 'OPEN')
+```
 
 The biggest real cluster was **side-effect-in-handler** — resetting dependent
 fields when a Select changed. In a watcher it hides cause/effect and re-fires on

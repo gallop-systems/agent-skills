@@ -45,6 +45,32 @@ URL sync (`router.replace({ query: { ...route.query, tab } })`) →
 param. Nuxt's own `useRoute()` is already reactive for *reads*; reach for
 `useRouteQuery` when you want a **writable** ref bound to a single param.
 
+### `useLocalStorage` reads at setup — guard SSR hydration
+
+`useLocalStorage`/`useStorage` is SSR-safe: on the server there's no `window`, so
+it returns the default and never touches storage (no `import.meta.client` guard
+needed — that guard was only for raw `localStorage.*` calls, which throw on the
+server). But on the client it reads storage **synchronously at setup**, so a value
+rendered *without a mount gate* differs between the server render (the default) and
+the hydrating client render (the stored value) → a hydration mismatch. Pass
+`{ initOnMounted: true }` to defer the read to `onMounted` so the first client
+render matches the server, or gate the rendering until mounted.
+
+```ts
+// shown straight away (no v-if gate) → defer the storage read to onMounted
+const view = useLocalStorage('view', 'list', { initOnMounted: true })
+```
+
+### `useRouteQuery` makes the URL the single source of truth
+
+Because the bound ref reads from and writes to the query param, the URL *is* the
+state — so it **can't represent a ref with two distinct "empty" states** (e.g. a
+filter that defaults to `"Open"` on load but clears to `null`; both would be "param
+absent"). When you need that distinction, keep a plain `ref` + a projecting `watch`
+(a sanctioned `watch.md` "URL sync" case). And **don't mix `useUrlSearchParams`
+(History API) with `useRouteQuery` (vue-router) in the same component** — they write
+the URL through different mechanisms and clobber each other's params; pick one.
+
 ## VueUse's `watch` sugar — when a `watch` IS warranted
 
 When the effect genuinely belongs in a watcher, VueUse's Watch category removes the
