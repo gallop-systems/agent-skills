@@ -526,6 +526,19 @@ await flushPromises();
 expect(replace.mock.calls.some((c) => (c[0] as any)?.query?.q === "foo")).toBe(true);
 ```
 
+If the component's source of truth is `useRoute()`/`useRouter()`, `route:` is not
+always the most direct test seam: app middleware, route rules, and redirects still
+run. For component-level behavior, mock the Nuxt imports before mounting:
+
+```typescript
+mockNuxtImport("useRoute", () => () => ({ query: { tab: "activity" }, params: {} }));
+mockNuxtImport("useRouter", () => () => ({ replace: vi.fn(), push: vi.fn() }));
+```
+
+If the component imports router helpers directly from `vue-router`, mock that
+module too. Keep the test focused on what the component reads or writes; use an
+end-to-end/page test when the middleware behavior itself is under test.
+
 ### 9. Testing a composable that needs a component scope
 
 For a composable using lifecycle hooks or `provide`/`inject`, mount a throwaway
@@ -541,6 +554,12 @@ Control a VueUse dependency with `vi.mock("@vueuse/core", …)` to return refs y
 drive. And make sure the vitest `include` glob covers `app/composables/**` — a
 composables dir is easy to leave out of the frontend config.
 
+Do this for lifecycle composables even when the return value looks plain:
+`onMounted`, `onUnmounted`, `useEventListener`, `useScrollLock`, and similar
+helpers need a component effect scope to attach and clean up correctly. Calling
+the composable directly in a Vitest test can produce Vue warnings and, worse,
+skip the listener or cleanup path you meant to verify.
+
 ### 10. Reset the shared `useFetch` cache between mounts
 
 `useFetch`/`useAsyncData` cache by key, and the cache is **shared across
@@ -552,6 +571,27 @@ test sees the first's response unless you clear it:
 import { clearNuxtData } from "#imports"; // not exported from @nuxt/test-utils/runtime
 beforeEach(() => clearNuxtData());
 ```
+
+### 11. Mock Nuxt fetch behavior at the right layer
+
+`mockNuxtImport("$fetch", ...)` is not a reliable target: `$fetch` is not a normal
+Nuxt auto-import in the same way `useRoute` or a composable is, so the transform
+may fail before the test even runs. Prefer `registerEndpoint` when the component
+calls `useFetch`, `useAsyncData`, or `$fetch` against an app route:
+
+```typescript
+registerEndpoint("/api/search", {
+  method: "GET",
+  handler: (event) => {
+    const q = new URL(event.node.req.url!, "http://localhost").searchParams.get("q");
+    return [{ id: 1, name: q ?? "" }];
+  },
+});
+```
+
+If the component calls a local service/composable that wraps `$fetch`, mock that
+service/composable instead. Mock the boundary you own; use `registerEndpoint` for
+Nuxt's fetch path.
 
 ## File Organization
 

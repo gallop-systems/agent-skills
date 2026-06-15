@@ -51,6 +51,12 @@ EOF
 - After merge: `git switch main && git pull --ff-only`, clean up `[gone]` branches, start the next branch from fresh main.
 - One concern per PR — hotfixes and review findings go in separate PRs unless told otherwise.
 - Stacked PRs: `gh pr create --base <parent-branch>`; after the parent merges, retarget with `gh pr edit <n> --base main` (and see [getting-unstuck.md](getting-unstuck.md) for rebasing onto main after the parent was squash-merged).
+- If you discover uncommitted work on the wrong branch and the PR must be "off
+  main", do not commit to the wrong branch. With a cleanly applicable worktree,
+  `git fetch origin main && git switch -c feat/<short-description> origin/main`
+  carries the unstaged changes onto a new branch from `origin/main`. Verify with
+  `git status` and tests. If checkout would overwrite/conflict, stash with `-u`
+  or use a worktree instead.
 
 ## Reading PR and CI State
 

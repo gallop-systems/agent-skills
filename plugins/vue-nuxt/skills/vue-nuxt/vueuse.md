@@ -24,6 +24,9 @@ export default defineNuxtConfig({ modules: ['@vueuse/nuxt'] })
 
 The **`@vueuse/router`** and **`@vueuse/integrations`** add-ons are separate
 installs and are **not** auto-imported by the module — import them explicitly.
+For URL query sync, install `@vueuse/router` and use its router composables before
+hand-rolling `useRoute()`/`useRouter()` glue; the package exists exactly for that
+boundary.
 
 ## The boundary cases (mapped from `watch.md`)
 
@@ -42,8 +45,9 @@ installs and are **not** auto-imported by the module — import them explicitly.
 
 URL sync (`router.replace({ query: { ...route.query, tab } })`) →
 `useRouteQuery('tab')` from `@vueuse/router` gives a ref bound two-way to the query
-param. Nuxt's own `useRoute()` is already reactive for *reads*; reach for
-`useRouteQuery` when you want a **writable** ref bound to a single param.
+param. Nuxt's own `useRoute()` is already reactive for *reads*; install and import
+`useRouteQuery` when you want a **writable** ref bound to a single param instead of
+open-coding the same replace/query merge logic.
 
 ### `useLocalStorage` reads at setup — guard SSR hydration
 
@@ -67,9 +71,13 @@ Because the bound ref reads from and writes to the query param, the URL *is* the
 state — so it **can't represent a ref with two distinct "empty" states** (e.g. a
 filter that defaults to `"Open"` on load but clears to `null`; both would be "param
 absent"). When you need that distinction, keep a plain `ref` + a projecting `watch`
-(a sanctioned `watch.md` "URL sync" case). And **don't mix `useUrlSearchParams`
-(History API) with `useRouteQuery` (vue-router) in the same component** — they write
-the URL through different mechanisms and clobber each other's params; pick one.
+(a sanctioned `watch.md` "URL sync" case). The same exception applies when one
+source object fans out to several query params and the projection itself is the
+behavior being tested. Otherwise, adding `@vueuse/router` is preferable to writing
+your own route-query synchronization. And **don't mix `useUrlSearchParams`
+(History API) with `useRouteQuery` (vue-router) in the same component** — they
+write the URL through different mechanisms and clobber each other's params; pick
+one.
 
 ## VueUse's `watch` sugar — when a `watch` IS warranted
 
