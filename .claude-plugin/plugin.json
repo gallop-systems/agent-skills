@@ -1,8 +1,0 @@
-{
-  "name": "all",
-  "description": "All skills: Kysely for PostgreSQL, and more",
-  "version": "1.0.0",
-  "author": {
-    "name": "yeedle"
-  }
-}
