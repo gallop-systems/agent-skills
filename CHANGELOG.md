@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.11.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.10.0...agent-skills-v1.11.0) (2026-06-15)
+
+
+### Features
+
+* **contribute-skill:** ship as its own plugin (skill-only); drop legacy command and dead "all" manifest ([#40](https://github.com/gallop-systems/agent-skills/issues/40)) ([c7dbcd0](https://github.com/gallop-systems/agent-skills/commit/c7dbcd0a8a600c9debcdc7fecddd77b8744ad40c))
+* **scripts:** support Codex by linking skills into .agents ([#38](https://github.com/gallop-systems/agent-skills/issues/38)) ([3849e9b](https://github.com/gallop-systems/agent-skills/commit/3849e9befbbbc0f3c82cbc58e883ab85b598f74b))
+
 ## [1.10.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.9.0...agent-skills-v1.10.0) (2026-06-15)
 
 
