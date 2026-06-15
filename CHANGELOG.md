@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.10.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.9.0...agent-skills-v1.10.0) (2026-06-15)
+
+
+### Features
+
+* **nitro-testing:** add frontend gotchas for stubs, routes, composables, fetch cache ([#36](https://github.com/gallop-systems/agent-skills/issues/36)) ([08abd5c](https://github.com/gallop-systems/agent-skills/commit/08abd5c291cc4091471a70adf19142b5edf9af03))
+* **vue-nuxt:** sharpen derive-state rule and add VueUse SSR/URL gotchas ([#35](https://github.com/gallop-systems/agent-skills/issues/35)) ([28f5680](https://github.com/gallop-systems/agent-skills/commit/28f5680bb99a2779be5cb0a4d30cbd499cd50460))
+
 ## [1.9.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.8.0...agent-skills-v1.9.0) (2026-06-15)
 
 
