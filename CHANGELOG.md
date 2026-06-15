@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.9.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.8.0...agent-skills-v1.9.0) (2026-06-15)
+
+
+### Features
+
+* **vue-nuxt:** add VueUse skill, prefer composables over hand-rolled watch effects ([#34](https://github.com/gallop-systems/agent-skills/issues/34)) ([f20397d](https://github.com/gallop-systems/agent-skills/commit/f20397d83e1e38f69c2b83bd28968a3c5ab1fa39))
+
+
+### Documentation
+
+* **copier-template:** document branch protection setup for descendants ([#32](https://github.com/gallop-systems/agent-skills/issues/32)) ([3e541ee](https://github.com/gallop-systems/agent-skills/commit/3e541eec37a7c86911b9ebf74d20cba2d14b8175))
+
 ## [1.8.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.7.0...agent-skills-v1.8.0) (2026-06-14)
 
 
