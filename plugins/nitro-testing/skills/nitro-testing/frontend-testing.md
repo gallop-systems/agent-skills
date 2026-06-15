@@ -482,6 +482,77 @@ for (const tz of timezones) {
 }
 ```
 
+### 7. Reading or driving a stubbed child needs an explicit stub
+
+`Stub: true` (auto-stub) renders the child but **does not expose its props** to
+`findComponent(Stub).props("x")`. To read or drive a child's `modelValue`, give it
+an explicit stub that declares the prop:
+
+```typescript
+const SelectStub = {
+  name: "Select",
+  props: ["modelValue"],
+  emits: ["update:modelValue"],
+  template: "<div />",
+};
+// findComponent(SelectStub).props("modelValue")  — now readable
+// findComponent(SelectStub).vm.$emit("update:modelValue", x)  — drives the v-model
+```
+
+For a deep tree (a dialog full of fields), `shallow: true` auto-stubs everything;
+add explicit stubs only for the parts you assert on — plus a dialog stub that
+renders its slot, since UI-lib dialogs gate content behind a `visible` prop:
+
+```typescript
+const DialogStub = { props: ["visible"], template: "<div v-if='visible'><slot /><slot name='footer' /></div>" };
+```
+
+### 8. Driving and asserting route/query state
+
+A global route middleware that redirects unauthenticated navigations (to a public
+`/login`) means `mountSuspended(Comp, { route: "/private?foo=1" })` lands on the
+public path and **drops the query** — so a `useRouteQuery`-bound ref reads empty.
+Two ways around it:
+
+- **Carry the params on the public route:** `route: "/login?foo=1"`. `useRouteQuery`
+  binds to `route.query` regardless of the path.
+- **Assert URL *writes* by spying on `router.replace`**, not by reading
+  `currentRoute` (the redirect strips what you'd read back):
+
+```typescript
+const replace = vi.spyOn((wrapper.vm as any).$router, "replace");
+input.vm.$emit("update:modelValue", "foo");
+await flushPromises();
+expect(replace.mock.calls.some((c) => (c[0] as any)?.query?.q === "foo")).toBe(true);
+```
+
+### 9. Testing a composable that needs a component scope
+
+For a composable using lifecycle hooks or `provide`/`inject`, mount a throwaway
+component whose `setup()` calls it and capture the return:
+
+```typescript
+let api: ReturnType<typeof useThing>;
+const Comp = defineComponent({ setup() { api = useThing(); return () => h("div"); } });
+await mountSuspended(Comp);
+```
+
+Control a VueUse dependency with `vi.mock("@vueuse/core", …)` to return refs you
+drive. And make sure the vitest `include` glob covers `app/composables/**` — a
+composables dir is easy to leave out of the frontend config.
+
+### 10. Reset the shared `useFetch` cache between mounts
+
+`useFetch`/`useAsyncData` cache by key, and the cache is **shared across
+`mountSuspended` calls in a file**. When several tests mount the same component
+(fixed URL) but `registerEndpoint` returns different data per test, the second
+test sees the first's response unless you clear it:
+
+```typescript
+import { clearNuxtData } from "#imports"; // not exported from @nuxt/test-utils/runtime
+beforeEach(() => clearNuxtData());
+```
+
 ## File Organization
 
 Co-locate tests with source files:
