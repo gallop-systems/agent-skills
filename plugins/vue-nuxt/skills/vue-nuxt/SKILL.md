@@ -1,6 +1,6 @@
 ---
 name: vue-nuxt
-description: Author Vue 3 components inside a Nuxt 4 app. Covers Nuxt auto-import rules, component authoring (props/emits/withDefaults/generics), v-model/defineModel, slots, composables, reactivity, when watch is a code smell, page structure, display formatting, and Vue-shaped template idioms.
+description: Author Vue 3 components inside a Nuxt 4 app. Covers Nuxt auto-import rules, component authoring (props/emits/withDefaults/generics), v-model/defineModel, slots, composables, reactivity, when watch is a code smell, reaching for VueUse over hand-rolled effects, page structure, display formatting, and Vue-shaped template idioms.
 ---
 
 # Vue-in-Nuxt component authoring
@@ -23,6 +23,7 @@ cross-links to those rather than restating them.
 - Formatting display values (currency/date/number) consistently
 - Anything reactivity-shaped: `computed` vs `watch`, prop→state sync, DOM measurement
 - You see `watch` and want to know if it should be something else
+- About to hand-roll a `watch` + lifecycle teardown for a browser API (storage, timers, DOM, listeners, URL) — VueUse likely wraps it
 
 ## Reference Files
 
@@ -33,6 +34,7 @@ cross-links to those rather than restating them.
 - [composables.md](./composables.md) — `MaybeRefOrGetter`/`toValue` argument contract, return refs not `reactive()`, thin pure-core shell, `onScopeDispose`/`effectScope` cleanup
 - [reactivity.md](./reactivity.md) — `ref` over `reactive`, `useTemplateRef`, pure computeds, mutate-don't-reassign, DOM-measure + `ResizeObserver`, `shallowRef`, watch-getter prop sync, `:key` remount, listener cleanup
 - [watch.md](./watch.md) — **`watch` is the escape hatch, not the default**: when it's right, and the four smell shapes (with refactors) found auditing 159 real watchers
+- [vueuse.md](./vueuse.md) — reach for a VueUse composable before hand-rolling a `watch` + lifecycle teardown for an external-world effect (DOM, timers, storage, URL, listeners); the `@vueuse/nuxt` setup, the watch-sugar functions, and what to keep on Nuxt's own APIs
 - [template-idioms.md](./template-idioms.md) — duplicate-`@keyup` TS error, `:deep()`/`:slotted()`/`:global()`, click-outside marker class, `NuxtLink`/thin `app.vue`, `useHead`, `v-bind` shorthand, `useId`, `<Teleport>`/`<KeepAlive>`, `v-memo`/`v-once`, file-input reset
 - [page-structure.md](./page-structure.md) — keep pages thin: route-param parsing + layout in the page, data/logic/forms in components
 - [formatters.md](./formatters.md) — never inline a currency/date/number formatter; centralize in `useFormatters`, prefer Intl/date-fns
@@ -42,7 +44,7 @@ cross-links to those rather than restating them.
 1. **Lean on auto-imports.** `app/components`, `app/composables`, `app/utils`, and the Vue/Nuxt APIs all auto-import. Add an explicit `import` only for third-party symbols and TS types. A nested component's tag carries its directory as a prefix (`components/customers/ProfileCard.vue` → `<CustomersProfileCard>`).
 2. **Type props/emits, default the booleans.** Use the type-only macros (`defineProps<{...}>()`, `defineEmits<{...}>()`). A bare `boolean` prop coerces to `false` when absent (not `undefined`), so any "defaults-on" flag MUST be defaulted — via reactive destructure (`{ flag = true } = defineProps<…>()`, the 3.5 default, no factory needed for arrays/objects) or `withDefaults` (factory required for non-primitives).
 3. **`computed` for derivation, `watch` for escaping the graph.** If a watcher body just assigns one reactive value from others, it's a `computed`. Need to write a value back? A `computed` can have a setter — reach for a writable `computed` or `defineModel` before a sync watcher. Keep computed getters pure (no fetch, no mutation, no DOM).
-4. **Tie effects to lifecycle.** DOM measurement, listeners, observers, and timers go in `onMounted` and are torn down in `onUnmounted`. A computed reading live DOM geometry needs an explicit re-measure signal (DOM size isn't reactive).
+4. **Tie effects to lifecycle.** DOM measurement, listeners, observers, and timers go in `onMounted` and are torn down in `onUnmounted`. A computed reading live DOM geometry needs an explicit re-measure signal (DOM size isn't reactive). Before hand-rolling that effect-plus-teardown, check whether a **VueUse** composable already wraps it (`vueuse.md`) — they bundle the cleanup.
 5. **Call composables at the top of `<script setup>`** — never inside a callback or a template expression (both lose Nuxt's request scope). Derive display state with `computed`, guarding for possibly-null data.
 6. **Defer to the right skill.** Fetch/SSR/auth/middleware → `nuxt-nitro-api`. Volt components, `pt:` styling, color tokens, dark mode → `volt-primevue`. Don't duplicate them here.
 
