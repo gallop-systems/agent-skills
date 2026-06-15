@@ -1,17 +1,19 @@
 #!/usr/bin/env node
-// Postinstall: symlink this package's skills and commands into the consuming
+// Postinstall: symlink this package's skills (and any commands) into the consuming
 // project, so a `yarn add` / `yarn install` keeps the project in sync with this
-// package's version. Skills are linked for both supported agents:
+// package's version:
 //
 //   skills   -> .claude/skills/<name>        (Claude Code; a dir with SKILL.md)
 //   skills   -> .agents/skills/<name>        (Codex; same SKILL.md format)
 //   commands -> .claude/commands/<rel>.md    (Claude Code only; a .md under commands/)
 //
 // The SKILL.md format (name + description frontmatter, no nesting) is identical
-// across Claude and Codex, so skill dirs are linked verbatim. Codex has no
-// project-level command dir, so commands stay Claude-only; a workflow that should
-// reach Codex too ships as a skill of the same name (e.g. contribute-skill) and is
-// then excluded from Claude's skills — there it's the command, not a duplicate skill.
+// across Claude and Codex, so skill dirs are linked verbatim into both roots. In
+// current Claude Code, custom commands were merged into skills: a skill is itself
+// slash-invocable (`/<name>`) AND model-invocable, so it fully covers what a command
+// did. We therefore ship workflows as skills, not commands. The commands/ path is
+// still honored for any legacy Claude-only command, but Codex has no project command
+// dir, so commands are never linked there.
 //
 // This runs during `yarn install`, so it MUST NOT throw — a thrown error aborts
 // the whole install. Every failure path here degrades to a warning + exit 0.
@@ -34,15 +36,6 @@ function realOrSelf(p) {
     return fs.realpathSync(p)
   } catch {
     return p
-  }
-}
-
-// True if p is a file, following symlinks (statSync, unlike Dirent.isFile()).
-function isFilePath(p) {
-  try {
-    return fs.statSync(p).isFile()
-  } catch {
-    return false
   }
 }
 
@@ -101,10 +94,7 @@ function collectCommands(root) {
       for (const e of entries) {
         const p = path.join(dir, e.name)
         if (e.isDirectory()) walk(p)
-        // Accept symlinked .md too: a command may be a symlink to a single-source
-        // file shared with a skill (e.g. contribute-skill). Dirent.isFile() is
-        // false for symlinks, so check the resolved target.
-        else if (e.name.endsWith('.md') && isFilePath(p)) add(found, path.relative(cmdDir, p), p, 'command')
+        else if (e.isFile() && e.name.endsWith('.md')) add(found, path.relative(cmdDir, p), p, 'command')
       }
     }
     walk(cmdDir)
@@ -260,20 +250,14 @@ function main() {
     return
   }
 
-  const allSkills = collectSkills(PKG_DIR)
-  const commandSources = collectCommands(PKG_DIR)
-
-  // A skill that mirrors a command (same base name) is excluded from Claude — there
-  // it ships as the command. Codex has no command dir, so it gets every skill.
-  const commandNames = new Set([...commandSources.keys()].map((rel) => path.basename(rel, '.md')))
-  const claudeSkills = new Map([...allSkills].filter(([name]) => !commandNames.has(name)))
-
-  const cSkills = linkInto(claudeSkillsRoot, claudeSkills, 'skills')
-  const xSkills = linkInto(codexSkillsRoot, allSkills, 'skills')
-  const commands = linkInto(commandsRoot, commandSources, 'commands')
+  const skillSources = collectSkills(PKG_DIR)
+  const skills = linkInto(claudeSkillsRoot, skillSources, 'skills')
+  linkInto(codexSkillsRoot, skillSources, 'skills')
+  const commands = linkInto(commandsRoot, collectCommands(PKG_DIR), 'commands')
   log(
-    `linked ${cSkills} skill${cSkills === 1 ? '' : 's'} + ${commands} command${commands === 1 ? '' : 's'} (.claude), ` +
-      `${xSkills} skill${xSkills === 1 ? '' : 's'} (.agents).`,
+    `linked ${skills} skill${skills === 1 ? '' : 's'} (.claude + .agents)` +
+      (commands ? ` and ${commands} command${commands === 1 ? '' : 's'} (.claude)` : '') +
+      '.',
   )
 }
 
