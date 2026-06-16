@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.12.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.11.0...agent-skills-v1.12.0) (2026-06-15)
+
+
+### Features
+
+* **nuxt-testing:** capture route and lifecycle test guidance ([#41](https://github.com/gallop-systems/agent-skills/issues/41)) ([408e5ea](https://github.com/gallop-systems/agent-skills/commit/408e5ea6a4d182aae37ea6b288b1eee0ff1a1905))
+
 ## [1.11.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.10.0...agent-skills-v1.11.0) (2026-06-15)
 
 
