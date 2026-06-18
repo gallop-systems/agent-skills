@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.13.0...agent-skills-v1.14.0) (2026-06-18)
+
+
+### Features
+
+* **kysely-postgres:** prefer eb callback over raw sql in predicate helpers ([#46](https://github.com/gallop-systems/agent-skills/issues/46)) ([dba2a55](https://github.com/gallop-systems/agent-skills/commit/dba2a55325d90ed4133292772fa6699f9240a2c3))
+
 ## [1.13.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.12.0...agent-skills-v1.13.0) (2026-06-18)
 
 
