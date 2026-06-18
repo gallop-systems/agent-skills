@@ -10,7 +10,9 @@ doctl databases ca <db-id>                                    # cluster CA certi
 
 - **The connection URI contains live credentials** — treat command output as a secret. Don't echo it into logs; pipe it directly to where it's needed.
 - **Check `Version`** and keep CI/local database versions in sync with production — a test suite running `postgres:15` against a pg-18 production cluster hides version-specific behavior.
-- Connections use port 25060 with `sslmode=require`. **TLS trap**: some clients (e.g. newer `pg-connection-string`) silently upgrade `require` to `verify-full`, which rejects DO's CA under the default trust store. Fix: supply the CA from `doctl databases ca <db-id>` explicitly, or configure ssl options in code rather than relying on the URI.
+- Connections use port 25060 with `sslmode=require`. **TLS trap**: some clients (e.g. `pg-connection-string` as bundled with `pg` >= 8.16) silently treat `require` as `verify-full`, which rejects DO's self-signed CA under the default trust store (`SELF_SIGNED_CERT_IN_CHAIN`). Two non-obvious parts:
+  - **An ssl option set in code does NOT override an `sslmode` already in the URI.** Passing `ssl: { rejectUnauthorized: false }` while the connection string still ends in `?sslmode=require` keeps failing — the URI's `sslmode` wins. The fix has to land in the URI itself: drop/replace `sslmode`, append `uselibpqcompat=true` (restores libpq semantics: encrypt but don't verify), or supply the CA from `doctl databases ca <db-id>` explicitly.
+  - **When you can't edit the URI** — specifically, when you bind App Platform's generated `${db.DATABASE_URL}` straight into an env var in the app spec, it always carries `?sslmode=require` and you don't author the string — append the param to the bound value: `value: ${db.DATABASE_URL}&uselibpqcompat=true`. This only applies to that bound-pipethrough case; if you declare the connection-string env var yourself, just put the right params (or none) in from the start and an in-code ssl option is enough.
 
 ## Spaces
 
