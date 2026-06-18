@@ -102,6 +102,29 @@ function isActiveUser() {
 }
 ```
 
+A predicate helper can also return a callback that receives the query's
+`eb`, so the same helper works in any `.where()`/`.having()` on that table:
+
+```typescript
+import type { ExpressionBuilder } from "kysely";
+
+// AVOID - raw sql means the column name is an unchecked string.
+// A typo or renamed column only fails at runtime.
+function nameMatches(name: string) {
+  return sql<boolean>`lower(name) = ${name.toLowerCase()}`;
+}
+
+// PREFER - eb.fn keeps the column reference type-checked against DB,
+// and the value stays parameterized.
+function nameMatches(name: string) {
+  return (eb: ExpressionBuilder<DB, "user">) =>
+    eb(eb.fn("lower", ["name"]), "=", name.toLowerCase());
+}
+
+// Both call sites stay identical:
+db.selectFrom("user").where(nameMatches(input)).execute();
+```
+
 ### Conditional Expressions with Arrays
 
 Build dynamic filters by collecting expressions:
