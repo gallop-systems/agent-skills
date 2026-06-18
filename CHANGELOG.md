@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.13.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.12.0...agent-skills-v1.13.0) (2026-06-18)
+
+
+### Features
+
+* **kysely-postgres:** document append-only migration ordering and prod ledger recovery ([#45](https://github.com/gallop-systems/agent-skills/issues/45)) ([60f2076](https://github.com/gallop-systems/agent-skills/commit/60f20769e1f9960ce060408bf9c30f13dc1eb301))
+
+
+### Bug Fixes
+
+* **doctl:** clarify DO managed-PG sslmode trap for bound DATABASE_URL ([#43](https://github.com/gallop-systems/agent-skills/issues/43)) ([6d8bdfa](https://github.com/gallop-systems/agent-skills/commit/6d8bdfa19d43ee4c041373977fc76ea5cad43b43))
+
 ## [1.12.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.11.0...agent-skills-v1.12.0) (2026-06-15)
 
 
