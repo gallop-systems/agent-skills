@@ -1,6 +1,6 @@
 ---
 name: copier-template
-description: Maintain a Copier project template and propagate updates to generated ("descendant") repos. Covers template anatomy (copier.yml, jinja, tasks), testing template changes, tagging/releasing versions, the automated update-notification PR pattern, and applying copier update in descendants with conflict resolution.
+description: Maintain a Copier project template and propagate updates to generated ("descendant") repos. Covers template anatomy (copier.yml, jinja, tasks), testing template changes, tagging/releasing versions, the automated update-notification PR pattern, and applying copier update in descendants — bringing a repo fully to the latest template version while preserving its app behavior, with conflict resolution an autonomous agent can run end to end.
 ---
 
 # Copier Template Maintenance & Propagation
@@ -19,7 +19,7 @@ Patterns for the full lifecycle of a [Copier](https://copier.readthedocs.io/) pr
 
 - The **template repo** holds `copier.yml` (questions + settings + tasks) and a `template/` subdirectory of scaffold files (some `.jinja`-suffixed for substitution). **Git tags (`v*`) are the version protocol**; GitHub Releases are the changelog protocol.
 - Each **descendant** carries `.copier-answers.yml` recording its answers and `_commit: vX.Y.Z` — the template version it's on. Never hand-edit this file; `copier update` maintains it.
-- `copier update` re-renders from old-tag → newest tag and three-way merges against local changes. **It always jumps to the latest tag** (unless `--vcs-ref` pins one) — a notification PR advertising v1.5.0 may actually land v1.8.0 if the template moved on.
+- `copier update` re-renders from old-tag → newest tag and three-way merges against local changes. **It always jumps to the latest tag** (unless `--vcs-ref` pins one) — a notification PR advertising v1.5.0 may actually land v1.8.0 if the template moved on. The job is **never to bump a version string** — it is to standardize whatever the template now sells while keeping this app's behavior intact. Hand-editing `_commit` or any version number to shrink a diff is always wrong; let `copier update` move it, and absorb the real changes.
 - Run copier via `uvx copier ...` (no global install needed). Templates with `_tasks` require `--trust` — without it copier refuses to render at all. Non-interactive contexts also need `--defaults` (and `--data key=value` for required questions without defaults).
 
 ## Direction of Change
@@ -79,7 +79,7 @@ echo '{"required_status_checks":{"strict":false,"contexts":["ci-success"]},"enfo
 ## Further Reading
 
 - **Template anatomy & testing changes**: [template-authoring.md](template-authoring.md)
-- **Applying an update in a descendant** (the conflict-resolution procedure): [applying-updates.md](applying-updates.md)
+- **Applying an update in a descendant** (the full procedure — read-the-changes-first, multi-version deltas, `.rej` triage, silent-overwrite review, and autonomous merge-readiness): [applying-updates.md](applying-updates.md)
 
 ## Contributing Back
 
