@@ -1,6 +1,6 @@
 {
   "name": "@gallopsystems/agent-skills",
-  "version": "1.15.0",
+  "version": "1.16.0",
   "description": "Gallop Systems agent skills, symlinked into .claude/skills (Claude Code) and .agents/skills (Codex) on install.",
   "license": "UNLICENSED",
   "repository": {

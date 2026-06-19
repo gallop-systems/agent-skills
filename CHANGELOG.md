@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.16.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.15.0...agent-skills-v1.16.0) (2026-06-19)
+
+
+### Features
+
+* **copier-template:** autonomous descendant-update procedure ([#51](https://github.com/gallop-systems/agent-skills/issues/51)) ([4b446a7](https://github.com/gallop-systems/agent-skills/commit/4b446a79e36380316b62a6a5ef223770b69afe38))
+
 ## [1.15.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.14.0...agent-skills-v1.15.0) (2026-06-19)
 
 
