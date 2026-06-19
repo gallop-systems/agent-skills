@@ -49,7 +49,7 @@ Runnable, copy-pasteable query examples live alongside as `.ts` files:
 
 ## Core Principles
 
-1. **Prefer Kysely methods over raw SQL**: Almost everything you can do in SQL, you can do in Kysely without `sql``
+1. **Always use Kysely's query builder — never reach for raw `sql`**: Almost anything expressible in SQL is expressible type-safely through Kysely's methods and the ExpressionBuilder (`eb`); raw `sql`` throws away the type safety this stack depends on. Treat it as a true last resort — only when Kysely genuinely cannot express the query (and type the template literal when you must). Being unsure how to do something is the cue to check the reference guides above, **not** to drop to raw SQL.
 2. **Use the ExpressionBuilder (eb)**: The `eb` parameter in callbacks is the foundation of type-safe query building
 3. **Let TypeScript guide you**: If it compiles, it's likely correct SQL
 
