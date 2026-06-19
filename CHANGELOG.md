@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.15.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.14.0...agent-skills-v1.15.0) (2026-06-19)
+
+
+### Features
+
+* **kysely-postgres:** document the idempotent seeding pattern ([#48](https://github.com/gallop-systems/agent-skills/issues/48)) ([8af65da](https://github.com/gallop-systems/agent-skills/commit/8af65daeff30929dbbe2c216c7ebcc0aa86a9939))
+
+
+### Code Refactoring
+
+* **kysely-postgres:** split SKILL.md into topic guides ([#49](https://github.com/gallop-systems/agent-skills/issues/49)) ([7afe869](https://github.com/gallop-systems/agent-skills/commit/7afe869f2339599524620f4f2a54c87d80dd0264))
+
 ## [1.14.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.13.0...agent-skills-v1.14.0) (2026-06-18)
 
 
