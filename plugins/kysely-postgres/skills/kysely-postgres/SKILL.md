@@ -32,6 +32,7 @@ For detailed examples, see these topic-focused reference files:
 - [locking.ts](references/locking.ts) - FOR UPDATE/SHARE, SKIP LOCKED, NOWAIT, job-queue pattern
 - [mutations.ts](references/mutations.ts) - INSERT, UPDATE, DELETE, UPSERT, INSERT FROM SELECT
 - [expressions.ts](references/expressions.ts) - CASE, $if, subqueries, eb.val/lit/not, standalone eb, dynamic refs
+- [seeding-pattern.md](references/seeding-pattern.md) - idempotent preview/dev seeding: factories shared by tests + seeds, monotonic-counter uniqueness, order-independence, scenes built in target state, the validity harness, preview login
 
 ## Core Principles
 
@@ -922,6 +923,10 @@ npx kysely migrate:down                 # Rollback last migration
 npx kysely seed make seed-name          # Create seed
 npx kysely seed run                     # Run all seeds
 ```
+
+Seeds that feed a preview/dev box have their own conventions (idempotency,
+order-independence, factories shared with tests, a validity harness) — see
+[seeding-pattern.md](references/seeding-pattern.md).
 
 ### Migration File Structure
 
