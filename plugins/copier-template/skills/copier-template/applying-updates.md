@@ -101,6 +101,13 @@ perl -0pi -e 's/^<<<<<<< before updating\n(.*?)^\|\|\|\|\|\|\| last update\n.*?^
 
 After editing markers out, **`git add` each resolved file** — it stays `UU` until staged, and an unstaged `UU` later blocks `git stash pop` and the push.
 
+**`package.json` dependency pins — keep *this repo's* versions, not the template's.** The template's Renovate bumps every pin in `package.json.jinja`, so each release moves those lines and they arrive here as conflicts. But a descendant runs its **own** Renovate, which keeps its deps ahead of — and CI-tested against — the template's pins, so the template side is almost always *behind*. Resolve each dependency-version conflict by **keeping ours**, with two exceptions:
+
+- **`@gallopsystems/agent-skills`** is template-owned (the descendant's `renovate.json` is configured to ignore it, so the template is its only updater). Always **take theirs** for that line.
+- If the template's pin is genuinely *higher* than ours (this repo lagged — Renovate paused, or a dep Renovate doesn't manage), taking theirs is fine **only when it's an obviously-safe move** — a patch within the same minor. For a minor/major where ours is behind, keep ours and let this repo's Renovate make the jump afterward rather than adopting the template's pin blind.
+
+A *new* dependency the template adds is not a conflict (the descendant doesn't have it yet) — copier just adds it; keep it. This rule is only about shared pins. The split is deliberate: the template owns `agent-skills`, each descendant owns its own app dependencies.
+
 **Scaffold files arrive written against the TEMPLATE's schema — adopt the feature, adapt it to yours; never a naive side-pick.** Files like preview-login, factories, seeds, and `auth.d.ts` ship assuming the template's columns (`first_name`/`last_name`, `deactivated_at`, numeric `id`). A descendant that diverged (a single `name` column, camelCase, string IDs) won't compile against them. Take the template's *feature* but rewrite it to the real schema: revert `Number(id)` coercions, fix the anchor-user/seed columns, drop selects on columns that don't exist, repair the matching test. After adopting any such file, grep it against the real `db.d.ts`:
 
 ```bash
