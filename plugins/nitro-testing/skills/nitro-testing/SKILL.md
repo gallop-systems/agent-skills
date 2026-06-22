@@ -236,7 +236,16 @@ The setup file stubs Nuxt/Nitro auto-imports:
 
 3. **Nested transactions work** - Code that calls `db.transaction()` works because we patch the prototype
 
-4. **Test file location** - Co-locate with handlers: `handler.ts` → `handler.test.ts`
+4. **Test file location** - Co-locate with handlers: `handler.ts` → `handler.test.ts`.
+   **Exception — module-scanned directories:** never co-locate a test inside a
+   directory a Nuxt/Nitro module auto-imports *wholesale* (it globs every file in
+   the dir and bundles it into the server build — e.g. a tool/plugin registry
+   like an MCP toolkit's `server/mcp/tools/`, where dropping a `*.test.ts` next to
+   the tool means the test is pulled into the build). `yarn build` then fails when
+   that test imports build-absent test utilities (e.g. `~/server/test-utils` →
+   `ENOENT`). Vitest **and** `typecheck` stay green — only `yarn build` (or the
+   build CI job) catches it. Keep such tests outside the scanned dir (e.g. under
+   `server/utils/`) and import the unit under test by alias.
 
 5. **Separate test database** - Always use a dedicated test DB (`myapp-test`, not `myapp`)
 
