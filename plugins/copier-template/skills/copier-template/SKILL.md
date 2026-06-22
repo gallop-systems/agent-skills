@@ -62,6 +62,15 @@ git ls-remote --tags --refs --sort=-v:refname <template-url> 'v*' | head -1
 
 If newer, it pushes a **static branch name** (e.g. `chore/template-update`) with an `--allow-empty` commit and opens a PR whose body contains the version delta, release-notes/compare links, and step-by-step instructions an agent can execute. Hard-won details to keep if reimplementing: an explicit `permissions: contents: write, pull-requests: write` block (default token can't open PRs), a static branch name (dated branches caused duplicate PRs), and comparing **tag versions, not commit SHAs**.
 
+## Dependency Updates: Who Owns What
+
+Two Renovate instances run, with a deliberate boundary so they never fight:
+
+- **The template's Renovate** (in the template repo) keeps the pins in `template/package.json.jinja` fresh via a custom regex manager, and **auto-merges `@gallopsystems/agent-skills`** — which release-please then cuts as a template release. Those bumps reach descendants through `copier update`.
+- **Each descendant's Renovate** (shipped as `renovate.json`, gated on the `include_renovate` question) owns that repo's **own** app dependencies — the only place an upgrade can be tested against the real app's code and CI.
+
+The one overlap is resolved by ownership: the descendant's `renovate.json` **disables `@gallopsystems/agent-skills`**, leaving it solely template-owned. Every other pin is the descendant's. Because the template keeps bumping all pins, a descendant's `package.json` arrives with version conflicts on `copier update` — resolve them by keeping the descendant's versions (see [applying-updates.md](applying-updates.md) → *`package.json` dependency pins*). Newly-scaffolded repos start on the template's pins and are freshened by their own Renovate within a day.
+
 ## Branch Protection in Descendants
 
 A template **cannot** enable branch protection for the repos it generates — GitHub reads required status checks from repo config, never from committed workflow files. So every descendant starts with nothing gating merges until someone sets it once (after the first CI run, so the check is known). This template's CI exposes a **`ci-success`** summary job to be exactly that gate — require it on `main`:
