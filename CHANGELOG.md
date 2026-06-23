@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.17.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.16.0...agent-skills-v1.17.0) (2026-06-22)
+
+
+### Features
+
+* **copier-template:** autonomous descendant-update procedure + Renovate ownership split ([#53](https://github.com/gallop-systems/agent-skills/issues/53)) ([2187fc2](https://github.com/gallop-systems/agent-skills/commit/2187fc2c55fd231a0da635ab40db298028f2cd3e))
+* **copier-template:** document the Renovate dependency-ownership split ([2187fc2](https://github.com/gallop-systems/agent-skills/commit/2187fc2c55fd231a0da635ab40db298028f2cd3e))
+
+
+### Bug Fixes
+
+* **nitro-testing:** warn against co-locating tests in module-scanned dirs ([#54](https://github.com/gallop-systems/agent-skills/issues/54)) ([cd613f9](https://github.com/gallop-systems/agent-skills/commit/cd613f9d5072f69c7cace7ca3b359551626ce29c))
+
 ## [1.16.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.15.0...agent-skills-v1.16.0) (2026-06-19)
 
 
