@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.19.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.18.0...agent-skills-v1.19.0) (2026-06-24)
+
+
+### Features
+
+* **kysely-postgres:** document builder-arg-is-a-column trap when de-rawing sql ([#58](https://github.com/gallop-systems/agent-skills/issues/58)) ([2a22cc9](https://github.com/gallop-systems/agent-skills/commit/2a22cc980378d6e822720037f35356ea5d741cd2))
+
 ## [1.18.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.17.0...agent-skills-v1.18.0) (2026-06-24)
 
 
