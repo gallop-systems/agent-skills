@@ -43,10 +43,26 @@ const upsertedProduct = await db
     oc.column("sku").doUpdateSet((eb) => ({
       // Update these columns on conflict - type-safe!
       stock_quantity: eb("product.stock_quantity", "+", eb.ref("excluded.stock_quantity")),
+      // Prefer typed builders over raw sql here too: eb.fn.coalesce(...) over both
+      // tables validates names against the schema (excluded is a real virtual table)
+      name: eb.fn.coalesce(eb.ref("product.name"), eb.ref("excluded.name")),
     }))
   )
   .returning(["id", "sku", "stock_quantity"])
   .executeTakeFirst();
+
+// GOTCHA: when you DO need raw sql in a SET / doUpdateSet value (e.g. now()),
+// do NOT parameterize it with a codegen ColumnType marker like the generated
+// `Timestamp` (= ColumnType<Date, ...>). It breaks compilation:
+//   updated_at: sql<Timestamp>`now()`   // ❌ TS2345: RawBuilder<Timestamp> not
+//                                        //    assignable; "isSelectQueryBuilder" missing
+// The SET target is the flattened Updateable value type (e.g. string | Date | undefined),
+// and RawBuilder<ColumnType<...>> falls outside that plain-value branch. Use a plain
+// value type or leave it bare instead:
+//   updated_at: sql<Date>`now()`        // ✅ Date is a plain value type
+//   updated_at: sql`now()`              // ✅ also assigns cleanly
+// (The "always type your sql literals" rule is aimed at SELECT, where the type flows
+// into the result. In write contexts, ColumnType markers are the wrong parameter.)
 
 // OnConflict variations:
 // - oc.column("col") - single column constraint
