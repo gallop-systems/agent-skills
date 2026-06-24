@@ -351,6 +351,37 @@ await db
   .execute();
 ```
 
+**`doUpdateSet` object vs callback form.** `doUpdateSet` takes either a plain
+object `doUpdateSet({ col: value })` or a callback `doUpdateSet((eb) => ({ ... }))`.
+The object form has no expression builder, so the moment you need a *builder
+expression* for any column — arithmetic, an `EXCLUDED` reference, a coalesce — you
+must switch the whole call to the callback form. Inside it, a **bare column name
+refers to the target (existing) row**, and **`eb.ref("excluded.<col>")` references
+the incoming row** (Kysely lowercases it to Postgres's `excluded` pseudo-table).
+The other columns come along unchanged inside the returned object:
+
+```typescript
+// Raw sql for the increment / EXCLUDED — column names are unchecked strings
+.onConflict((oc) =>
+  oc.column("email").doUpdateSet({
+    reply_count: sql`reply_count + 1`,
+    email: sql`EXCLUDED.email`,
+    status: "active",                       // plain value, fine in either form
+  }),
+)
+
+// Callback form unlocks eb(): both column refs are now type-checked
+.onConflict((oc) =>
+  oc.column("email").doUpdateSet((eb) => ({
+    reply_count: eb("reply_count", "+", 1),
+    email: eb.ref("excluded.email"),
+    status: "active",
+  })),
+)
+```
+
+The same object-vs-callback rule applies to `.set()` on a plain `UPDATE` (see below).
+
 ### UPDATE Operations
 
 ```typescript
