@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.18.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.17.0...agent-skills-v1.18.0) (2026-06-24)
+
+
+### Features
+
+* **kysely-postgres:** document when converting raw sql is worth it ([#56](https://github.com/gallop-systems/agent-skills/issues/56)) ([1470bb7](https://github.com/gallop-systems/agent-skills/commit/1470bb7255b6229c3829642062addf0f6d93fd7c))
+
 ## [1.17.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.16.0...agent-skills-v1.17.0) (2026-06-22)
 
 
