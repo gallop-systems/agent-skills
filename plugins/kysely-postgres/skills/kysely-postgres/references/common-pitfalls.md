@@ -49,6 +49,39 @@ Rule of thumb: **convert when the raw SQL names a column or table; leave it when
 it is only parameters and literals.** The latter compiles to identical SQL and the
 "type-safe" rewrite verifies nothing.
 
+**One more trap in the canonical `count(*)` swap above: it returns a *string* at
+runtime, and a type parameter won't change that.** `eb.fn.countAll()` emits a bare
+`count(*)`, which PostgreSQL returns as `bigint` — and the `pg` driver deserializes
+`bigint` to a JavaScript **string** by default (see why below). So the row's `count`
+is `"2"`, not `2`:
+
+```typescript
+// MISLEADING - compiles, but lies about the runtime value
+.select((eb) => eb.fn.countAll<number>().as("count"))
+// `<number>` is a pure type assertion. The driver still hands back a string,
+// so `row.count === 2` is false and `row.count.toFixed()` throws.
+
+// RIGHT - cast in SQL so the driver parses a real number
+.select((eb) => eb.cast<number>(eb.fn.countAll(), "integer").as("count"))
+// emits `cast(count(*) as integer)` -> int4 -> the driver yields a JS number
+```
+
+The rule generalizes: **typing a `sql`/builder expression as `<number>` does not
+change the value the driver produces — only a SQL-level cast does.** Any
+`bigint`-returning aggregate (`count`, `sum` over a `bigint`, etc.) needs an explicit
+`cast` when downstream code expects a JS number.
+
+> **Why `bigint` comes back as a string — and don't "fix" it globally.** The `pg`
+> driver returns `int8`/`bigint` as a string on purpose: a JS `number` is a float64,
+> exact only to `2^53 - 1`, while `bigint` runs to `2^63 - 1`, so auto-parsing would
+> silently corrupt large IDs. You *can* register `pg.types.setTypeParser` to coerce
+> `int8` to a number, but it reintroduces that precision footgun for **every**
+> `bigint` column (primary keys included), and `kysely-codegen` has no
+> `--bigint-parser` flag (only `--date-parser` / `--numeric-parser`) — so the
+> generated `Int8` type still selects as `string` and you would be hand-overriding an
+> alias that regeneration clobbers. Keep the string default and `cast` per query where
+> you need a number.
+
 ### 2. Don't Forget .execute()
 
 Queries are lazy - they won't run without calling an execute method:
