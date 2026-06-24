@@ -159,3 +159,40 @@ The `"between"` operator looks like it should work but compiles to a tuple, whic
 .where((eb) => eb.betweenSymmetric("age", 65, 18))   // swaps bounds if needed
 ```
 
+### 9. Builder Argument Strings Are Column References, Not Literals
+
+This bites hardest when converting raw `sql` to builders. In `eb.fn.coalesce`,
+binary `eb(lhs, op, rhs)`, and most `eb.fn` calls, a bare string argument is
+interpreted as a **column reference**, not a string value. So porting
+`` sql`coalesce(status, 'pending')` `` naively produces a query that looks for a
+column named `pending`:
+
+```typescript
+// WRONG - 'pending' is read as a column name -> "column \"pending\" does not exist"
+eb.fn.coalesce("status", "pending")
+
+// RIGHT - wrap a literal default in eb.val() (parameterized) ...
+eb.fn.coalesce("status", eb.val("pending"))
+// ... or a typed sql`` literal when you need it inlined (e.g. inside GROUP BY)
+eb.fn.coalesce("status", sql<string>`'pending'`)
+
+// Number/boolean/null literals can use eb.lit (eb.lit rejects strings, see
+// expression-builder.md):
+eb.fn.coalesce("score", eb.lit(0))
+
+// Coalescing two real COLUMNS is the case where bare strings are correct:
+eb.fn.coalesce("preferred_name", "legal_name")   // both are column refs
+```
+
+A companion trap: when you feed a `sql`` fragment as the right-hand operand of a
+typed operator (e.g. a full-text `@@`), the fragment must carry a type parameter
+or it infers `unknown` and the operator overload rejects it:
+
+```typescript
+// WRONG - RawBuilder<unknown> is not a valid operand -> TS2345
+.where("search_vector", "@@", sql`to_tsquery('english', ${q})`)
+
+// RIGHT - type the fragment so it satisfies the operator's operand type
+.where("search_vector", "@@", sql<string>`to_tsquery('english', ${q})`)
+```
+
