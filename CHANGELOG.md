@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.20.1](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.20.0...agent-skills-v1.20.1) (2026-06-24)
+
+
+### Bug Fixes
+
+* **kysely-postgres:** warn against ColumnType-typed sql in write SET contexts ([#63](https://github.com/gallop-systems/agent-skills/issues/63)) ([fed18ea](https://github.com/gallop-systems/agent-skills/commit/fed18ea41a71eaf3b4a6711b83a0f4b10c749baa))
+
 ## [1.20.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.19.0...agent-skills-v1.20.0) (2026-06-24)
 
 
