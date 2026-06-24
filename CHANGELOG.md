@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.20.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.19.0...agent-skills-v1.20.0) (2026-06-24)
+
+
+### Features
+
+* **kysely-postgres:** document doUpdateSet object-vs-callback form for upserts ([#61](https://github.com/gallop-systems/agent-skills/issues/61)) ([d761438](https://github.com/gallop-systems/agent-skills/commit/d761438ab36163a3eaae3e2d539105f31ef4e857))
+
+
+### Bug Fixes
+
+* **kysely-postgres:** note count() returns a bigint string at runtime ([#60](https://github.com/gallop-systems/agent-skills/issues/60)) ([35748bb](https://github.com/gallop-systems/agent-skills/commit/35748bb9a8f0c33b170a8a8177e6a4c6b3fbe22e))
+
 ## [1.19.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.18.0...agent-skills-v1.19.0) (2026-06-24)
 
 
