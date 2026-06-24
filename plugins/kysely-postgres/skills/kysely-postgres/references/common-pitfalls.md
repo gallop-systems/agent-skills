@@ -20,6 +20,35 @@
 )
 ```
 
+**…but only when the expression references the schema.** The whole payoff of
+dropping raw `sql` is letting Kysely validate column/table names against your
+generated types — so the value is proportional to how many schema identifiers the
+expression names. A `sql` template made only of **bound parameters and constants**
+has nothing to check; converting it is lateral churn, and occasionally worse:
+
+```typescript
+// WORTH CONVERTING - names a column, so eb.ref/eb() validate it exists
+.where(sql`lower(name)`, "=", value)
+.where((eb) => eb(eb.fn<string>("lower", [eb.ref("name")]), "=", value))
+
+// WORTH CONVERTING - correlated EXISTS validates table + both column refs
+sql<boolean>`EXISTS (SELECT 1 FROM child WHERE child.parent_id = parent.id)`
+eb.exists(eb.selectFrom("child").select(eb.lit(1).as("one"))
+  .whereRef("child.parent_id", "=", "parent.id"))
+
+// LEAVE RAW - a bound param + a constant cast: no column, nothing to verify.
+// The "typed" form is also a schema MISMATCH: eb.cast(...) is Expression<Date>,
+// but a DATE column is codegen'd as `string` (with --date-parser string).
+sql`${value}::date`            // keep it
+
+// LEAVE RAW - bare string/number/bool literals have no schema surface
+sql.lit("Unassigned")          // keep it (or eb.lit for number/bool, but no real gain)
+```
+
+Rule of thumb: **convert when the raw SQL names a column or table; leave it when
+it is only parameters and literals.** The latter compiles to identical SQL and the
+"type-safe" rewrite verifies nothing.
+
 ### 2. Don't Forget .execute()
 
 Queries are lazy - they won't run without calling an execute method:
