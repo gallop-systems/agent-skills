@@ -201,6 +201,8 @@ Any value that's already a UUID is passed through untouched. Project and milesto
 > **Important:** When assigning an issue to a cycle, always set `--state todo`. Issues default to Backlog, which doesn't work with cycles — they must be in Todo status.
 >
 > **Required placement rule:** Never create an issue without both `--project` and `--milestone`. If the right project does not exist, create it first. If the project exists but the right milestone does not, create the milestone first. Do not leave issues unscoped or unmilestoned.
+>
+> **Confirm decisions with the requester — don't punt them into the issue.** When the person asking you to create the issue is right there in the conversation, ask the open decisions (scope, mechanism, data source, ownership, who/where it should land) *before* writing the issue — e.g. via a structured question prompt — and bake the confirmed answers into the body. Do **not** write an "Open questions" section full of decisions you could have just asked, and do **not** use that manufactured uncertainty as a rationale to leave the issue in Backlog or unassigned. Only genuinely external unknowns (something that needs a meeting, a client, or a spike to resolve) belong as open questions; everything the requester can answer on the spot should already be a confirmed decision with the issue placed and assigned accordingly.
 
 ```bash
 # --state todo is required when using --cycle
