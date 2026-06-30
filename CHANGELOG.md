@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.21.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.20.1...agent-skills-v1.21.0) (2026-06-30)
+
+
+### Features
+
+* **linear:** add --team flag and per-team config schema to CLI ([#65](https://github.com/gallop-systems/agent-skills/issues/65)) ([0c625cc](https://github.com/gallop-systems/agent-skills/commit/0c625cce73e7fec0fae5740fe007a0891f086c21))
+
 ## [1.20.1](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.20.0...agent-skills-v1.20.1) (2026-06-24)
 
 
