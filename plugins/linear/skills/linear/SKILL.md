@@ -15,7 +15,9 @@ Invoke it as `node <skill>/bin/linear.mjs <command> [args] [--flags]`. Examples 
 
 ### Check 1 — Workspace bootstrap config exists
 
-Before running any `linear.mjs` command, verify that the per-user workspace config exists at `~/.config/linctl/workspace.json` (override path with `$LINCTL_WORKSPACE_FILE`). This file holds the team UUID, the Linear member UUIDs that play the Frontend/PM and Backend roles, and the workflow-state and label UUIDs the CLI resolves symbolic names against. Without it, every command that needs the team, members, states, or labels will refuse to run.
+Before running any `linear.mjs` command, verify that the per-user workspace config exists at `~/.config/linctl/workspace.json` (override path with `$LINCTL_WORKSPACE_FILE`). This file holds **every team** in the workspace (each with its own UUID plus its workflow-state and label UUIDs — states differ per team), an optional `defaultTeam`, and the Linear member UUIDs that play the Frontend/PM and Backend roles. Without it, every command that needs the team, members, states, or labels will refuse to run.
+
+> **Multi-team workspaces:** `workspace.json` registers all teams, but `states`/`labels` are per-team (each team's `Todo` is a distinct UUID). Which team a command targets is resolved in this order: the **`--team <key|name|uuid>`** flag → the **`LINCTL_DEFAULT_TEAM`** env var (a per-repo default — set it via direnv/`.envrc` or your shell so every command in a repo targets that team) → the **`defaultTeam`** field in `workspace.json`. If none resolve, `--team` is **required** on team-scoped commands; workspace-wide commands (e.g. `list-initiatives`) work without a team. A legacy config (predating per-team support, i.e. with no `defaultTeam` key and top-level `states`/`labels`) still works — it falls back to the first registered team — but re-run `init` to migrate it to the per-team schema.
 
 ```bash
 [ -f "${LINCTL_WORKSPACE_FILE:-$HOME/.config/linctl/workspace.json}" ] && echo "ok" || echo "missing"
@@ -27,7 +29,7 @@ Before running any `linear.mjs` command, verify that the per-user workspace conf
 node linear.mjs init
 ```
 
-`init` calls Linear's GraphQL API, lists the workspace's members, and prompts the user to designate (1) the Frontend/PM lead and (2) the Backend lead by number. It then writes `~/.config/linctl/workspace.json`. The config is read fresh on every invocation — no re-sourcing needed.
+`init` calls Linear's GraphQL API, lists the workspace's members, and prompts the user to designate (1) the Frontend/PM lead and (2) the Backend lead by number, then (3) an optional default team key (blank = no default, so `--team` is required on each team-scoped call). It registers **all** teams with their per-team states/labels and writes `~/.config/linctl/workspace.json`. The config is read fresh on every invocation — no re-sourcing needed.
 
 ### Check 2 — Linear MCP server installed and authorized
 
@@ -187,6 +189,7 @@ node linear.mjs help        # full command list
 The CLI resolves friendly names against `workspace.json`, so you rarely need raw UUIDs:
 
 ```
+--team       ACME | "Acme Corp"  (team key or name)                          (or a UUID)
 --state      todo | backlog | "in progress" | "in review" | done | canceled   (or a UUID)
 --assignee   frontend | backend                                               (or a UUID)
 --labels     bug,frontend,feature  (comma-separated label names)              (or UUIDs)
@@ -194,7 +197,7 @@ The CLI resolves friendly names against `workspace.json`, so you rarely need raw
 --cycle      current  (the active cycle)                                      (or a UUID)
 ```
 
-Any value that's already a UUID is passed through untouched. Project and milestone IDs are still UUIDs (pass them with `--project` / `--milestone`).
+`--team` selects which team a team-scoped command runs against, and `--state`/`--labels` then resolve against **that team's** states and labels. When `--team` is omitted it falls back to `$LINCTL_DEFAULT_TEAM` (a per-repo default) and then to `workspace.json`'s `defaultTeam`; if none are set you'll get an error listing the registered team keys. Workspace-wide commands (initiatives) don't need a team. Any value that's already a UUID is passed through untouched. Project and milestone IDs are still UUIDs (pass them with `--project` / `--milestone`).
 
 ### Creating Issues
 

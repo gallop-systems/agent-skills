@@ -73,39 +73,111 @@ function readMaybeFile(v, key) {
 // --- Workspace config ------------------------------------------------------
 
 /**
+ * @typedef {{ id: string, key: string, name: string, states?: Record<string, string>, labels?: Record<string, string> }} TeamEntry
  * @typedef {{
  *   teamId: string,
+ *   teams: TeamEntry[],
  *   members: { frontend?: string, backend?: string, frontendName?: string, backendName?: string },
  *   states: Record<string, string>,
  *   labels: Record<string, string>,
  * }} Config
  */
 
-/** @returns {Config | null} */
-function loadConfig() {
+/**
+ * Resolve which team a command runs against. Precedence: the `--team` flag
+ * (key, name, or UUID), then `$LINCTL_DEFAULT_TEAM` (a per-repo default, set via
+ * direnv or the shell), then the config's `defaultTeam`. A config that predates
+ * per-team support (no `defaultTeam` key at all) and no env override falls back
+ * to the first team for compatibility. Returns null only when there is genuinely
+ * no default and no `--team` — the caller defers the error until `cfg.teamId` is
+ * actually read.
+ * @param {TeamEntry[]} teams
+ * @param {string|undefined} ref
+ * @param {string|null|undefined} fileDefault
+ * @returns {TeamEntry | null}
+ */
+function selectTeam(teams, ref, fileDefault) {
+  /** @param {string} val */
+  const find = (val) => {
+    const v = String(val).toLowerCase();
+    return teams.find(
+      (t) => t.id === val || t.key?.toLowerCase() === v || t.name?.toLowerCase() === v,
+    );
+  };
+  if (ref) {
+    const t = find(ref);
+    if (!t) {
+      fail(`unknown team "${ref}". Registered: ${teams.map((x) => x.key).join(", ") || "(none)"}`);
+    }
+    return t ?? null;
+  }
+  const envDefault = process.env.LINCTL_DEFAULT_TEAM?.trim();
+  if (envDefault) {
+    const t = find(envDefault);
+    if (!t) {
+      fail(`LINCTL_DEFAULT_TEAM="${envDefault}" is not among the registered teams.`);
+    }
+    return t ?? null;
+  }
+  if (fileDefault) {
+    const t = find(fileDefault);
+    if (!t) fail(`configured defaultTeam "${fileDefault}" is not among the registered teams.`);
+    return t ?? null;
+  }
+  if (fileDefault === undefined) return teams[0] ?? null; // legacy config: no explicit default
+  return null; // defaultTeam === null and no env → no default; --team is required
+}
+
+/** @param {TeamEntry[]} teams */
+function teamSelectionError(teams) {
+  const keys = teams.map((t) => t.key).join(", ") || "(none registered)";
+  return (
+    `no team selected for this command.\n` +
+    `  Pass --team <key> (one of: ${keys}),\n` +
+    `  set LINCTL_DEFAULT_TEAM in your shell/repo (per-repo default),\n` +
+    `  or set "defaultTeam" in ${WORKSPACE_FILE}.`
+  );
+}
+
+/** @param {string} [teamRef] @returns {Config | null} */
+function loadConfig(teamRef) {
   if (!existsSync(WORKSPACE_FILE)) return null;
   const raw = JSON.parse(readFileSync(WORKSPACE_FILE, "utf8"));
+  /** @type {TeamEntry[]} */
   const teams = raw.teams ?? [];
   const roles = raw.roles ?? {};
-  return {
-    teamId: teams[0]?.id ?? "",
+  const sel = selectTeam(teams, teamRef, "defaultTeam" in raw ? raw.defaultTeam : undefined);
+  /** @type {Config} */
+  const cfg = {
+    // @ts-ignore — teamId is installed as a lazy getter below.
+    teams,
     members: {
       frontend: roles.frontend_lead?.id,
       backend: roles.backend_lead?.id,
       frontendName: roles.frontend_lead?.name,
       backendName: roles.backend_lead?.name,
     },
-    states: raw.states ?? {},
-    labels: raw.labels ?? {},
+    states: sel?.states ?? raw.states ?? {},
+    labels: sel?.labels ?? raw.labels ?? {},
   };
+  // Lazy: workspace-wide commands (e.g. list-initiatives) never read teamId, so
+  // they work without --team. Team-scoped commands trigger the error on access.
+  Object.defineProperty(cfg, "teamId", {
+    enumerable: true,
+    get() {
+      if (sel?.id) return sel.id;
+      return fail(teamSelectionError(teams));
+    },
+  });
+  return cfg;
 }
 
-/** @returns {Config} */
-function requireConfig() {
-  const cfg = loadConfig();
-  if (!cfg || !cfg.teamId) {
+/** @param {string} [teamRef] @returns {Config} */
+function requireConfig(teamRef) {
+  const cfg = loadConfig(teamRef);
+  if (!cfg) {
     fail(
-      `workspace config not found or incomplete at ${WORKSPACE_FILE}\n` +
+      `workspace config not found at ${WORKSPACE_FILE}\n` +
         `  Run \`node linear.mjs init\` to generate it.`,
     );
   }
@@ -970,12 +1042,46 @@ async function cmdApi(args, v, cfg) {
 
 // --- init (interactive workspace bootstrap) --------------------------------
 
+const WANTED_STATES = ["Backlog", "Todo", "In Progress", "In Review", "Done", "Canceled"];
+const WANTED_LABELS = ["discovery", "tech-debt", "backend", "frontend", "db", "bug", "feature", "improvement"];
+
+/** Filter a team's raw state nodes down to the canonical names we track.
+ * @param {Array<{id:string,name:string}>} nodes */
+function pickStates(nodes) {
+  /** @type {Record<string, string>} */
+  const states = {};
+  const lookup = new Map(nodes.map((s) => [s.name.toLowerCase(), s]));
+  for (const name of WANTED_STATES) {
+    const s = lookup.get(name.toLowerCase());
+    if (s) states[name] = s.id;
+  }
+  return states;
+}
+
+/** Filter a team's raw label nodes down to the canonical names we track.
+ * @param {Array<{id:string,name:string}>} nodes */
+function pickLabels(nodes) {
+  const norm = (s) => s.toLowerCase().replace(/-/g, " ").trim();
+  /** @type {Record<string, string>} */
+  const labels = {};
+  const lookup = new Map(nodes.map((l) => [norm(l.name), l]));
+  for (const name of WANTED_LABELS) {
+    const l = lookup.get(norm(name));
+    if (l) labels[name] = l.id;
+  }
+  return labels;
+}
+
 async function cmdInit() {
   if (!API_KEY) fail("LINEAR_API_KEY is not set. Set it first, then re-run `init`.");
 
   console.error("Fetching workspace data from Linear...");
+  // Pull each team's own states + labels — they differ per team (e.g. each
+  // team's "Todo" is a distinct workflow-state UUID).
   const bootstrap = await gql(
-    `{ teams(first: 50) { nodes { id key name parent { id } } }
+    `{ teams(first: 50) { nodes { id key name parent { id }
+         states { nodes { id name type } }
+         labels { nodes { id name } } } }
        users(first: 250) { nodes { id name email displayName } } }`,
   );
 
@@ -987,17 +1093,8 @@ async function cmdInit() {
     process.exit(1);
   }
 
-  // Prefer a parent team (no parent of its own) so states/labels come from the
-  // umbrella team rather than a sub-team.
-  const parents = teams.filter((t) => !t.parent);
-  const chosenTeam = parents[0] ?? teams[0];
-
-  const teamExtra = await gql(
-    `query TeamExtra($id: String!) {
-       team(id: $id) { states { nodes { id name type } } labels { nodes { id name } } }
-     }`,
-    { id: chosenTeam.id },
-  );
+  // Parent (umbrella) teams first so the list reads top-down.
+  const teamsSorted = [...teams].sort((a, b) => (a.parent ? 1 : 0) - (b.parent ? 1 : 0));
 
   // Filter out Linear's integration/bot users.
   const users = (bootstrap?.data?.users?.nodes ?? []).filter(
@@ -1014,6 +1111,10 @@ async function cmdInit() {
   const rl = createInterface({ input, output });
   const frontendIdx = await rl.question("Which member is the Frontend/PM lead? Enter number: ");
   const backendIdx = await rl.question("Which member is the Backend lead? Enter number: ");
+  console.error("\nTeams: " + teamsSorted.map((t) => t.key).join(", "));
+  const defaultTeamAns = (
+    await rl.question("Default team key (blank = none; --team required each call): ")
+  ).trim();
   rl.close();
 
   /** @param {string} idxStr */
@@ -1029,37 +1130,27 @@ async function cmdInit() {
   const frontend = pick(frontendIdx);
   const backend = pick(backendIdx);
 
-  const WANTED_STATES = ["Backlog", "Todo", "In Progress", "In Review", "Done", "Canceled"];
-  const WANTED_LABELS = ["discovery", "tech-debt", "backend", "frontend", "db", "bug", "feature", "improvement"];
-
-  const stateNodes = teamExtra?.data?.team?.states?.nodes ?? [];
-  const labelNodes = teamExtra?.data?.team?.labels?.nodes ?? [];
-
-  /** @type {Record<string, string>} */
-  const states = {};
-  const stateLookup = new Map(stateNodes.map((s) => [s.name.toLowerCase(), s]));
-  for (const name of WANTED_STATES) {
-    const s = stateLookup.get(name.toLowerCase());
-    if (s) states[name] = s.id;
+  let defaultTeam = null;
+  if (defaultTeamAns) {
+    const match = teamsSorted.find(
+      (t) =>
+        t.key?.toLowerCase() === defaultTeamAns.toLowerCase() ||
+        t.name?.toLowerCase() === defaultTeamAns.toLowerCase(),
+    );
+    if (!match) fail(`"${defaultTeamAns}" is not one of the workspace teams.`);
+    defaultTeam = match.key;
   }
-
-  const norm = (s) => s.toLowerCase().replace(/-/g, " ").trim();
-  /** @type {Record<string, string>} */
-  const labels = {};
-  const labelLookup = new Map(labelNodes.map((l) => [norm(l.name), l]));
-  for (const name of WANTED_LABELS) {
-    const l = labelLookup.get(norm(name));
-    if (l) labels[name] = l.id;
-  }
-
-  // Parent teams first so teams[0] is the umbrella team.
-  const teamsSorted = [...teams].sort((a, b) => (a.parent ? 1 : 0) - (b.parent ? 1 : 0));
 
   const cfg = {
-    teams: teamsSorted.map((t) => ({ id: t.id, key: t.key, name: t.name })),
+    teams: teamsSorted.map((t) => ({
+      id: t.id,
+      key: t.key,
+      name: t.name,
+      states: pickStates(t.states?.nodes ?? []),
+      labels: pickLabels(t.labels?.nodes ?? []),
+    })),
+    defaultTeam,
     roles: { frontend_lead: frontend, backend_lead: backend },
-    states,
-    labels,
   };
 
   mkdirSync(dirname(WORKSPACE_FILE), { recursive: true });
@@ -1118,6 +1209,13 @@ const USAGE = `Linear CLI — node linear.mjs <command> [args] [--flags]
 
 Setup:
   init                                   Interactive: fetch workspace, write ~/.config/linctl/workspace.json
+
+Team selection:
+  --team <key|name|uuid>                 Run a team-scoped command against this team
+                                         (e.g. --team ACME). Precedence: --team >
+                                         $LINCTL_DEFAULT_TEAM (per-repo default) >
+                                         workspace.json "defaultTeam". Workspace-wide
+                                         commands (initiatives) don't need a team.
 
 Issues:
   create-issue --title T [--description D|--description-file F] [--priority P]
@@ -1187,6 +1285,7 @@ async function main() {
       priority: { type: "string" },
       state: { type: "string" },
       assignee: { type: "string" },
+      team: { type: "string" },
       labels: { type: "string" },
       estimate: { type: "string" },
       project: { type: "string" },
@@ -1221,7 +1320,7 @@ async function main() {
   const handler = COMMANDS[command];
   if (!handler) fail(`unknown command "${command}". Run \`node linear.mjs help\`.`);
 
-  const cfg = NO_CONFIG.has(command) ? /** @type {Config} */ ({}) : requireConfig();
+  const cfg = NO_CONFIG.has(command) ? /** @type {Config} */ ({}) : requireConfig(values.team);
   await handler(args, values, cfg);
 }
 
