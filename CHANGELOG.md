@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.22.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.21.0...agent-skills-v1.22.0) (2026-06-30)
+
+
+### Features
+
+* **linear:** confirm issue decisions with the requester instead of leaving open questions ([#66](https://github.com/gallop-systems/agent-skills/issues/66)) ([35c43b9](https://github.com/gallop-systems/agent-skills/commit/35c43b955df55cfbdde1612b2ec0c414e496fd5f))
+
 ## [1.21.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.20.1...agent-skills-v1.21.0) (2026-06-30)
 
 
