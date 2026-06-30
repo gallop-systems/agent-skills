@@ -17,7 +17,7 @@ Invoke it as `node <skill>/bin/linear.mjs <command> [args] [--flags]`. Examples 
 
 Before running any `linear.mjs` command, verify that the per-user workspace config exists at `~/.config/linctl/workspace.json` (override path with `$LINCTL_WORKSPACE_FILE`). This file holds **every team** in the workspace (each with its own UUID plus its workflow-state and label UUIDs — states differ per team), an optional `defaultTeam`, and the Linear member UUIDs that play the Frontend/PM and Backend roles. Without it, every command that needs the team, members, states, or labels will refuse to run.
 
-> **Multi-team workspaces:** `workspace.json` registers all teams, but `states`/`labels` are per-team (each team's `Todo` is a distinct UUID). Team-scoped commands pick a team via `--team <key|name|uuid>`, falling back to `defaultTeam` if set. If `defaultTeam` is `null` (no default), `--team` is **required** on team-scoped commands; workspace-wide commands (e.g. `list-initiatives`) work without it. A legacy config (predating per-team support, i.e. with no `defaultTeam` key and top-level `states`/`labels`) still works — it falls back to the first registered team — but re-run `init` to migrate it to the per-team schema.
+> **Multi-team workspaces:** `workspace.json` registers all teams, but `states`/`labels` are per-team (each team's `Todo` is a distinct UUID). Which team a command targets is resolved in this order: the **`--team <key|name|uuid>`** flag → the **`LINCTL_DEFAULT_TEAM`** env var (a per-repo default — set it via direnv/`.envrc` or your shell so every command in a repo targets that team) → the **`defaultTeam`** field in `workspace.json`. If none resolve, `--team` is **required** on team-scoped commands; workspace-wide commands (e.g. `list-initiatives`) work without a team. A legacy config (predating per-team support, i.e. with no `defaultTeam` key and top-level `states`/`labels`) still works — it falls back to the first registered team — but re-run `init` to migrate it to the per-team schema.
 
 ```bash
 [ -f "${LINCTL_WORKSPACE_FILE:-$HOME/.config/linctl/workspace.json}" ] && echo "ok" || echo "missing"
@@ -197,7 +197,7 @@ The CLI resolves friendly names against `workspace.json`, so you rarely need raw
 --cycle      current  (the active cycle)                                      (or a UUID)
 ```
 
-`--team` selects which team a team-scoped command runs against, and `--state`/`--labels` then resolve against **that team's** states and labels. If `workspace.json` has no `defaultTeam`, `--team` is required on team-scoped commands (you'll get an error listing the registered team keys); workspace-wide commands (initiatives) don't need it. Any value that's already a UUID is passed through untouched. Project and milestone IDs are still UUIDs (pass them with `--project` / `--milestone`).
+`--team` selects which team a team-scoped command runs against, and `--state`/`--labels` then resolve against **that team's** states and labels. When `--team` is omitted it falls back to `$LINCTL_DEFAULT_TEAM` (a per-repo default) and then to `workspace.json`'s `defaultTeam`; if none are set you'll get an error listing the registered team keys. Workspace-wide commands (initiatives) don't need a team. Any value that's already a UUID is passed through untouched. Project and milestone IDs are still UUIDs (pass them with `--project` / `--milestone`).
 
 ### Creating Issues
 

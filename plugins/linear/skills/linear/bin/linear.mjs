@@ -84,17 +84,19 @@ function readMaybeFile(v, key) {
  */
 
 /**
- * Resolve which team a command runs against. `--team` (key, name, or UUID) wins;
- * otherwise the config's `defaultTeam`. A config that predates per-team support
- * (no `defaultTeam` key at all) falls back to the first team for compatibility.
- * Returns null only when there is genuinely no default and no `--team` — the
- * caller defers the error until `cfg.teamId` is actually read.
+ * Resolve which team a command runs against. Precedence: the `--team` flag
+ * (key, name, or UUID), then `$LINCTL_DEFAULT_TEAM` (a per-repo default, set via
+ * direnv or the shell), then the config's `defaultTeam`. A config that predates
+ * per-team support (no `defaultTeam` key at all) and no env override falls back
+ * to the first team for compatibility. Returns null only when there is genuinely
+ * no default and no `--team` — the caller defers the error until `cfg.teamId` is
+ * actually read.
  * @param {TeamEntry[]} teams
  * @param {string|undefined} ref
- * @param {string|null|undefined} defaultTeam
+ * @param {string|null|undefined} fileDefault
  * @returns {TeamEntry | null}
  */
-function selectTeam(teams, ref, defaultTeam) {
+function selectTeam(teams, ref, fileDefault) {
   /** @param {string} val */
   const find = (val) => {
     const v = String(val).toLowerCase();
@@ -109,13 +111,21 @@ function selectTeam(teams, ref, defaultTeam) {
     }
     return t ?? null;
   }
-  if (defaultTeam) {
-    const t = find(defaultTeam);
-    if (!t) fail(`configured defaultTeam "${defaultTeam}" is not among the registered teams.`);
+  const envDefault = process.env.LINCTL_DEFAULT_TEAM?.trim();
+  if (envDefault) {
+    const t = find(envDefault);
+    if (!t) {
+      fail(`LINCTL_DEFAULT_TEAM="${envDefault}" is not among the registered teams.`);
+    }
     return t ?? null;
   }
-  if (defaultTeam === undefined) return teams[0] ?? null; // legacy config: no explicit default
-  return null; // defaultTeam === null → no default; --team is required
+  if (fileDefault) {
+    const t = find(fileDefault);
+    if (!t) fail(`configured defaultTeam "${fileDefault}" is not among the registered teams.`);
+    return t ?? null;
+  }
+  if (fileDefault === undefined) return teams[0] ?? null; // legacy config: no explicit default
+  return null; // defaultTeam === null and no env → no default; --team is required
 }
 
 /** @param {TeamEntry[]} teams */
@@ -124,6 +134,7 @@ function teamSelectionError(teams) {
   return (
     `no team selected for this command.\n` +
     `  Pass --team <key> (one of: ${keys}),\n` +
+    `  set LINCTL_DEFAULT_TEAM in your shell/repo (per-repo default),\n` +
     `  or set "defaultTeam" in ${WORKSPACE_FILE}.`
   );
 }
@@ -1201,9 +1212,10 @@ Setup:
 
 Team selection:
   --team <key|name|uuid>                 Run a team-scoped command against this team
-                                         (e.g. --team ACME). Required unless workspace.json
-                                         sets "defaultTeam". Workspace-wide commands
-                                         (initiatives) don't need it.
+                                         (e.g. --team ACME). Precedence: --team >
+                                         $LINCTL_DEFAULT_TEAM (per-repo default) >
+                                         workspace.json "defaultTeam". Workspace-wide
+                                         commands (initiatives) don't need a team.
 
 Issues:
   create-issue --title T [--description D|--description-file F] [--priority P]
