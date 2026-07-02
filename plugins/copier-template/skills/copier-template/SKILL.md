@@ -30,7 +30,34 @@ When working in a descendant and a fix belongs in the template too: fix the symp
 
 ## Releasing a Template Version
 
-After merging to the template's main:
+First determine **how the template releases** — it changes everything below:
+
+```bash
+ls release-please-config.json .release-please-manifest.json 2>/dev/null   # present ⇒ release-please
+```
+
+### If the template uses release-please (e.g. nuxt-copier-template)
+
+**You never `git tag` by hand.** Merging to `main` runs release-please, which opens a "release PR"; merging *that* cuts the tag + GitHub Release. The **Conventional-Commits type of your merged PR governs the entire outcome** — both the version bump and whether a release happens at all:
+
+- `feat:` → **minor** bump. `fix:` → **patch**. `feat!:` / `BREAKING CHANGE:` → **major**.
+- `chore:`, `docs:`, `refactor:`, `style:`, `test:`, `ci:`, `build:` → **no version bump, no release**. The change lands on `main` but sits in the (often hidden) "Miscellaneous" changelog bucket, **invisible to descendants**, until some later `feat`/`fix` rides out and drags it along.
+
+**The trap:** a template change that *should* propagate — a new alias/convention, a raised dependency floor, anything descendants must adopt — is a `feat` (or `fix`), **not** a `chore`. Type it `chore` and it silently never releases; descendants track git *tags*, so no tag = no `copier update` PR. When in doubt about whether descendants need it, it's a `feat`.
+
+**If you already merged it as the wrong type** (non-releasing), don't wait — force a release with an empty commit carrying a `Release-As` footer, via a normal PR (squash-merge it):
+
+```bash
+git commit --allow-empty -m "chore: release template <X.Y.Z>
+
+<why this is being force-released>
+
+Release-As: <X.Y.Z>"
+```
+
+release-please honors `Release-As:` regardless of commit types and opens the release PR at that exact version. Note: **release PRs get no CI** (the meta-test workflow doesn't run on `release-please--branches--*`), so if branch protection requires a status check, the release PR stays `BLOCKED` under a normal merge and an admin/maintainer must merge it — that's the expected path for release PRs here, not a failure.
+
+### If the template has no release automation (manual tags)
 
 ```bash
 git checkout main && git pull --ff-only
