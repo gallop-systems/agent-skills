@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.23.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.22.0...agent-skills-v1.23.0) (2026-07-02)
+
+
+### Features
+
+* **linear:** forbid adding issues to completed milestones ([#69](https://github.com/gallop-systems/agent-skills/issues/69)) ([e351553](https://github.com/gallop-systems/agent-skills/commit/e351553cc0f85218f1a4504b04b18cbe2fb6d9b6))
+
 ## [1.22.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.21.0...agent-skills-v1.22.0) (2026-06-30)
 
 
