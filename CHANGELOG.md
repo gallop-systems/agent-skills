@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.24.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.23.0...agent-skills-v1.24.0) (2026-07-02)
+
+
+### Features
+
+* **copier-template:** warn that chore-typed template changes never release ([#71](https://github.com/gallop-systems/agent-skills/issues/71)) ([79fe840](https://github.com/gallop-systems/agent-skills/commit/79fe840a8ef6630060aabda77f87c8e053d885d4))
+
 ## [1.23.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.22.0...agent-skills-v1.23.0) (2026-07-02)
 
 
