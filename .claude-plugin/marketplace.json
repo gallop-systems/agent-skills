@@ -94,6 +94,12 @@
       "source": "./plugins/database",
       "description": "Query and inspect databases directly from the command line (psql etc.) for lookups, schema, and counts rather than going through the app",
       "version": "1.0.0"
+    },
+    {
+      "name": "github",
+      "source": "./plugins/github",
+      "description": "Team GitHub conventions: Linear-issue-first branching and naming, PR targeting and stacking, backend/frontend layered PRs, backend labels, and PR/comment writing style",
+      "version": "1.0.0"
     }
   ]
 }
