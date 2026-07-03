@@ -88,6 +88,12 @@
       "source": "./plugins/codex-review",
       "description": "Run OpenAI's codex review CLI against the current branch's draft-PR base for a second-opinion code review on the working diff",
       "version": "1.0.0"
+    },
+    {
+      "name": "database",
+      "source": "./plugins/database",
+      "description": "Query and inspect databases directly from the command line (psql etc.) for lookups, schema, and counts rather than going through the app",
+      "version": "1.0.0"
     }
   ]
 }
