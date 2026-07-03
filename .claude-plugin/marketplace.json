@@ -100,6 +100,12 @@
       "source": "./plugins/github",
       "description": "Team GitHub conventions: Linear-issue-first branching and naming, PR targeting and stacking, backend/frontend layered PRs, backend labels, and PR/comment writing style",
       "version": "1.0.0"
+    },
+    {
+      "name": "knowledge-docs",
+      "source": "./plugins/knowledge-docs",
+      "description": "Author and update per-client and per-project knowledge documents in Linear (Who / How they operate / Our thinking), keeping the four concepts strictly separated",
+      "version": "1.0.0"
     }
   ]
 }

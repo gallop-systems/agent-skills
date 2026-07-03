@@ -25,6 +25,7 @@ Then install the skills you want:
 /plugin install codex-review@gallop-systems-agent-skills
 /plugin install database@gallop-systems-agent-skills
 /plugin install github@gallop-systems-agent-skills
+/plugin install knowledge-docs@gallop-systems-agent-skills
 ```
 
 ## Updating
