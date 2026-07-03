@@ -70,6 +70,12 @@
       "source": "./plugins/contribute-skill",
       "description": "Contribute a lesson learned this session back to the gallop-systems/agent-skills repo as a PR: distill the generic rule, privacy-sweep it, and open a PR against the right skill",
       "version": "1.0.0"
+    },
+    {
+      "name": "frontend-design",
+      "source": "./plugins/frontend-design",
+      "description": "Apply the team's frontend design conventions (visual hierarchy, layout, spacing, typography, color, component structure, UX patterns) whenever creating or modifying UI",
+      "version": "1.0.0"
     }
   ]
 }
