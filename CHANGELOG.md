@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.25.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.24.0...agent-skills-v1.25.0) (2026-07-06)
+
+
+### Features
+
+* **frontend-design:** add frontend-design skill ([#77](https://github.com/gallop-systems/agent-skills/issues/77)) ([df343f3](https://github.com/gallop-systems/agent-skills/commit/df343f3482ec08cfe0ab9a016e989a400251e734))
+* **frontend-design:** add frontend-design skill (UI design conventions) ([df343f3](https://github.com/gallop-systems/agent-skills/commit/df343f3482ec08cfe0ab9a016e989a400251e734))
+
 ## [1.24.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.23.0...agent-skills-v1.24.0) (2026-07-02)
 
 
