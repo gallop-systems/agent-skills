@@ -391,6 +391,11 @@ node linear.mjs current-cycle-id   # Current active cycle UUID
 - **No domain prefix** (e.g., ~~UI:~~, ~~API:~~) — labels (`frontend`, `backend`) already cover this.
 - Titles should be concise and describe the feature/fix directly (e.g., "Add provider create form", "Fix login redirect on Safari").
 
+### Issue Body Conventions
+
+- **Do NOT list or link an issue's sub-issues in the parent body** (no "Sub-issues" section, no bulleted child links). Linear renders an issue's children natively — a manual list just clutters the description and goes stale as children are added or removed. A parent body should carry the objective, any single-source-of-truth pointer, and acceptance criteria — nothing that restates the hierarchy.
+- **No timestamped or dated section headers** (e.g. `## Data model — corrected (2025-05-01)`). State the current spec cleanly; issue history already records the "when." Dated "correction" sections accumulate as noise.
+
 ### Client Feature Request — Frontend
 
 > **Important:** Do NOT guess which pages/components need updating. Check the client's repo (`app/pages/`, `app/components/`) to identify the correct files and routes. If the repo is not accessible, add a **## To Determine** section listing what needs to be verified before work begins (e.g., "Which page renders the jobs list? Check repo.").
