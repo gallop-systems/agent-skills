@@ -1,0 +1,8 @@
+{
+  "name": "frontend-design",
+  "description": "Apply the team's frontend design conventions (visual hierarchy, layout, spacing, typography, color, component structure, UX patterns) whenever creating or modifying UI",
+  "version": "1.0.0",
+  "author": {
+    "name": "arisilber"
+  }
+}

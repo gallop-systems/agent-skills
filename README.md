@@ -20,6 +20,7 @@ Then install the skills you want:
 /plugin install copier-template@gallop-systems-agent-skills
 /plugin install volt-primevue@gallop-systems-agent-skills
 /plugin install vue-nuxt@gallop-systems-agent-skills
+/plugin install frontend-design@gallop-systems-agent-skills
 ```
 
 ## Updating
