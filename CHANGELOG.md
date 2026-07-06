@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.25.1](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.25.0...agent-skills-v1.25.1) (2026-07-06)
+
+
+### Bug Fixes
+
+* **linear:** don't list or link sub-issues in the parent issue body ([#81](https://github.com/gallop-systems/agent-skills/issues/81)) ([f78b60f](https://github.com/gallop-systems/agent-skills/commit/f78b60fbcb4cde0ace44bb19873eb528d381856b))
+
 ## [1.25.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.24.0...agent-skills-v1.25.0) (2026-07-06)
 
 
