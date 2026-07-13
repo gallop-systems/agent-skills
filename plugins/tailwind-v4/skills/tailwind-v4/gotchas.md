@@ -13,9 +13,17 @@ but your custom `@theme` tokens fail with *"Cannot apply unknown utility class."
 
 ```css
 /* ❌ @reference "tailwindcss";  → @apply text-fg fails */
-@reference "../assets/css/main.css";   /* ✅ exposes YOUR tokens; path is relative to the file */
+@reference "~/assets/css/main.css";   /* ✅ exposes YOUR tokens */
 .prose :where(h2) { @apply text-fg; }
 ```
+
+Prefer the bundler alias (`~/` in Nuxt, or your Vite alias) over a relative
+path — `@tailwindcss/vite` resolves aliases in `@reference` fine, and the alias
+survives file moves. A relative path (`"../assets/css/main.css"`) is depth-
+sensitive: move the file a directory deeper (e.g. a route-namespace refactor)
+and the production build fails with
+`[@tailwindcss/vite:generate:build] Can't resolve '../assets/css/main.css'` —
+typecheck, tests, and dev can all stay green; only the real build catches it.
 
 Better still in scoped styles: skip `@apply` and consume the generated CSS
 variables directly — `color: var(--color-fg)` always works with no `@reference`.
