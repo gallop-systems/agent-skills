@@ -52,6 +52,7 @@ Runnable, copy-pasteable query examples live alongside as `.ts` files:
 1. **Always use Kysely's query builder — never reach for raw `sql`**: Almost anything expressible in SQL is expressible type-safely through Kysely's methods and the ExpressionBuilder (`eb`); raw `sql`` throws away the type safety this stack depends on. Treat it as a true last resort — only when Kysely genuinely cannot express the query (and type the template literal when you must). Being unsure how to do something is the cue to check the reference guides above, **not** to drop to raw SQL.
 2. **Use the ExpressionBuilder (eb)**: The `eb` parameter in callbacks is the foundation of type-safe query building
 3. **Let TypeScript guide you**: If it compiles, it's likely correct SQL
+4. **Document schema in the database, and read it before you touch a table**: Keep table/column/index/constraint notes as Postgres COMMENTs (not just migration source), surface them in the generated `db.d.ts`, and update them in the same migration that changes how something works. Consult that JSDoc to gather context before querying or altering a table — see [migrations-and-codegen.md](references/migrations-and-codegen.md#schema-comments--document-in-the-db-not-just-in-migration-source).
 
 ## Contributing Back
 
