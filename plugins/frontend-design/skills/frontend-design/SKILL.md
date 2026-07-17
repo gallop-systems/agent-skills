@@ -199,6 +199,16 @@ The first three are the foundational lenses — every other principle and rule s
 - **Why:** This is core to the tool-like feel. Persistent action buttons next to every value make lists feel cluttered and form-like; inline edit + hover actions keep the surface calm and let content dominate.
 - **How to apply:** For editable fields on detail pages and rows, prefer click-to-edit. For bulk row actions, use a hover-revealed action group or a per-row `…` (kebab) menu. Reserve always-visible buttons for the one or two primary actions of the surface.
 
+#### Entering edit mode must not shift the layout
+
+- **Rule:** Toggling a row or field between read and edit must not move anything around it. The read-out keeps its exact footprint, aligned columns (numeric value columns especially) stay put, and neighboring rows don't reflow. The classic offender is swapping a row's right-hand cells (the value/metric readout) for inputs — inputs have different widths, so the value column jumps and every other row's alignment breaks the instant one row opens.
+- **Why:** A layout that lurches when you click "edit" reads as broken, and in a dense ledger/table it destroys the scannability that made the read view useful — the eye loses the column it was tracking. Stability is what makes inline editing feel native rather than like a bolted-on form.
+- **How to apply:**
+  - Reveal the edit affordance (a pencil/kebab) with **absolute positioning** so it consumes no layout space — float it in the row's whitespace with `opacity-0 group-hover:opacity-100` (also reveal on `focus-visible`). Adding a real per-row action *column* pushes content and, unless you add the identical gutter to every row including headers/totals, misaligns the value column — absolute positioning sidesteps that entirely.
+  - For anything wider than the value it replaces (multiple inputs, unit×qty, a rate + suffix), **expand an editor strip below the row** rather than replacing the cells in place. The row above stays frozen showing the current value for context; the editor gets arbitrary width with zero horizontal shift. Animate the expand with a height/opacity transition (e.g. `v-auto-animate` / auto-height), never by animating siblings.
+  - Drop the row's bottom divider while it's being edited so the row and its editor strip read as one unit, not two stacked rows.
+  - One editor open at a time; autofocus the first input; **Enter** saves, **Esc** cancels. On save, patch → return to read-only → let the recomputed value settle back into the unchanged row.
+
 #### Every interaction gets immediate visible feedback
 
 - **Rule:** The moment a user acts, the UI must respond — within the same frame if possible. Pressed states on buttons (slight darken or scale, not just color), hover states on every clickable surface, optimistic UI updates for ordinary mutations (toggling a checkbox, renaming a field), an inline check or subtle highlight when a save completes. If a network call takes more than ~200ms, show a quiet inline spinner or skeleton in the affected region — not a global loading bar.
