@@ -147,6 +147,46 @@ with `ifExists`, so re-applying it after the others is a safe no-op). Verify the
 ledger is a contiguous prefix after the DELETE, and prefer letting the deploy's own
 migrate job re-apply rather than running migrations from a laptop against prod.
 
+## Schema Comments — Document in the DB, Not Just in Migration Source
+
+Design notes written as `//` comments in a migration file are invisible the moment
+the migration runs: they don't reach a live database and they don't reach the
+generated types. **Put the documentation in the database itself** as Postgres
+COMMENTs so it survives, stays queryable (`\d+`, `obj_description`, any GUI), and —
+via codegen below — lands in the generated `db.d.ts` as JSDoc.
+
+Comment every object that carries intent, not just tables and columns:
+
+```typescript
+await sql`COMMENT ON TABLE ${sql.ref("invoice")} IS ${sql.lit(
+  "A billed invoice. status is DERIVED from payments, never stored.",
+)}`.execute(db);
+await sql`COMMENT ON COLUMN ${sql.ref("invoice.void_reason")} IS ${sql.lit(
+  "Set only when status='void'; null otherwise.",
+)}`.execute(db);
+await sql`COMMENT ON INDEX ${sql.ref("uq_invoice_current_number")} IS ${sql.lit(
+  "One live number per org — partial unique WHERE void_at IS NULL.",
+)}`.execute(db);
+await sql`COMMENT ON CONSTRAINT ${sql.ref("invoice_status_check")} ON ${sql.ref("invoice")} IS ${sql.lit(
+  "status must be one of draft/sent/paid/void.",
+)}`.execute(db);
+```
+
+Use `sql.ref()` for identifiers and `sql.lit()` for the text (it escapes the
+literal; `COMMENT` does not accept bound parameters). To reverse, set the comment
+to `NULL`. Centralizing all comments in one data-driven migration (maps of
+table/column/index/constraint → text, applied in `up`, nulled in `down`) keeps them
+in one place and makes the `down` trivial.
+
+**Keep comments in sync with behavior.** When a migration changes *how something
+works* — a column's meaning, what a partial index enforces, a new CHECK — update
+its comment in that same migration. A stale comment is worse than none.
+
+**Gather context from these comments.** Before querying or changing a table, read
+its JSDoc in the generated `db.d.ts` (see below) — the table/column/index/constraint
+notes are the schema's own explanation of intent, invariants, and "derived, not
+stored" rules. Prefer them over re-deriving intent from the raw column list.
+
 ## Type Generation
 
 Use `kysely-codegen` to generate types from your database:
@@ -159,4 +199,23 @@ Generated types use:
 - `Generated<T>` for auto-increment columns (optional on insert)
 - `ColumnType<Select, Insert, Update>` for different operation types
 - `Timestamp` for timestamptz columns
+
+### Surfacing schema comments in the generated types
+
+`kysely-codegen` emits **column** comments as JSDoc automatically, but drops
+**table**, **index**, and **constraint** comments (kysely #1368 / kysely-codegen
+#316, unmerged as of 0.20.0 — indexes and constraints also have no symbol of their
+own in the output). Recover them with a post-codegen step: a small script reads
+`obj_description` for tables/indexes/constraints and injects each table's comment
+plus `Indexes:` / `Constraints:` sections as JSDoc above its `export interface`.
+Chain it into the codegen command:
+
+```jsonc
+"db:codegen": "kysely-codegen --url $DATABASE_URL --out-file src/db/db.d.ts --dialect postgres --date-parser string && node scripts/inject-table-comments.mjs $DATABASE_URL src/db/db.d.ts"
+```
+
+The result is a `db.d.ts` where each table interface is prefaced by its full design
+note — the documentation surface an agent should consult first. (Ship the
+`inject-table-comments.mjs` script and this wired-up `db:codegen` in your project
+template so every scaffolded repo gets it out of the box.)
 
