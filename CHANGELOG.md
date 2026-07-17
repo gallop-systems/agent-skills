@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.26.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.25.1...agent-skills-v1.26.0) (2026-07-17)
+
+
+### Features
+
+* **frontend-design:** require inline edit mode to not shift layout ([#86](https://github.com/gallop-systems/agent-skills/issues/86)) ([c5b5134](https://github.com/gallop-systems/agent-skills/commit/c5b5134bad45aa38751f372818ea0f4bc455fc6c))
+
+
+### Bug Fixes
+
+* **tailwind-v4:** prefer bundler alias over relative path in [@reference](https://github.com/reference) ([#83](https://github.com/gallop-systems/agent-skills/issues/83)) ([4930aa8](https://github.com/gallop-systems/agent-skills/commit/4930aa8c1f65e19318ee572f974b842dca5ce222))
+
+
+### Documentation
+
+* **kysely-postgres:** document schema comments as the doc surface ([#85](https://github.com/gallop-systems/agent-skills/issues/85)) ([0351bb4](https://github.com/gallop-systems/agent-skills/commit/0351bb44b4aaf7339015e8ecb8b8581d4e718a4b))
+
 ## [1.25.1](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.25.0...agent-skills-v1.25.1) (2026-07-06)
 
 
