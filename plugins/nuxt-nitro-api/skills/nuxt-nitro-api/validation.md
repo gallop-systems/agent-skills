@@ -146,3 +146,9 @@ The model's prior is mostly Zod 3 — these are the idioms that changed. Get the
 - **Format errors with the built-ins**, not `zod-validation-error`: `z.prettifyError()` (human string), `z.treeifyError()` (nested, replaces deprecated `.format()`), `z.flattenError()` (replaces deprecated `.flatten()`).
 - **`.default()` applies to the *output* type** and short-circuits parsing when input is `undefined`. For the old "run the default through the schema" behavior, use `.prefault()`.
 - **`z.coerce.*` input type is now `unknown`** (not the output type) — fine for h3 query/body parsing, but affects schemas you consume elsewhere.
+- **`.default()` fires even under `.optional()` (and through `.partial()`)** — `someDefaulted.optional()` still emits the default for a missing key, so a defaulted field can never signal "not provided". The classic trap is deriving a PATCH body from a create schema: `CreateSchema.partial()` silently fills every defaulted field, so `body.someField !== undefined` is always true and "was this field sent?" logic (partial updates, tree-replace triggers) misfires on every request. For PATCH schemas, compose from bare **undefaulted** field schemas and add `.optional()` per field:
+  ```typescript
+  const itemsSchema = z.array(ItemSchema); // no .default([]) here
+  const createSchema = z.object({ items: itemsSchema.default([]) });
+  const patchSchema = z.object({ items: itemsSchema.optional() }); // undefined ⇢ "not sent"
+  ```
