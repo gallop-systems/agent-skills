@@ -203,7 +203,7 @@ The CLI resolves friendly names against `workspace.json`, so you rarely need raw
 
 > **Important:** When assigning an issue to a cycle, always set `--state todo`. Issues default to Backlog, which doesn't work with cycles — they must be in Todo status.
 >
-> **Required placement rule:** Never create an issue without both `--project` and `--milestone`. If the right project does not exist, create it first. If the project exists but the right milestone does not, create the milestone first. Do not leave issues unscoped or unmilestoned.
+> **Required placement rule:** Never create an issue without both `--project` and `--milestone`. **The project must already exist** — place the issue in the initiative's existing `M` project for the milestone it falls under, and never conjure a project to hold it (see "Never invent a project"). Creating a project is only correct for a confirmed out-of-scope revision. If the project exists but the right milestone does not, create the milestone first. Do not leave issues unscoped or unmilestoned.
 >
 > **Never target a completed milestone.** New work never belongs in a milestone that is already done — it distorts the completed phase and hides the issue from the team's current view. Only place an issue in an **open** milestone. If no open milestone matches the issue, create a new one and use that; do not reopen or reuse a completed milestone.
 >
@@ -241,8 +241,11 @@ node linear.mjs create-issue --title 'Investigate perf issue' --state todo \
   --description-file ./issue-body.md \
   --project 'project-uuid' --milestone 'milestone-uuid'
 
-# If the project or milestone does not exist yet, create it before the issue
-PROJECT_ID="$(node linear.mjs create-project --name '[CLIENT] Feature Area' --description 'Short description' | node -e "process.stdin.once('data',d=>console.log(JSON.parse(d).data.projectCreate.project.id))")"
+# Find the existing M project for the milestone this work falls under — do not create one.
+# (Prefer the MCP `get_initiative` with includeProjects; this lists them via the CLI.)
+node linear.mjs list-projects            # copy the [KEY] M<n> project's UUID
+PROJECT_ID='project-uuid-here'
+# Only the milestone may be created as part of intake
 MILESTONE_ID="$(node linear.mjs create-milestone "$PROJECT_ID" 'Phase 1' | node -e "process.stdin.once('data',d=>{const n=JSON.parse(d).data.projectMilestoneCreate.projectMilestone;console.log(n.id)})")"
 node linear.mjs create-issue --title 'Investigate performance issue' --state todo \
   --project "$PROJECT_ID" --milestone "$MILESTONE_ID" --cycle current
@@ -319,7 +322,9 @@ node linear.mjs search-issues "login bug"
 ### Projects & Milestones
 ```bash
 # Create a new project (linked to an initiative)
-node linear.mjs create-project --name "[KEY] Project Name" --initiative "$INITIATIVE_ID" --description "Short description"
+# Projects mirror the signed proposal's milestones ([KEY] M<n>) or a confirmed revision ([KEY] R<n>).
+# Never create one to hold work you couldn't place — see "Never invent a project".
+node linear.mjs create-project --name "[KEY] M1 — Milestone Name" --initiative "$INITIATIVE_ID" --description "Short description"
 
 # List all projects (pretty table with initiative, state, progress)
 node linear.mjs list-projects
@@ -347,7 +352,7 @@ node linear.mjs create-issue \
 
 ### Initiatives
 ```bash
-# Create a new initiative (= new client)
+# Create a new initiative (= a newly signed proposal; a repeat client gets another one)
 node linear.mjs create-initiative --name "ClientName" --description "Short description"
 
 # List all initiatives (pretty table with ID, status, description)
@@ -601,11 +606,11 @@ node linear.mjs update-initiative "$INITIATIVE_ID" --content-file ./initiative-n
 
 Linear organizes work in a top-down hierarchy: **Initiative → Project → Milestone → Issue**. Here's how the Gallop team uses each level.
 
-### Initiative (= Client)
+### Initiative (= Signed Proposal)
 
-An **Initiative** represents a client engagement or internal program. Each client gets one initiative.
+An **Initiative** represents **one signed proposal** for a client, not the client itself. A client who signs a second proposal (a later phase, a separate engagement) gets a **second initiative** — never a second set of projects bolted onto the first. The initiative's scope is fixed by what was signed.
 
-**The current client roster is not stored in this repo — fetch it live from Linear.** Initiatives are the source of truth for which clients exist, their descriptions, and their repo links:
+**The current roster is not stored in this repo — fetch it live from Linear.** Initiatives are the source of truth for which engagements exist, their descriptions, and their repo links:
 
 - **List all clients:** `mcp__linear-server__list_initiatives`
 - **Read a client's full details (overview, repo structure, domain notes):** `mcp__linear-server__get_initiative` — these live in the initiative's `content` field
@@ -615,33 +620,69 @@ When you start any task that needs client context, query Linear instead of looki
 
 - One initiative can contain **multiple projects**
 
-### Project (= Product / Workstream)
+### Project (= One Proposed Milestone, or a Revision)
 
-A **Project** is a distinct product, app, or major workstream within a client initiative. It groups related issues that ship together.
+A **Project** is **one of the milestones the signed proposal committed to** — not a
+product, not a workstream, not a theme you invented. The initiative's project list
+*is* the proposal's milestone list: if the proposal promised three milestones, the
+initiative has three projects, numbered and named after them.
 
-**Examples:**
-- `[ACME] Billing System` — one self-contained product
-- `[ACME] Analytics Demo` — separate product under the same client
-- `[CLIENT] Migration Workstream` — the single workstream for that client
-- `[CLIENT] Scheduling Platform` — the main product for that client
+**Naming convention:** `[KEY] M<n> — <Milestone name>`, where `<n>` is the
+milestone's number in the signed proposal.
 
-**When to create a new project:**
-- The work has its own deployment, repo, or codebase
-- It could be described independently to a stakeholder
-- It has a distinct "done" state separate from other work
+- `[KEY] M1 — Data Model`
+- `[KEY] M2 — Pricing Engine`
+- `[KEY] M3 — Reporting`
 
-**Naming convention:** `[CLIENT_KEY] Project Name`
+**Work outside the signed scope is a revision, and gets its own project** —
+attached to the **same initiative**, named with an `R` prefix instead of `M`:
+
+- `[KEY] R1 — <Name>`, `[KEY] R2 — <Name>`, …
+
+`R` numbering is sequential across the whole proposal in the order revisions are
+taken on, independent of which milestone the revision relates to. Never fold
+out-of-scope work into an `M` project — that silently rewrites what was signed.
+
+#### Never invent a project
+
+**The default is that the right project already exists.** Creating one is a
+structural change to a signed engagement, so it is never a side effect of intake.
+
+Before placing any work, answer this question — and **ask the requester if they
+are in the conversation, do not infer it**:
+
+> Is this within the signed scope, or is it a revision?
+
+- **Within scope** → **find the existing `M` project yourself.** List the
+  initiative's projects (`get_initiative` with `includeProjects: true`), read what
+  each milestone covers, and place the work in the one it falls under. Only ask
+  which project if two genuinely both fit. Do **not** create a project because none
+  of the names happens to match the request's wording — milestone names are broad
+  by design.
+- **A revision** → determine the next `R<n>` (one past the highest existing `R`,
+  or `R1`), **confirm the name and the revision framing with the requester**, then
+  create it under the same initiative.
+
+Never create a project to hold work you were unsure how to place, to mirror a repo
+or deployment, to group work by theme or domain (that is what milestones and labels
+are for), or because the initiative looked empty. If you cannot place the work and
+the requester is unavailable, leave it unplaced and say so — an invented project is
+harder to undo than an unplaced issue.
 
 ### Milestone (= Phase / Epic)
 
 A **Milestone** is a phase or epic within a project — a meaningful chunk of progress that can be demoed or shipped incrementally.
 
-**Examples within `[ACME] Billing System`:**
+A milestone is the level where grouping decisions actually belong — **unlike
+projects, milestones may be created freely as part of intake.** If a request needs
+a new home inside its `M` project, that home is a milestone, never a new project.
+
+**Examples within `[KEY] M2 — Billing`:**
 - `Core Billing` — create, edit, send invoices (done)
 - `Quotes` — quote workflow, create/edit/convert to invoice
 - `Payments` — payment methods, receipts, balance due display
 
-**Examples within `[NW] Appointment Scheduling`:**
+**Examples within `[KEY] M1 — Scheduling`:**
 - `Providers Module` — list, create, edit, deactivate providers
 - `Booking Requests` — request creation, accept/reject workflow
 - `Scheduling & Calendar` — availability, scheduling UI
@@ -661,24 +702,30 @@ Individual work items live at the bottom of the hierarchy. Every issue belongs t
 ### Hierarchy in Practice
 
 ```
-Initiative: Northwind
-  └── Project: [NW] Appointment Scheduling
-        ├── Milestone: Providers Module
-        │     ├── ACME-101: Create providers list page
-        │     ├── ACME-102: Add provider create/edit form
-        │     └── ACME-103: Provider deactivation support
-        ├── Milestone: Booking Requests
-        │     ├── ACME-110: Request creation form
-        │     └── ACME-111: Accept/reject API endpoints
-        └── Milestone: Notifications
-              └── ACME-120: Set up email service
+Initiative: <Client> — Phase 1        ← one signed proposal
+  ├── Project: [KEY] M1 — Scheduling      ← proposal milestone 1
+  │     ├── Milestone: Providers Module
+  │     │     ├── KEY-101: Create providers list page
+  │     │     ├── KEY-102: Add provider create/edit form
+  │     │     └── KEY-103: Provider deactivation support
+  │     ├── Milestone: Booking Requests
+  │     │     ├── KEY-110: Request creation form
+  │     │     └── KEY-111: Accept/reject API endpoints
+  │     └── Milestone: Notifications
+  │           └── KEY-120: Set up email service
+  ├── Project: [KEY] M2 — Billing         ← proposal milestone 2
+  └── Project: [KEY] R1 — SSO Integration ← out-of-scope revision
 ```
+
+The project row is fixed by the proposal (`M1`, `M2`) plus whatever revisions have
+been agreed (`R1`). New requests land as **issues in a milestone** inside an
+existing project — the project row only grows when a revision is confirmed.
 
 ### Guidelines for the Team
 
 1. **Every issue must be placed into a cycle with Todo status.** **Do NOT default to the current/active cycle.** Follow this procedure: (a) Run `cycle-capacity` to see each cycle's capacity % (velocity-based, from last 3 completed cycles). (b) Starting from the earliest (current) cycle, find the first cycle that is **strictly under 100%** capacity. (c) If the current cycle is at or above 100%, **skip it** and use the next cycle with room. Assign the issue there via `--cycle`. **Always set `--state todo`** — issues in Backlog don't work with cycles. **Exception:** High priority or above (priority ≤ 2: Urgent, High) always go into the current active cycle regardless of capacity.
 2. **Every issue must belong to a project and a milestone.** Never create orphan issues and never leave an issue outside a milestone.
-3. **If the correct project does not exist, create it before creating the issue.** Do not park work in a generic team backlog while waiting to organize it later.
+3. **Place the issue in an existing project — never invent one.** The initiative's `M` projects are the signed proposal's milestones; find the one the work falls under. A new project is correct *only* for work the requester confirmed is out of scope, and then only as the next `[KEY] R<n> — <Name>` revision project (see "Never invent a project"). Don't park work in a generic team backlog either — if you truly cannot place it, say so rather than manufacturing a home for it.
 4. **If the correct milestone does not exist, create it before creating the issue.** Milestone creation is part of issue intake, not optional cleanup. **Never add an issue to a completed milestone** — only open milestones may receive new issues. If no open milestone matches the issue, create a new one; do not reuse a completed one.
 5. **Use milestones for sequencing.** Milestones can have target dates, making them useful for communicating delivery phases to clients.
 6. **Track progress in Linear.** After creating/updating projects or milestones, update the initiative's content in Linear to reflect the current structure (see "Post-Organization: Update Initiative in Linear" below).
@@ -693,9 +740,11 @@ node linear.mjs list-projects
 # List milestones within a project
 node linear.mjs list-milestones "$PROJECT_ID"
 
-# If needed, create the missing project or milestone before creating the issue
-PROJECT_ID="$(node linear.mjs create-project --name "[CLIENT] Feature Area" --description "Short description" | node -e "process.stdin.once('data',d=>console.log(JSON.parse(d).data.projectCreate.project.id))")"
+# If the milestone is missing, create it inside the EXISTING M project (never a new project)
 MILESTONE_ID="$(node linear.mjs create-milestone "$PROJECT_ID" "Phase 1" | node -e "process.stdin.once('data',d=>console.log(JSON.parse(d).data.projectMilestoneCreate.projectMilestone.id))")"
+
+# Creating a project is only for a CONFIRMED out-of-scope revision — next R<n>, same initiative
+node linear.mjs create-project --name "[KEY] R1 — Revision Name" --initiative "$INITIATIVE_ID" --description "Short description"
 
 # Create an issue within a project and milestone (with cycle)
 node linear.mjs create-issue \
