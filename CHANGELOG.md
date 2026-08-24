@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.27.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.26.0...agent-skills-v1.27.0) (2026-08-24)
+
+
+### Features
+
+* **linear:** stop agents inventing projects; projects mirror proposal milestones ([#88](https://github.com/gallop-systems/agent-skills/issues/88)) ([8bb32c7](https://github.com/gallop-systems/agent-skills/commit/8bb32c7bda26d88b62e1cb4a9eadc9a47b836c50))
+* **nuxt-nitro-api:** document zod v4 .default() firing under .optional()/.partial() ([#87](https://github.com/gallop-systems/agent-skills/issues/87)) ([9e9d3a4](https://github.com/gallop-systems/agent-skills/commit/9e9d3a49776646fa59e577013d22323312d9a356))
+
 ## [1.26.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.25.1...agent-skills-v1.26.0) (2026-07-17)
 
 
