@@ -76,6 +76,12 @@
       "source": "./plugins/frontend-design",
       "description": "Apply the team's frontend design conventions (visual hierarchy, layout, spacing, typography, color, component structure, UX patterns) whenever creating or modifying UI",
       "version": "1.0.0"
+    },
+    {
+      "name": "best-practices",
+      "source": "./plugins/best-practices",
+      "description": "Apply accumulated code-review feedback and coding best-practices so past mistakes aren't repeated; consult before writing or editing code and re-check before finalizing",
+      "version": "1.0.0"
     }
   ]
 }

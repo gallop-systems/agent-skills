@@ -1,0 +1,8 @@
+{
+  "name": "best-practices",
+  "description": "Apply accumulated code-review feedback and coding best-practices so past mistakes aren't repeated; consult before writing or editing code and re-check before finalizing",
+  "version": "1.0.0",
+  "author": {
+    "name": "arisilber"
+  }
+}
