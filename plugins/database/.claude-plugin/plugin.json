@@ -1,0 +1,8 @@
+{
+  "name": "database",
+  "description": "Query and inspect databases directly from the command line (psql etc.) for lookups, schema, and counts rather than going through the app",
+  "version": "1.0.0",
+  "author": {
+    "name": "arisilber"
+  }
+}
