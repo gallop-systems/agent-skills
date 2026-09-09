@@ -181,3 +181,30 @@ test("returns empty list", async ({ factories: _ }) => {
   expect(result).toEqual([]);
 });
 ```
+
+## Gotcha: A Constraint Violation Aborts the Whole Test Transaction
+
+Postgres aborts the current transaction on any error, and the rollback fixture
+runs the entire test inside one transaction. After a deliberate constraint
+violation (FK, CHECK, UNIQUE), every further statement in that test fails with
+`current transaction is aborted, commands ignored until end of transaction block`.
+
+So a test that provokes a real database rejection must make it the **last**
+database work in the test. Split "the happy path still works afterwards" into a
+separate test rather than continuing in the same one:
+
+```typescript
+test("rejects an item whose category is not on the order", async ({ factories }) => {
+  const order = await factories.order();
+  const other = await factories.category();
+  // The rejection must be the final DB call in this test.
+  await expect(
+    factories.orderItem({ order_id: order.id, category_id: other.id }),
+  ).rejects.toThrow(/foreign key/);
+});
+```
+
+The handler-level `db.transaction().execute(...)` pass-through (see above) does not
+help here: there is no savepoint, so the abort propagates to the test's outer
+transaction. If a test genuinely needs to continue after an expected error, wrap
+that one statement in a savepoint with raw SQL (`SAVEPOINT s; ... ROLLBACK TO s`).
