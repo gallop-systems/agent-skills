@@ -559,6 +559,46 @@ Description:
 
 ---
 
+## Post-Issue-Creation: Refresh the Project's Acceptance-Criteria Document
+
+**Every time you create issues in a project — or materially edit the acceptance
+criteria on existing ones — refresh that project's `Acceptance criteria across all
+issues` document.** It is one of the project's knowledge documents (see the
+`project-docs` skill, which owns its title, icon, and format) and it is the one
+place the requester can scan every criterion the project has committed to in a
+single pass.
+
+### Why it exists
+
+Acceptance criteria are where a misunderstanding becomes concrete. Scattered one
+per issue, a wrong criterion is invisible — nobody opens fifteen issues to check.
+Gathered in one document, the requester reads the list, something reads wrong, and
+they say so. You then trace it to its source, which is rarely only the issue: the
+same wrong fact usually sits in the project's workflow or thinking document too.
+**Fix every place it propagated, not just the line that was pointed at.**
+
+### How to refresh it
+
+1. Read the project's issues as they *currently* stand (`list_issues` with the
+   project, then `get_issue` for the bodies).
+2. **Rebuild the document from them** rather than patching the previous content —
+   a criterion deleted from an issue must disappear from the document, and
+   patching leaves it behind.
+3. `get_document` immediately before `save_document`, per the usual
+   clobber-avoidance rule.
+
+Copy criteria **verbatim**. Never paraphrase, never merge two into one, and never
+add a criterion no issue states — the document's only value is that it is a true
+mirror of the issues. Omit issues that have no criteria (the one-line Backlog
+shells `proposal-to-linear` seeds).
+
+### Don't invert the fix
+
+When the requester flags a criterion, the fix belongs on the **issue** (and on
+whichever document carried the wrong fact into it). Editing the criterion in this
+document alone changes nothing — the next refresh overwrites it from the issues,
+and the team works from the issue regardless.
+
 ## Post-Organization: Update Initiative in Linear
 
 **After organizing issues for a client (creating, triaging, updating statuses, or completing a sprint review), always update the corresponding initiative's `content` field in Linear.**
@@ -730,6 +770,7 @@ existing project — the project row only grows when a revision is confirmed.
 5. **Use milestones for sequencing.** Milestones can have target dates, making them useful for communicating delivery phases to clients.
 6. **Track progress in Linear.** After creating/updating projects or milestones, update the initiative's content in Linear to reflect the current structure (see "Post-Organization: Update Initiative in Linear" below).
 7. **When creating issues with the CLI**, use the `--project`, `--milestone`, and `--cycle` flags to place issues correctly in the hierarchy and cycle.
+8. **After creating issues, refresh the project's acceptance-criteria document** (see "Post-Issue-Creation: Refresh the Project's Acceptance-Criteria Document").
 
 ### CLI Examples
 
