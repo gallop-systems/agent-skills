@@ -33,6 +33,57 @@ Note: a full `yarn build` validates `@apply` in `<style>`; a bare
 fails. Include `build` in your check. (The SFC-specific details live in the
 **volt-primevue** skill's gotchas.)
 
+## `@theme` variables no utility references are pruned from the output
+
+v4 treats `@theme` as a **source of utilities**, and by default only emits the
+custom properties that something in the compiled output actually references (a
+generated utility like `bg-series-1`). A token read **only** through a raw
+`var()` — an inline `:style` binding, a `<style>` block, a JS-computed style —
+looks unused to the compiler and is dropped. Nothing errors: the build, the
+linter and typecheck are all clean, and the variable is simply absent from the
+emitted CSS.
+
+```css
+@theme {
+  --color-series-1: #4f46e5;   /* ❌ pruned: no utility class ever uses it */
+}
+```
+```vue
+<span :style="{ backgroundColor: 'var(--color-series-1)' }" />  <!-- renders transparent -->
+```
+
+Sibling tokens in the same block can survive while these vanish — semantic ones
+like `--color-surface` stay because `bg-surface`/`text-fg` are used throughout the
+templates.
+
+Two fixes, depending on what the token is for:
+
+```css
+/* Read only through var() → plain :root. Plain custom properties are never pruned. */
+:root {
+  --color-series-1: #4f46e5;
+}
+
+/* Genuinely part of the theme (should ALSO generate utilities) → @theme static,
+   which emits every variable in the block regardless of use. */
+@theme static {
+  --color-series-1: #4f46e5;
+}
+```
+
+Rule of thumb: `@theme` is for values you want turned into utility classes;
+`:root` is for values you want to read directly.
+
+**Diagnostic signal:** a value silently falling back — a transparent background,
+an inherited color, a `var()` with no fallback resolving to nothing — while the
+build is completely clean. If `var(--token)` renders as nothing, check whether the
+token is declared in `@theme` and never used as a utility *before* suspecting
+scope or specificity.
+
+Overriding such a variable in `@media (prefers-color-scheme: dark) { :root { … } }`
+is unaffected: that is a plain CSS block, and the pruning happens only on the
+`@theme` declaration side.
+
 ## `@import url(...)` must come before `@import "tailwindcss"`
 
 The CSS spec requires all `@import` statements to precede other rules. Because

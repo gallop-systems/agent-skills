@@ -58,6 +58,12 @@ or `tailwindcss-primeui` raises peer-dependency warnings.
   `bg-surface-strong` with no matching token) **generates nothing, with no error**
   — the element just renders unstyled. First thing to check when a custom color
   "does nothing": does the token name match exactly?
+- **A token read only via `var()` does not belong in `@theme`.** v4 prunes any
+  `@theme` variable that no generated utility references, so a token consumed
+  purely from an inline style or a `<style>` block silently disappears from the
+  emitted CSS — with a clean build. Declare those in `:root` (never pruned), or
+  use `@theme static { … }` if it should also generate utilities. See
+  [gotchas.md](gotchas.md).
 - **Inverse for PrimeUI:** PrimeVue's `--p-*` variables stay in `:root`. The
   `tailwindcss-primeui` plugin turns those into utilities — don't move them into
   `@theme`.
@@ -101,7 +107,7 @@ default. Two consequences:
 ## More gotchas
 
 The full set mined from real debugging sessions — `@apply` in scoped `<style>`,
-JS-driven colors that can't read tokens, `@import url()` ordering, the PrimeUI
+JS-driven colors that can't read tokens, pruned `@theme` variables, `@import url()` ordering, the PrimeUI
 surface ramp vs flipping tokens, and more — is in
 [gotchas.md](gotchas.md). Read it when touching CSS in this stack.
 
