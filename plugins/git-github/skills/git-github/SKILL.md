@@ -50,7 +50,15 @@ EOF
 - Merge style: `gh pr merge <n> --squash --delete-branch`; verify with `gh pr view <n> --json state,mergedAt`.
 - After merge: `git switch main && git pull --ff-only`, clean up `[gone]` branches, start the next branch from fresh main.
 - One concern per PR — hotfixes and review findings go in separate PRs unless told otherwise.
-- Stacked PRs: `gh pr create --base <parent-branch>`; after the parent merges, retarget with `gh pr edit <n> --base main` (and see [getting-unstuck.md](getting-unstuck.md) for rebasing onto main after the parent was squash-merged).
+- **Stacked PRs: use `gh stack`, never hand-set a PR's base to another feature branch.** First ask whether the child truly depends on the parent — if not, branch it from main and skip stacking. If it does:
+  ```bash
+  gh stack init <parent-branch> <child-branch>   # or `gh stack init` then `gh stack add <branch>` as you go
+  gh stack submit                                # push every branch, create/update the chained PRs
+  gh stack sync                                  # after a parent merges: rebase the rest and retarget
+  gh stack merge                                 # merge the stack bottom-up
+  ```
+  Why: with hand-set bases (`gh pr create --base <parent-branch>`), whether the child's changes reach main depends on the order and style the stack is merged in. Merge the child first and it lands on the parent's branch, not main; it only reaches main if the parent is merged *afterwards* as its updated branch head. Merge the parent first and the child still needs retargeting and a rebase (GitHub only retargets it automatically if the parent's branch is deleted on merge). Nothing warns you when the child ends up merged into a branch instead of main. `gh stack` tracks the chain and retargets as PRs merge.
+  Already hand-stacked and the parent squash-merged? Recover with `git rebase --onto origin/main origin/<parent-branch> <child-branch>`, `git push --force-with-lease`, `gh pr edit <n> --base main`, then fix any "stacked on #…" wording in the PR body (details in [getting-unstuck.md](getting-unstuck.md)). Check `git diff origin/<parent-branch> origin/main --stat` to confirm what actually reached main.
 - If you discover uncommitted work on the wrong branch and the PR must be "off main", do not commit to the wrong branch. With a cleanly applicable worktree, `git fetch origin main && git switch -c feat/<short-description> origin/main` carries the unstaged changes onto a new branch from `origin/main`. Verify with `git status` and tests. If checkout would overwrite/conflict, stash with `-u`. Only resort to worktree if stash gets too complicated.
 
 ## Reading PR and CI State
