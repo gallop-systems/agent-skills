@@ -178,6 +178,55 @@ const invoice = await $fetch(`/api/invoices/${id}` as "/api/invoices/:id");
 Expect this side effect whenever you add a static endpoint beside a `[param]`
 one — you'll need to touch the existing dynamic-route callers.
 
+### TS2589 once the app passes ~200 API routes
+
+**Symptom:** `TS2589: Type instantiation is excessively deep and possibly
+infinite` on ordinary, untyped `useFetch("/api/...")` / `$fetch(url)` calls — in
+files your change never touched — right after adding a few routes.
+
+**Cause:** Nitro v2 types each call by scoring the URL against *every* key of
+`InternalApi` with a recursive template-literal type (`MatchedRoutes` →
+`CalcMatchScore`). Around 204 routes that exceeds TypeScript's instantiation
+limit ([nuxt/nuxt#33735](https://github.com/nuxt/nuxt/issues/33735); upstream
+closed as not planned, [nitrojs/nitro#2758](https://github.com/nitrojs/nitro/issues/2758)).
+It is the route **count**, not one handler: removing any one new route makes
+it pass, adding any one back fails it.
+
+**Don't** add `$fetch<T>()` / `useFetch<T>()` generics at the failing sites.
+That short-circuits the matcher at those calls only; the overflow moves to the
+next untyped call site, and fixing two call sites can turn 2 errors into
+hundreds.
+
+**Fix:** a types-only `yarn patch` of `nitropack` that replaces the scoring fold
+with a shallow per-segment matcher (exact key → direct index; `:param` and
+`/**` segments; query string stripped). Responses stay inferred and nothing at
+runtime changes.
+
+```bash
+yarn patch nitropack          # prints a temp dir holding an editable copy
+# edit <temp-dir>/dist/types/index.d.ts: replace the `type MatchedRoutes<...> = ...;`
+# declaration (the one using Extract<Matches, { exact: true }>) with:
+```
+
+```typescript
+type __Seg<R extends string, K extends string> = K extends `:${string}` ? (R extends "" ? false : true) : K extends `**${string}` ? true : R extends K ? (K extends R ? true : false) : false;
+type __M<R extends string, K extends string> = K extends `${infer Kh}/${infer Kr}` ? (R extends `${infer Rh}/${infer Rr}` ? (__Seg<Rh, Kh> extends true ? __M<Rr, Kr> : false) : false) : K extends `:${string}` ? (R extends `${string}/${string}` ? false : R extends "" ? false : true) : K extends `**${string}` ? true : R extends K ? (K extends R ? true : false) : false;
+type MatchedRoutes<Route extends string> = Route extends "/" ? keyof InternalApi : Route extends `${infer Base}?${string}` ? MatchedRoutes<Base> : Route extends keyof InternalApi ? Route : { [K in keyof InternalApi]: __M<Route, K & string> extends true ? K : never }[keyof InternalApi];
+```
+
+```bash
+yarn patch-commit -s <temp-dir>   # writes .yarn/patches/nitropack-npm-<version>-<hash>.patch
+                                  # and a "resolutions" entry in package.json
+yarn install && yarn typecheck
+```
+
+Verified on nitropack 2.13.4 (Nuxt 4.4). Notes:
+
+- **Re-make the patch when `nitropack` is bumped** (the patch pins one
+  version); otherwise the error returns. Say so in the project's CLAUDE.md.
+- Real response types coming back can surface response-shape errors that the
+  overflow had been hiding as `any` — budget time to fix those.
+
 **Never add manual types:**
 ```typescript
 // WRONG - defeats inference
