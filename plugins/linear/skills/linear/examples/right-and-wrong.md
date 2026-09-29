@@ -25,13 +25,17 @@ No prefixes at all — no client, no domain, no `Fix:` / `Chore:` / `Spike:`. Th
    Dispatchers want to email quotes from the platform, which will improve
    customer satisfaction and reduce churn.
 
+❌ ## Context
+   There's nowhere in the app to attach a quote to an email, so dispatchers
+   print each quote and fax it to the customer.
+
 ✅ ## Context
    Dispatchers say getting a quote out to a customer takes too long. Right now
    they generate it, download it, and email it from Outlook. They want to send
    it without leaving the platform.
 ```
 
-Frame the issue around the intent — who has the problem and what they're trying to get done — not the fix. The first ❌ goes straight to the solution. The second is framed around intent, but it includes a reason nobody gave. The reason always comes from the requester; if they didn't say why, ask them.
+Frame the issue around the intent — who has the problem and what they're trying to get done — not the fix. The first ❌ goes straight to the solution. The second is framed around intent, but it includes a reason nobody gave. The third makes up a workaround: nobody said anything about faxing, the agent guessed it because the feature doesn't exist. The reason and the current workaround both come from the requester. The ✅ mentions Outlook because the dispatchers said that's what they do. If the requester didn't tell you, ask them.
 
 ## Describing things literally
 
