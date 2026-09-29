@@ -16,9 +16,9 @@ description: Create, triage, and manage Linear issues at Gallop Systems followin
 
 For those, read [`cli.md`](cli.md) — it covers the CLI's one-time setup (workspace config, `LINEAR_API_KEY`) and every command's syntax.
 
-**Verify every MCP write.** `mcp__linear__save_issue` has been seen returning success while silently not applying `labels` or the milestone — and its response echo can omit fields it did apply. After each create/update, re-read the issue with `mcp__linear__get_issue` and confirm labels, project, and milestone are all set. Pass UUIDs rather than names for those fields; if one still won't stick, set it with `linear.mjs api` (`issueUpdate` with `labelIds` / `projectMilestoneId`). Don't report the issue as done until it verifies.
+**Verify every MCP write.** `mcp__linear__save_issue` has been seen returning success without applying `labels` or the milestone — and its response echo can omit fields it did apply. After each create/update, re-read the issue with `mcp__linear__get_issue` and confirm labels, project, and milestone are all set. Pass UUIDs rather than names for those fields; if one still won't stick, set it with `linear.mjs api` (`issueUpdate` with `labelIds` / `projectMilestoneId`). Don't report the issue as done until it verifies.
 
-**Write serially.** Linear can silently discard rapid-fire mutations while still reporting success. Make MCP writes one at a time — never in parallel — and verify as above.
+**Write serially.** Linear can drop rapid-fire mutations and still return success. Make MCP writes one at a time — never in parallel — and verify as above.
 
 ### MCP setup check
 
@@ -147,6 +147,7 @@ Read the examples before writing an issue — they show the voice and level of d
 
 - **Frame around intent, not the solution.** Open with whose problem this is and what they're trying to get done. The framing never describes the fix — that's what the rest of the issue is for.
 - **Write like a person.** Plain words, the way you'd explain it to a teammate — "we", "right now", contractions are fine. Avoid abstract, stiff phrasing like "technicians stop being entities a visit points at"; say "instead of linking a visit to a technician record, the visit stores the name".
+- **Describe things literally.** Documents, code, and systems don't speak, know, want, or ignore anything. Say what they do or contain: "the generated document doesn't include the tax line", not "the generated document is silent on tax"; "the list total doesn't include credits", not "the list ignores credits".
 - **Never make up the reason.** The intent comes from the requester. If they didn't say why, ask them — don't guess, and don't pad it with benefits nobody mentioned ("will improve customer satisfaction").
 - **Terse.** A short framing, then the substance. No paragraphs of background.
 - **Behavior and rules, not implementation.** State what has to be true, the business rules, and the edge cases. For backend work never prescribe tables, columns, types, indexes, constraints, endpoint shapes, or enum values — the Backend lead designs those. Naming *existing* code is fine.
@@ -155,7 +156,7 @@ Read the examples before writing an issue — they show the voice and level of d
 
 ### Titles
 
-A plain, sentence-case statement of the outcome — "Send a quote by email from the platform", "Invoices list ignores credits in the total". **No prefixes of any kind**: no client key, no domain (`UI:`, `API:`), no `Fix:` / `Chore:` / `Spike:`. The team identifies the client; labels carry type and domain.
+A plain, sentence-case statement of the outcome — "Send a quote by email from the platform", "Invoices list total doesn't include credits". **No prefixes of any kind**: no client key, no domain (`UI:`, `API:`), no `Fix:` / `Chore:` / `Spike:`. The team identifies the client; labels show type and domain.
 
 ### Body layout
 
@@ -176,13 +177,13 @@ A plain, sentence-case statement of the outcome — "Send a quote by email from 
 
 ### Links
 
-- Link an issue **inline, by identifier, where the body first mentions the thing it owns** (`…the scheduler warns when they don't match (KEY-92)…`) — once per target.
+- Link an issue **inline, by identifier, where the body first mentions the thing it owns** (`…the scheduler shows a warning when they don't match (KEY-92)…`) — once per target.
 - Never narrate lineage or dependencies ("upstream capture lives in KEY-14…") — that's what relations are for.
 - Any project, issue, or doc named in the body is a clickable link.
 
 ### Body Conventions
 
-- **Do NOT list or link an issue's sub-issues in the parent body** (no "Sub-issues" section, no bulleted child links). Linear renders an issue's children natively — a manual list just clutters the description and goes stale as children are added or removed. A parent body should carry the objective, any single-source-of-truth pointer, and acceptance criteria — nothing that restates the hierarchy.
+- **Do NOT list or link an issue's sub-issues in the parent body** (no "Sub-issues" section, no bulleted child links). Linear renders an issue's children natively — a manual list just clutters the description and goes stale as children are added or removed. A parent body should include the objective, any single-source-of-truth pointer, and acceptance criteria — nothing that restates the hierarchy.
 - **No timestamped or dated section headers** (e.g. `## Data model — corrected (2025-05-01)`). State the current spec cleanly; issue history already records the "when." Dated "correction" sections accumulate as noise.
 - **The body is the current spec, not a decision log.** When a clarifying answer or any later change alters the issue, rewrite the affected parts of the body so it reads as if it had always said that. Don't append a "Decisions" / "Clarifications" / "Update" section, and don't leave superseded text in place (struck through or otherwise) — anything superseded gets rewritten or removed.
 
@@ -293,7 +294,7 @@ attached to the **same initiative**, named with an `R` prefix instead of `M`:
 
 `R` numbering is sequential across the whole proposal in the order revisions are
 taken on, independent of which milestone the revision relates to. Never fold
-out-of-scope work into an `M` project — that silently rewrites what was signed.
+out-of-scope work into an `M` project — that changes the signed scope without anyone agreeing to it.
 
 #### Never invent a project
 
@@ -374,6 +375,6 @@ existing project — projects and milestones only grow when a revision is confir
 
 ## Contributing Back
 
-This skill grows by capturing what it missed. If you just worked through something in this domain that this skill did not cover — an error you had to figure out, a behavior that contradicts what is documented above, a workflow knot — ask the user: **"Want me to contribute this back to the linear skill?"**
+This skill grows by adding what it doesn't cover yet. If you just worked through something in this domain that this skill did not cover — an error you had to figure out, behavior that doesn't match what's documented above, a workflow knot — ask the user: **"Want me to contribute this back to the linear skill?"**
 
 If yes, run `/contribute-skill`. If that command is not available, do the equivalent inline: distill the generic lesson (placeholders only — no project names, IDs, domains, or secrets), then branch or fork [gallop-systems/agent-skills](https://github.com/gallop-systems/agent-skills) and open a PR editing this skill.

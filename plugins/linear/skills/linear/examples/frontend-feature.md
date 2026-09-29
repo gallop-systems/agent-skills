@@ -12,7 +12,7 @@ Note:     Every path in UI Notes was verified in the repo on main. If the repo c
 
 ## Context
 
-Dispatchers set the same job type on every visit of a job, which is repetitive and easy to get wrong. They've also asked to stop picking technicians from a list here — the list lives in their HR system. They want to pick the job type once for the job, and type the technician's name and certification date on each visit.
+Dispatchers set the same job type on every visit of a job, which is repetitive and easy to get wrong. They've also asked to stop picking technicians from a list here — they keep that list in their HR system. They want to pick the job type once for the job, and type the technician's name and certification date on each visit.
 
 ## Requirements
 

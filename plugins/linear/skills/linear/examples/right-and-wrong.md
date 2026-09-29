@@ -8,12 +8,12 @@ Each pair is a real correction made on a drafted issue. ❌ is what agents tend 
 ❌ Fix: Invoice list total wrong
 ❌ [ACME] UI: Add quote email
 ❌ Spike: overtime hours
-✅ Invoices list ignores credits in the total
+✅ Invoices list total doesn't include credits
 ✅ Send a quote by email from the platform
 ✅ Decide what hours to check overtime thresholds against
 ```
 
-No prefixes at all — no client, no domain, no `Fix:` / `Chore:` / `Spike:`. The team already tells you the client, and the labels tell you the type and domain. Just say what the issue is about.
+No prefixes at all — no client, no domain, no `Fix:` / `Chore:` / `Spike:`. The team already identifies the client, and the labels show the type and domain. Just say what the issue is about.
 
 ## Framing
 
@@ -31,7 +31,19 @@ No prefixes at all — no client, no domain, no `Fix:` / `Chore:` / `Spike:`. Th
    it without leaving the platform.
 ```
 
-Frame the issue around the intent — who has the problem and what they're trying to get done — not the fix. The first ❌ jumps straight to the solution. The second has the right idea but makes up a reason nobody gave. The reason always comes from the requester; if they didn't say why, ask them.
+Frame the issue around the intent — who has the problem and what they're trying to get done — not the fix. The first ❌ goes straight to the solution. The second is framed around intent, but it includes a reason nobody gave. The reason always comes from the requester; if they didn't say why, ask them.
+
+## Describing things literally
+
+```
+❌ The generated quote PDF is currently silent on tax.
+❌ The list endpoint ignores credits and doesn't know about partial payments.
+
+✅ The generated quote PDF doesn't include a tax line.
+✅ The list endpoint doesn't subtract credits or partial payments.
+```
+
+Documents, code, and systems don't speak, know, want, or ignore anything. Say what they do or what they contain.
 
 ## Backend: behavior, not schema
 
@@ -86,8 +98,8 @@ Describe what the code on `main` does today, and check it. Don't point at a wire
    - KEY-201
    - KEY-202
 
-✅ ...the scheduler warns when they don't match (KEY-92), since a technician
-   who works for two customers...
+✅ ...the scheduler shows a warning when they don't match (KEY-92), since a
+   technician who works for two customers...
 ```
 
 Link another issue inline, by its identifier, the first time you mention something it covers — once per issue is enough. Dependencies go in Linear relations, not in the text. Linear already shows sub-issues, so don't list them. Anything you name — a project, an issue, a doc — should be a link.

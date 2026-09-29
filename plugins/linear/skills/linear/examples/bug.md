@@ -1,5 +1,5 @@
 <!--
-Title:    Invoices list ignores credits in the total
+Title:    Invoices list total doesn't include credits
 Labels:   Bug, Backend
 Estimate: S (2)
 Note:     The title states the broken behavior — no "Fix:" prefix. Root cause and location
