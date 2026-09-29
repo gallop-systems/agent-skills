@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.28.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.27.0...agent-skills-v1.28.0) (2026-09-29)
+
+
+### Features
+
+* **git-github:** add a stacked-PRs reference for gh stack ([#97](https://github.com/gallop-systems/agent-skills/issues/97)) ([b53feaf](https://github.com/gallop-systems/agent-skills/commit/b53feafff184890eda276beb5196aa7e02abd298))
+
 ## [1.27.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.26.0...agent-skills-v1.27.0) (2026-08-24)
 
 
