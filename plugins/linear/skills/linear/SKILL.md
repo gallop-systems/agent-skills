@@ -180,7 +180,7 @@ The CLI resolves friendly names against `workspace.json`, so you rarely need raw
 >
 > **Fill in everything you can.** Set priority, estimate, one type label plus every domain label it touches (see **Labels**), and an assignee (see **Assignment Guidelines**) as a best-effort draft — the user adjusts them while fleshing the issue out.
 >
-> **Confirm decisions with the requester — don't punt them into the issue.** When the person asking you to create the issue is right there in the conversation, ask the open decisions (scope, mechanism, data source, ownership, who/where it should land) *before* writing the issue — e.g. via a structured question prompt — and bake the confirmed answers into the body. Do **not** write an "Open questions" section full of decisions you could have just asked, and do **not** use that manufactured uncertainty as a rationale to leave fields blank or the issue unassigned. Only genuinely external unknowns (something that needs a meeting, a client, or a spike to resolve) belong as open questions; everything the requester can answer on the spot should already be a confirmed decision with the issue placed and assigned accordingly.
+> **Confirm decisions with the requester — don't punt them into the issue.** When the person asking you to create the issue is right there in the conversation, ask the open decisions (scope, mechanism, data source, ownership, who/where it should land) *before* writing the issue — e.g. via a structured question prompt — and bake the confirmed answers into the body. Do **not** write an "Open questions" section full of decisions you could have just asked, and do **not** use that manufactured uncertainty as a rationale to leave fields blank or the issue unassigned. Only list something as an open question when the requester tells you it's an open question — never decide on your own that it needs a meeting, the client, or more investigation. Ask everything; whatever they answer becomes a confirmed decision, with the issue placed and assigned accordingly. Answers are folded into the issue body itself, not appended as a log of decisions — see "The body is the current spec" under **Issue Body Conventions**.
 
 ```bash
 # --project and --milestone are always required
@@ -363,6 +363,7 @@ node linear.mjs list-labels        # Labels
 
 - **Do NOT list or link an issue's sub-issues in the parent body** (no "Sub-issues" section, no bulleted child links). Linear renders an issue's children natively — a manual list just clutters the description and goes stale as children are added or removed. A parent body should carry the objective, any single-source-of-truth pointer, and acceptance criteria — nothing that restates the hierarchy.
 - **No timestamped or dated section headers** (e.g. `## Data model — corrected (2025-05-01)`). State the current spec cleanly; issue history already records the "when." Dated "correction" sections accumulate as noise.
+- **The body is the current spec, not a decision log.** When a clarifying answer or any later change alters the issue, rewrite the affected parts of the body so it reads as if it had always said that. Don't append a "Decisions" / "Clarifications" / "Update" section, and don't leave superseded text in place (struck through or otherwise) — anything superseded gets rewritten or removed.
 
 ### Client Feature Request — Frontend
 
