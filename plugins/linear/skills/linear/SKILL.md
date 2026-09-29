@@ -66,39 +66,20 @@ Don't silently skip these checks. A user who hits an MCP error mid-task without 
 
 ---
 
-## Team Overview
-
-- **Workspace Team Key:** `GAL`
-- **Team Size:** 2 members
-- **Sprint Cycle:** 2 weeks
-- **Stack:** Nuxt 4 (Vue frontend + Nitro backend)
-- **Work Type:** Client/agency projects
-
-### Team Roles
-
-| Role | Responsibilities |
-|------|-----------------|
-| **Frontend/PM Lead** | Frontend development, requirement gathering, project design, client communication, light backend (e.g., adding endpoints), issue triage, client IT coordination (DNS, infrastructure requests) |
-| **Backend Lead** | Data modeling, database design, backend architecture, API logic |
-
-The Frontend/PM lead triages incoming client requests and translates them into Linear issues.
-
-On first run, `node linear.mjs init` binds these roles to specific Linear members; Claude reads `~/.config/linctl/workspace.json` to know who they are. Pass `--assignee frontend` or `--assignee backend` and the CLI resolves it to the corresponding Linear user UUID.
-
----
-
 ## Workflow Statuses
 
-| Status | Meaning |
-|--------|---------|
-| **Backlog** | Captured but not yet planned for a cycle |
-| **Todo** | Committed to the current or next cycle |
-| **In Progress** | Actively being worked on |
-| **In Review** | Code complete, awaiting review or client feedback |
-| **Done** | Shipped and verified |
-| **Canceled** | Dropped or no longer relevant |
+| Status | Meaning | Move here when |
+|--------|---------|----------------|
+| **Triage** | Raw incoming request, not yet shaped into a real issue | Client-portal submissions land here automatically — work them with the `linear-triage` skill |
+| **Backlog** | Captured but not yet planned for a cycle | The issue is well-formed but not committed to a cycle; new requests go here, not straight into a cycle, unless truly urgent |
+| **Todo** | Committed to the current or next cycle | The issue is assigned to a cycle — required, since a Backlog issue doesn't work in a cycle |
+| **In Progress** | Actively being worked on | Work on it starts |
+| **In Review** | Code complete, awaiting review or client feedback | A PR is open for review, or the change is waiting on client sign-off |
+| **Done** | Shipped and verified | Merged/deployed and verified |
+| **Canceled** | Dropped or no longer relevant | The work is no longer wanted |
+| **Duplicate** | Same work as another issue | Another issue already covers it — mark it a duplicate of that issue rather than canceling |
 
-> **Note:** "In Review" is a recommended addition to the default Linear statuses. It provides a clear handoff point for code review between the two team members and for client sign-off.
+Linear rolls unfinished issues into the next cycle and closes completed cycles on its own — there's no cycle start/end step to perform. To redistribute work across cycles, use **Cycle Rebalance** below.
 
 ---
 
@@ -154,27 +135,6 @@ The API, the MCP server, and `linear.mjs --estimate` all take the numeric **Valu
 
 ---
 
-## Sprint Cycle Process
-
-### Cycle Start (Every 2 Weeks)
-1. Review **Backlog** — pull items into **Todo** for the cycle
-2. Assign issues to the appropriate team member based on domain (backend vs. frontend)
-3. Ensure each issue has: priority, estimate, label(s), and assignee
-4. Keep cycle scope realistic — a 2-person team should commit to what's achievable
-
-### During the Cycle
-- Move issues to **In Progress** when you start working on them
-- Move to **In Review** when code is ready for review or client feedback
-- Move to **Done** when merged/deployed and verified
-- If scope changes, add new issues to **Backlog** unless they're urgent
-
-### Cycle End
-- Review what got done vs. what was planned
-- Move incomplete **Todo** / **In Progress** items to the next cycle or back to **Backlog**
-- Archive the completed cycle
-
----
-
 ## Linear Tooling — MCP First, `linear.mjs` as Fallback
 
 **Default to the Linear MCP server (`mcp__linear__*` tools)** for all standard operations: creating/updating issues, listing projects/milestones/cycles/initiatives/labels/users, comments, etc. The MCP tools take strings directly — pass real markdown with real newlines, no JSON-escaping.
@@ -218,6 +178,8 @@ The CLI resolves friendly names against `workspace.json`, so you rarely need raw
 > **Required placement rule:** Never create an issue without both `--project` and `--milestone`. **The project must already exist** — place the issue in the initiative's existing `M` project for the milestone it falls under, and never conjure a project to hold it (see "Never invent a project"). Creating a project is only correct for a confirmed out-of-scope revision. If the project exists but the right milestone does not, create the milestone first. Do not leave issues unscoped or unmilestoned.
 >
 > **Never target a completed milestone.** New work never belongs in a milestone that is already done — it distorts the completed phase and hides the issue from the team's current view. Only place an issue in an **open** milestone. If no open milestone matches the issue, create a new one and use that; do not reopen or reuse a completed milestone.
+>
+> **Every issue is complete on creation.** Set priority, estimate, one type label plus every domain label it touches (see **Labels**), and an assignee (see **Assignment Guidelines**) — never leave any of them for later.
 >
 > **Confirm decisions with the requester — don't punt them into the issue.** When the person asking you to create the issue is right there in the conversation, ask the open decisions (scope, mechanism, data source, ownership, who/where it should land) *before* writing the issue — e.g. via a structured question prompt — and bake the confirmed answers into the body. Do **not** write an "Open questions" section full of decisions you could have just asked, and do **not** use that manufactured uncertainty as a rationale to leave the issue in Backlog or unassigned. Only genuinely external unknowns (something that needs a meeting, a client, or a spike to resolve) belong as open questions; everything the requester can answer on the spot should already be a confirmed decision with the issue placed and assigned accordingly.
 
@@ -404,7 +366,7 @@ node linear.mjs current-cycle-id   # Current active cycle UUID
 
 ### Issue Title Conventions
 
-- **No client prefix** (e.g., ~~[GBX]~~) — the project name already identifies the client.
+- **No client prefix** (e.g., ~~[GBX]~~) — the team already identifies the client.
 - **No domain prefix** (e.g., ~~UI:~~, ~~API:~~) — labels (`frontend`, `backend`) already cover this.
 - Titles should be concise and describe the feature/fix directly (e.g., "Add provider create form", "Fix login redirect on Safari").
 
@@ -557,6 +519,8 @@ Description:
 ---
 
 ## Assignment Guidelines
+
+Issues are assigned by role: the **Frontend/PM lead** or the **Backend lead**. `node linear.mjs init` binds each role to a Linear member in `~/.config/linctl/workspace.json` — read it to know who they are, or pass `--assignee frontend` / `--assignee backend` to the CLI.
 
 | Issue Type | Default Assignee |
 |-----------|-----------------|
@@ -1102,15 +1066,6 @@ node linear.mjs rebalance
 > **Rate limit note:** Linear's API can silently discard rapid mutations. The batch function includes a 0.5s delay between calls and validates each response. For large rebalances (50+ moves), process in groups of ~9 and verify between groups.
 
 ---
-
-## Tips for a 2-Person Team
-
-1. **Keep issues small.** If it's XL, break it down. Small issues keep momentum and make reviews easier.
-2. **Daily async check-in.** A quick message about what you're working on and if you're blocked.
-3. **Use "In Review" status.** It signals to the other person that something needs their eyes.
-4. **Don't overcommit cycles.** Leave ~20% buffer for bugs, client requests, and interruptions.
-5. **Projects identify the client.** No need for client prefixes in issue titles or client labels — the project name (e.g., `[GBX] Portal`) already provides that context.
-6. **Triage first.** New client requests go to Backlog, not straight into the sprint — unless truly urgent.
 
 ## Contributing Back
 
