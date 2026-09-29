@@ -142,7 +142,6 @@ The API, the MCP server, and `linear.mjs --estimate` all take the numeric **Valu
 **Use `linear.mjs` only for things MCP doesn't expose:**
 - `cycle-capacity` — velocity-based capacity % (used in cycle placement & rebalancing)
 - `batch-move-to-cycle` / `batch-move-to-milestone` — rate-limit-aware bulk moves
-- `add-dependency` / `remove-dependency` / `list-dependencies` — issue relations
 - `add-initiative-link` — adding external links to initiatives
 - `api` — raw GraphQL escape hatch
 
@@ -270,16 +269,13 @@ node linear.mjs update-issue "issue-uuid" --raw '{"priority":1}'
 ```
 
 ### Issue Dependencies
-```bash
-# Create a "blocks" dependency (backend blocks frontend)
-node linear.mjs add-dependency "$BLOCKER_ISSUE_ID" "$BLOCKED_ISSUE_ID"
 
-# List all dependencies for an issue (both directions)
-node linear.mjs list-dependencies "$ISSUE_ID"
+Use the MCP server for issue relations:
+- **Add:** `mcp__linear__save_issue` with `blocks` / `blockedBy` (issue identifiers, e.g. `["ACME-12"]`). Append-only — existing relations are kept.
+- **Remove:** `mcp__linear__save_issue` with `removeBlocks` / `removeBlockedBy`.
+- **List:** `mcp__linear__get_issue` with `includeRelations: true` — returns `blocks`, `blockedBy`, `relatedTo`, and `duplicateOf`.
 
-# Remove a dependency by relation UUID (get UUID from list-dependencies)
-node linear.mjs remove-dependency "$RELATION_ID"
-```
+The CLI's `add-dependency` / `list-dependencies` / `remove-dependency` still work as a fallback.
 
 ### Comments
 ```bash
@@ -444,18 +440,12 @@ This keeps issues focused, enables parallel assignment (the Backend lead on back
 **Steps:**
 1. Create the **backend issue** using the "Client Feature Request — Backend / API" template above (labels: `Feature`, `Backend`, plus `DB` if it changes the schema)
 2. Create the **frontend issue** using the "Client Feature Request — Frontend" template above (labels: `Feature`, `Frontend`)
-3. **Create the Linear dependency:** use `add-dependency` so the backend issue blocks the frontend issue
-
-```bash
-# After creating both issues, link them:
-node linear.mjs add-dependency "$BACKEND_ISSUE_ID" "$FRONTEND_ISSUE_ID"
-# Result: backend blocks frontend (frontend is blocked by backend)
-```
+3. **Create the Linear dependency:** update the frontend issue with `mcp__linear__save_issue` `blockedBy: ["<backend issue identifier>"]` (or pass it on create), so the backend issue blocks the frontend issue
 
 **Example:** "Add admin button to complete all job tasks"
 - **Backend issue:** Support marking all tasks for a job as complete in a single operation; admin-only, should be atomic
 - **Frontend issue:** Admin-only button on job page, confirmation dialog, API call, toast
-- **Dependency:** `node linear.mjs add-dependency "$BACKEND_ID" "$FRONTEND_ID"`
+- **Dependency:** frontend issue `blockedBy` the backend issue
 
 > **Note:** If the feature is simple enough that the backend is trivial (e.g., a single straightforward CRUD endpoint), it's acceptable to create one combined issue assigned to the person doing both. Use your judgement.
 
@@ -934,7 +924,7 @@ Apply these heuristics throughout:
 
 #### Heuristic 2: Respect dependencies
 - **Hard rule: a blocking issue must NEVER be in a later cycle than the issue it blocks.** If issue A blocks issue B, A must be in the same cycle as B or an earlier one. This is inviolable — never move a blocker to a later cycle than its dependent.
-- Check dependencies with `node linear.mjs list-dependencies "$ISSUE_ID"` for any issue you plan to move
+- Check dependencies with `mcp__linear__get_issue` (`includeRelations: true`) for any issue you plan to move
 - When pulling an issue forward, also pull forward any of its blockers that are in a later cycle (or leave both)
 - When pushing an issue later, ensure none of the issues it blocks are in the current or an earlier cycle — if they are, you cannot push this issue. Either push the dependent issues too, or leave the blocker in place.
 
@@ -1060,7 +1050,7 @@ node linear.mjs move-issue-to-cycle "$ISSUE_ID" "$CYCLE_ID"
 # Reports success/fail counts. Keep batches ≤9 for reliability.
 node linear.mjs batch-move-to-cycle "$CYCLE_ID" "$ISSUE_1" "$ISSUE_2" "$ISSUE_3"
 
-# Check dependencies before moving
+# Check dependencies before moving (or MCP get_issue with includeRelations: true)
 node linear.mjs list-dependencies "$ISSUE_ID"
 
 # Verify after rebalancing
