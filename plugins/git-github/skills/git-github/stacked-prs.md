@@ -77,7 +77,7 @@ If the bottom PR merged before the stack object existed, `submit` prints `Could 
 
 **Merging is the user's call.** Permission classifiers block agent-initiated merges as "Merge Without Review". Hand the user the exact command to run, e.g. `! gh stack merge <n> --yes --squash`.
 
-- **Plain `gh pr merge` doesn't work on a stacked PR.** Use `gh stack merge`.
+- **Plain `gh pr merge` doesn't work on a stacked PR.** Use `gh stack merge`. The error it prints (`must be merged using the asynchronous merge REST API`) points at REST. Don't follow it; `gh stack merge` is the supported path.
 - **`gh stack merge <n>`** merges everything up to and including PR `<n>`. A bare number is tried as a stack number first, then as a PR number.
 - **Flags:** `--yes` plus `--squash`, `--merge` or `--rebase` (or `--merge-method <m>`). There is no `--method`. Without a method flag it reuses your last method.
 - **All-or-nothing.** `merge failed: … has a merge conflict` then `Stack merges are atomic, so nothing was merged`. Rebase, push and retry.
@@ -98,6 +98,8 @@ If the bottom PR merged before the stack object existed, `submit` prints `Could 
 | `✗ failed to push <b>: … failed to push some refs` (no detail) | Almost always the pre-push hook failed, and gh stack swallows its output. Run `git push origin <b>` to see it, fix it (often env vars the hook's tests need, which you then export in the same shell), and resubmit. |
 | `src refspec refs/heads/<b> does not match any` | The branch exists only on the remote. Run `git branch <b> origin/<b>`. |
 | `unknown flag: --method` | Use `--squash` / `--merge` / `--rebase` or `--merge-method`. |
+| `GraphQL: This pull request is part of a stack and must be merged using the asynchronous merge REST API` (from `gh pr merge`) | The PR is in a stack. Run `gh stack merge <n> --yes --squash` instead; it merges everything up to `<n>`. |
+| `Merging stacked PRs via this endpoint is not supported. Use the asynchronous merge endpoint instead.` (HTTP 403, from `PUT /repos/<owner>/<repo>/pulls/<n>/merge`) | Same cause. Use `gh stack merge`. The raw fallback is `PUT …/pulls/<n>/merge-async` (returns `.details.uuid`; poll `GET …/merge-async/<uuid>` until `status: merged`). It also merges **every open PR below `<n>`**, each as its own commit on trunk, so wait for CI on all of them first. |
 
 ## Several agents or worktrees on one repo
 
