@@ -83,7 +83,7 @@ node linear.mjs create-issue \
 
 # Create a bug report
 node linear.mjs create-issue \
-  --title 'Fix: login redirect fails on Safari' \
+  --title 'Login redirect fails on Safari' \
   --description 'Users on Safari not redirected after login. Reproduced on Safari 17.' \
   --priority urgent \
   --state backlog \

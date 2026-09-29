@@ -129,75 +129,62 @@ Always use `@` mentions when referring to team members in comments. Use the Line
 
 ---
 
-## Issue Templates
+## Writing Issues
 
 > **Tech stack context:** All projects use Nuxt 4 + Nitro + Kysely + PostgreSQL + PrimeVue/Volt + Tailwind CSS v4. See `tech-stack.md` for full details.
 
-### Issue Title Conventions
+Read the examples before writing an issue — they show the voice and level of detail better than any rule:
 
-- **No client prefix** (e.g., ~~[GBX]~~) — the team already identifies the client.
-- **No domain prefix** (e.g., ~~UI:~~, ~~API:~~) — labels (`frontend`, `backend`) already cover this.
-- Titles should be concise and describe the feature/fix directly (e.g., "Add provider create form", "Fix login redirect on Safari").
+- [backend-feature.md](./examples/backend-feature.md) - Backend feature: behavior, business rules, explicit out-of-scope
+- [backend-data-model.md](./examples/backend-data-model.md) - Data-model change described as rules, not columns
+- [frontend-feature.md](./examples/frontend-feature.md) - Frontend feature with repo-verified UI Notes
+- [small-improvement.md](./examples/small-improvement.md) - A small change kept small
+- [discovery.md](./examples/discovery.md) - An open question with options and trade-offs
+- [bug.md](./examples/bug.md) - Bug with a code-grounded root cause
+- [right-and-wrong.md](./examples/right-and-wrong.md) - ❌/✅ pairs for the mistakes agents make most
 
-### Issue Body Conventions
+### Voice
+
+- **Frame around intent, not the solution.** Open with whose problem this is and what they're trying to get done. The framing never describes the fix — that's what the rest of the issue is for.
+- **Write like a person.** Plain words, the way you'd explain it to a teammate — "we", "right now", contractions are fine. Avoid abstract, stiff phrasing like "technicians stop being entities a visit points at"; say "instead of linking a visit to a technician record, the visit stores the name".
+- **Never make up the reason.** The intent comes from the requester. If they didn't say why, ask them — don't guess, and don't pad it with benefits nobody mentioned ("will improve customer satisfaction").
+- **Terse.** A short framing, then the substance. No paragraphs of background.
+- **Behavior and rules, not implementation.** State what has to be true, the business rules, and the edge cases. For backend work never prescribe tables, columns, types, indexes, constraints, endpoint shapes, or enum values — the Backend lead designs those. Naming *existing* code is fine.
+- **Grounded in `main`.** Describe what the code does today, verified in the repo. Never point at a wireframe branch or scratch file (paste the substance instead), and never frame an issue around another issue's plan.
+- **Explicit scope.** Say what's out of scope and whether existing data is converted ("Greenfield: no conversion of existing …").
+
+### Titles
+
+A plain, sentence-case statement of the outcome — "Send a quote by email from the platform", "Invoices list ignores credits in the total". **No prefixes of any kind**: no client key, no domain (`UI:`, `API:`), no `Fix:` / `Chore:` / `Spike:`. The team identifies the client; labels carry type and domain.
+
+### Body layout
+
+1. **Doc header** — if the project has its project docs (see the `project-docs` skill) ("Our thinking", "How they operate"), always open with a line linking the sections this issue relies on, then `---`:
+   `**Context:** [Our thinking — <section>](url) · [How they operate — <section>](url)`
+   Attach the same links to the issue (`links` on `save_issue`).
+2. **`## Context`** — a few sentences on the intent: who's affected, what they're trying to do, and what gets in their way today. Not the solution.
+3. **The type's sections** (below).
+4. **`## Acceptance criteria`** — checkboxes describing observable outcomes; end with `Tests written` for any code work.
+
+| Type | Sections after Context |
+|------|------------------------|
+| **Backend** (incl. data model) | `## Functionality` — bullets of behavior, rules, edge cases, out-of-scope |
+| **Frontend** | `## Requirements` (checkboxes) · `## UI Notes` — repo-verified pages/components, Volt components, "Follow DESIGN_LANGUAGE.md". If the repo can't be checked, leave paths out — no "To Determine" / TBD section. |
+| **Bug** | `## Bug` (what happens vs. what should) · `## Root cause` · `## Steps to reproduce` · `## Likely location` — replaces Context |
+| **Discovery** | `## Open question` — the options, each with its trade-off. AC: settled with the client, recorded in "Our thinking", dependent issues updated. |
+| **Tech Debt** | `## Requirements` · optional `## Files affected` |
+
+### Links
+
+- Link an issue **inline, by identifier, where the body first mentions the thing it owns** (`…the scheduler warns when they don't match (KEY-92)…`) — once per target.
+- Never narrate lineage or dependencies ("upstream capture lives in KEY-14…") — that's what relations are for.
+- Any project, issue, or doc named in the body is a clickable link.
+
+### Body Conventions
 
 - **Do NOT list or link an issue's sub-issues in the parent body** (no "Sub-issues" section, no bulleted child links). Linear renders an issue's children natively — a manual list just clutters the description and goes stale as children are added or removed. A parent body should carry the objective, any single-source-of-truth pointer, and acceptance criteria — nothing that restates the hierarchy.
 - **No timestamped or dated section headers** (e.g. `## Data model — corrected (2025-05-01)`). State the current spec cleanly; issue history already records the "when." Dated "correction" sections accumulate as noise.
 - **The body is the current spec, not a decision log.** When a clarifying answer or any later change alters the issue, rewrite the affected parts of the body so it reads as if it had always said that. Don't append a "Decisions" / "Clarifications" / "Update" section, and don't leave superseded text in place (struck through or otherwise) — anything superseded gets rewritten or removed.
-
-### Client Feature Request — Frontend
-
-> **Important:** Do NOT guess which pages/components need updating. Check the client's repo (`app/pages/`, `app/components/`) to identify the correct files and routes. If the repo is not accessible, add a **## To Determine** section listing what needs to be verified before work begins (e.g., "Which page renders the jobs list? Check repo.").
-
-```
-Title: Feature description
-Priority: High (2) or Medium (3)
-Labels: Feature, Frontend
-Estimate: XS/S/M/L/XL
-Description:
-  ## Context
-  [Why does the client need this?]
-
-  ## Requirements
-  - [ ] Requirement 1
-  - [ ] Requirement 2
-
-  ## UI Notes
-  - Page/route: `/path` ← verified from repo, NOT guessed
-  - Components: [Which Volt components are relevant — VoltCard, VoltDataTable, etc.]
-  - Follow DESIGN_LANGUAGE.md (zinc palette, no decorative shadows)
-
-  ## To Determine (if repo not checked)
-  - [ ] Which page/route handles this feature?
-  - [ ] Which existing components need modification?
-
-  ## Acceptance Criteria
-  - [ ] What "done" looks like
-```
-
-### Client Feature Request — Backend / API
-
-> **Note:** Backend issues should describe *what* functionality is needed, not *how* to implement it. The Backend lead knows which endpoints to create, how to structure handlers, and what validation to add. Focus the description on the functionality the backend needs to support and any business rules or constraints.
-
-```
-Title: Feature description
-Priority: High (2) or Medium (3)
-Labels: Feature, Backend (+ DB if it changes the schema)
-Estimate: XS/S/M/L/XL
-Description:
-  ## Context
-  [Why does the client need this? What problem does it solve for the client?]
-
-  ## Functionality
-  - [What the backend needs to support — describe the behavior, not the implementation]
-  - [Business rules, constraints, edge cases]
-  - [What data needs to be stored, returned, or transformed]
-  - [Auth considerations if non-standard (e.g., public access, webhook)]
-
-  ## Acceptance Criteria
-  - [ ] What "done" looks like from a functionality perspective
-  - [ ] Tests written
-```
 
 ### Fullstack Features — Split Into Separate Issues
 
@@ -208,8 +195,8 @@ When a feature requires both backend and frontend work, **always create separate
 This keeps issues focused, enables parallel assignment (the Backend lead on backend, the Frontend/PM lead on frontend), and makes progress tracking clearer. Using Linear dependencies (rather than just mentioning the dependency in the description) makes the blocking relationship visible in the UI, prevents the frontend issue from accidentally being started too early, and keeps the dependency machine-readable.
 
 **Steps:**
-1. Create the **backend issue** using the "Client Feature Request — Backend / API" template above (labels: `Feature`, `Backend`, plus `DB` if it changes the schema)
-2. Create the **frontend issue** using the "Client Feature Request — Frontend" template above (labels: `Feature`, `Frontend`)
+1. Create the **backend issue** using the **Backend** layout (labels: `Feature`, `Backend`, plus `DB` if it changes the schema)
+2. Create the **frontend issue** using the **Frontend** layout (labels: `Feature`, `Frontend`)
 3. **Create the Linear dependency:** update the frontend issue with `mcp__linear__save_issue` `blockedBy: ["<backend issue identifier>"]` (or pass it on create), so the backend issue blocks the frontend issue
 
 **Example:** "Add admin button to complete all job tasks"
@@ -218,67 +205,6 @@ This keeps issues focused, enables parallel assignment (the Backend lead on back
 - **Dependency:** frontend issue `blockedBy` the backend issue
 
 > **Note:** If the feature is simple enough that the backend is trivial (e.g., a single straightforward CRUD endpoint), it's acceptable to create one combined issue assigned to the person doing both. Use your judgement.
-
-### Bug Report
-```
-Title: Fix: brief description of the bug
-Priority: Urgent (1) or High (2)
-Labels: Bug, Frontend|Backend|DB
-Description:
-  ## Bug
-  [What's happening vs. what should happen]
-
-  ## Steps to Reproduce
-  1. Step 1
-  2. Step 2
-
-  ## Environment
-  [Browser, OS, user account, etc.]
-
-  ## Likely Location
-  - [File path if known, e.g., server/api/users/[id].get.ts or app/pages/users.vue]
-```
-
-### Backend / Data Modeling Task
-
-> **Note:** Focus on *what* data needs to be modeled and *why*, not on prescribing specific schema details or endpoint structures. Include business context and constraints so the Backend lead can make the right design decisions.
-
-```
-Title: Description of the task
-Priority: as appropriate
-Labels: Backend, DB
-Estimate: XS/S/M/L/XL
-Description:
-  ## Objective
-  [What data model or API change is needed and why]
-
-  ## Requirements
-  - [What data needs to be stored/tracked]
-  - [Relationships to existing data (e.g., "each job has many tasks")]
-  - [Business rules and constraints]
-  - [Any existing data that needs migrating]
-
-  ## Acceptance Criteria
-  - [ ] What "done" looks like
-  - [ ] Tests written
-```
-
-### Tech Debt / Maintenance
-```
-Title: Chore: description
-Priority: Medium (3) or Low (4)
-Labels: Tech Debt, Frontend|Backend|DB
-Estimate: -/XS/S/M/L
-Description:
-  ## What
-  [What needs to be done]
-
-  ## Why
-  [Why it matters — tech debt, performance, DX, etc.]
-
-  ## Files Affected
-  - [List key files/directories]
-```
 
 ---
 
