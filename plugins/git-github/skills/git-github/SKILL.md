@@ -1,6 +1,6 @@
 ---
 name: git-github
-description: Git and GitHub (gh CLI) workflows for agents - the branch-to-PR loop, reading PR and CI state, debugging failed GitHub Actions runs, getting unstuck from rejected pushes and rebase messes, gh api recipes, and release flows.
+description: Git and GitHub (gh CLI) workflows for agents - the branch-to-PR loop, stacked PRs with gh stack, reading PR and CI state, debugging failed GitHub Actions runs, getting unstuck from rejected pushes and rebase messes, gh api recipes, and release flows.
 ---
 
 # Git + GitHub Workflows
@@ -50,7 +50,7 @@ EOF
 - Merge style: `gh pr merge <n> --squash --delete-branch`; verify with `gh pr view <n> --json state,mergedAt`.
 - After merge: `git switch main && git pull --ff-only`, clean up `[gone]` branches, start the next branch from fresh main.
 - One concern per PR — hotfixes and review findings go in separate PRs unless told otherwise.
-- Stacked PRs: `gh pr create --base <parent-branch>`; after the parent merges, retarget with `gh pr edit <n> --base main` (and see [getting-unstuck.md](getting-unstuck.md) for rebasing onto main after the parent was squash-merged).
+- **Stacked PRs: use `gh stack` (github/gh-stack), never hand-set a PR's base to another feature branch.** Stack only when the child truly depends on the parent; otherwise branch from main. Core loop: `gh stack init <b1>` → `gh stack add <b2>` → `gh stack submit --auto --open` → `gh stack sync` after merges → `gh stack merge <n> --yes --squash` (the user's call). Plain `gh pr merge` doesn't work on stacked PRs. Full playbook, agent flags and error table: [stacked-prs.md](stacked-prs.md).
 - If you discover uncommitted work on the wrong branch and the PR must be "off main", do not commit to the wrong branch. With a cleanly applicable worktree, `git fetch origin main && git switch -c feat/<short-description> origin/main` carries the unstaged changes onto a new branch from `origin/main`. Verify with `git status` and tests. If checkout would overwrite/conflict, stash with `-u`. Only resort to worktree if stash gets too complicated.
 
 ## Reading PR and CI State
@@ -81,6 +81,7 @@ Do not bypass failing hooks with `--no-verify` unless the user says to.
 
 - **Debugging failed Actions runs** (the full playbook): [actions-debugging.md](actions-debugging.md)
 - **Repair ladders** — rejected pushes, blocked checkouts, rebase/conflict recovery, shallow clones, worktrees: [getting-unstuck.md](getting-unstuck.md)
+- **Stacked PRs with `gh stack`**: build, adopt, rebase, merge, and fix the errors it throws: [stacked-prs.md](stacked-prs.md)
 - **gh api recipes** — PR comments, reading files without checkout, repo settings, PAT gotchas: [gh-api-recipes.md](gh-api-recipes.md)
 - **Releases & publishing** — tags, gh release, npm Trusted Publishing, release-please: [releases.md](releases.md)
 - **External review loop** — using the codex CLI as an adversarial pre-merge reviewer: [external-review.md](external-review.md)
