@@ -140,14 +140,17 @@ There is no `fullstack` label — an issue that touches several layers carries e
 
 ## Estimation (T-Shirt Sizes)
 
-| Size | Meaning | Rough Effort |
-|------|---------|-------------|
-| **S** | Small, well-understood task | A few hours |
-| **M** | Medium complexity, clear scope | Half a day to a full day |
-| **L** | Large, may span multiple days | 2–3 days |
-| **XL** | Very large — consider breaking down | 3+ days, likely needs subtasks |
+| Size | Value | Meaning | Rough Effort |
+|------|-------|---------|-------------|
+| **No estimate** | `null` | Not yet sized | — |
+| **-** | `0` | Trivial — effectively no effort (a config flip, a copy change) | Minutes |
+| **XS** | `1` | Tiny, obvious change | Under an hour or two |
+| **S** | `2` | Small, well-understood task | A few hours |
+| **M** | `3` | Medium complexity, clear scope | Half a day to a full day |
+| **L** | `5` | Large, may span multiple days | 2–3 days |
+| **XL** | `8` | Very large — consider breaking down | 3+ days, likely needs subtasks |
 
-If an issue is XL, break it into smaller sub-issues before starting work.
+The API, the MCP server, and `linear.mjs --estimate` all take the numeric **Value**, not the letter (e.g. `--estimate 3` for M); capacity math sums these values. If an issue is XL, break it into smaller sub-issues before starting work.
 
 ---
 
@@ -418,7 +421,7 @@ node linear.mjs current-cycle-id   # Current active cycle UUID
 Title: Feature description
 Priority: High (2) or Medium (3)
 Labels: Feature, Frontend
-Estimate: S/M/L/XL
+Estimate: XS/S/M/L/XL
 Description:
   ## Context
   [Why does the client need this?]
@@ -448,7 +451,7 @@ Description:
 Title: Feature description
 Priority: High (2) or Medium (3)
 Labels: Feature, Backend (+ DB if it changes the schema)
-Estimate: S/M/L/XL
+Estimate: XS/S/M/L/XL
 Description:
   ## Context
   [Why does the client need this? What problem does it solve for the client?]
@@ -518,7 +521,7 @@ Description:
 Title: Description of the task
 Priority: as appropriate
 Labels: Backend, DB
-Estimate: S/M/L/XL
+Estimate: XS/S/M/L/XL
 Description:
   ## Objective
   [What data model or API change is needed and why]
@@ -539,7 +542,7 @@ Description:
 Title: Chore: description
 Priority: Medium (3) or Low (4)
 Labels: Tech Debt, Frontend|Backend|DB
-Estimate: S/M/L
+Estimate: -/XS/S/M/L
 Description:
   ## What
   [What needs to be done]
