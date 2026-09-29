@@ -113,19 +113,28 @@ On first run, `node linear.mjs init` binds these roles to specific Linear member
 
 ---
 
-## Labels (Recommended)
+## Labels
 
-### By Type
-- `bug` — Something is broken
-- `feature` — New functionality
-- `improvement` — Enhancement to existing functionality
-- `chore` — Maintenance, config, devops, dependencies
-- `spike` — Research or investigation task
+These are the labels that exist in the workspace — use only these; don't invent new ones. All are workspace-level, so every team has the same set with the same UUIDs.
 
-### By Domain
-- `frontend` — UI/UX, Vue components, pages, styling
-- `backend` — API, database, data modeling, server logic
-- `fullstack` — Touches both frontend and backend
+### By Type (pick one)
+- `Bug` — Something is broken
+- `Feature` — New functionality
+- `Improvement` — Enhancement to existing functionality
+- `Tech Debt` — Maintenance, refactors, test/CI gaps, dependencies, config — work with no user-facing change
+- `Discovery` — Research, investigation, or a decision to be made before building (what other teams call a spike)
+
+### By Domain (apply every one the issue touches)
+- `Frontend` — UI/UX, Vue components, pages, styling
+- `Backend` — API handlers, server logic, integrations
+- `DB` — Schema changes, migrations, data modeling
+
+There is no `fullstack` label — an issue that touches several layers carries each of them (e.g. `Backend`, `Frontend`, `DB`).
+
+### Status Flags (add alongside type + domain)
+- `client-request` — Originated from the client (e.g. a client-portal submission) rather than from us
+- `Needs Clarification` — Open questions for the client/requester must be answered before the work can be finished
+- `agent blocked` — An AI agent working the issue hit something it can't resolve and needs a human
 
 ---
 
@@ -197,7 +206,7 @@ The CLI resolves friendly names against `workspace.json`, so you rarely need raw
 --cycle      current  (the active cycle)                                      (or a UUID)
 ```
 
-`--team` selects which team a team-scoped command runs against, and `--state`/`--labels` then resolve against **that team's** states and labels. When `--team` is omitted it falls back to `$LINCTL_DEFAULT_TEAM` (a per-repo default) and then to `workspace.json`'s `defaultTeam`; if none are set you'll get an error listing the registered team keys. Workspace-wide commands (initiatives) don't need a team. Any value that's already a UUID is passed through untouched. Project and milestone IDs are still UUIDs (pass them with `--project` / `--milestone`).
+`--team` selects which team a team-scoped command runs against, and `--state`/`--labels` then resolve against **that team's** states and labels. When `--team` is omitted it falls back to `$LINCTL_DEFAULT_TEAM` (a per-repo default) and then to `workspace.json`'s `defaultTeam`; if none are set you'll get an error listing the registered team keys. Workspace-wide commands (initiatives) don't need a team. Any value that's already a UUID is passed through untouched. Label names match case-insensitively with `-` and space interchangeable (`tech-debt` → `Tech Debt`), but `init` only registers the type and domain labels (`discovery`, `tech-debt`, `bug`, `feature`, `improvement`, `frontend`, `backend`, `db`) — apply the status flags (`client-request`, `Needs Clarification`, `agent blocked`) via the MCP server or by UUID. Project and milestone IDs are still UUIDs (pass them with `--project` / `--milestone`).
 
 ### Creating Issues
 
@@ -408,7 +417,7 @@ node linear.mjs current-cycle-id   # Current active cycle UUID
 ```
 Title: Feature description
 Priority: High (2) or Medium (3)
-Labels: feature, frontend
+Labels: Feature, Frontend
 Estimate: S/M/L/XL
 Description:
   ## Context
@@ -438,7 +447,7 @@ Description:
 ```
 Title: Feature description
 Priority: High (2) or Medium (3)
-Labels: feature, backend
+Labels: Feature, Backend (+ DB if it changes the schema)
 Estimate: S/M/L/XL
 Description:
   ## Context
@@ -464,8 +473,8 @@ When a feature requires both backend and frontend work, **always create separate
 This keeps issues focused, enables parallel assignment (the Backend lead on backend, the Frontend/PM lead on frontend), and makes progress tracking clearer. Using Linear dependencies (rather than just mentioning the dependency in the description) makes the blocking relationship visible in the UI, prevents the frontend issue from accidentally being started too early, and keeps the dependency machine-readable.
 
 **Steps:**
-1. Create the **backend issue** using the "Client Feature Request — Backend / API" template above (labels: `feature`, `backend`)
-2. Create the **frontend issue** using the "Client Feature Request — Frontend" template above (labels: `feature`, `frontend`)
+1. Create the **backend issue** using the "Client Feature Request — Backend / API" template above (labels: `Feature`, `Backend`, plus `DB` if it changes the schema)
+2. Create the **frontend issue** using the "Client Feature Request — Frontend" template above (labels: `Feature`, `Frontend`)
 3. **Create the Linear dependency:** use `add-dependency` so the backend issue blocks the frontend issue
 
 ```bash
@@ -485,7 +494,7 @@ node linear.mjs add-dependency "$BACKEND_ISSUE_ID" "$FRONTEND_ISSUE_ID"
 ```
 Title: Fix: brief description of the bug
 Priority: Urgent (1) or High (2)
-Labels: bug, frontend|backend
+Labels: Bug, Frontend|Backend|DB
 Description:
   ## Bug
   [What's happening vs. what should happen]
@@ -508,7 +517,7 @@ Description:
 ```
 Title: Description of the task
 Priority: as appropriate
-Labels: backend
+Labels: Backend, DB
 Estimate: S/M/L/XL
 Description:
   ## Objective
@@ -525,11 +534,11 @@ Description:
   - [ ] Tests written
 ```
 
-### Chore / Maintenance
+### Tech Debt / Maintenance
 ```
 Title: Chore: description
 Priority: Medium (3) or Low (4)
-Labels: chore, frontend|backend
+Labels: Tech Debt, Frontend|Backend|DB
 Estimate: S/M/L
 Description:
   ## What
