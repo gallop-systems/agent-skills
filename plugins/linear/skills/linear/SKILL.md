@@ -1,13 +1,13 @@
 ---
 name: linear
-description: Create, triage, and manage Linear issues at Gallop Systems following the team's workflow conventions — cycle placement, issue templates, project/milestone hierarchy, and project refresh / cycle rebalance procedures. Use whenever the user asks for Linear work (creating issues, planning cycles, refreshing projects) on a Gallop client.
+description: Create, triage, and manage Linear issues at Gallop Systems following the team's workflow conventions — issue status, issue templates, and the project/milestone hierarchy. Use whenever the user asks for Linear work (creating or updating issues, placing work in projects and milestones) on a Gallop client.
 ---
 
 # Linear Project Management — Team Workflow & CLI Guide
 
 ## The CLI
 
-The fallback tooling is a single zero-dependency Node script, `bin/linear.mjs`. It runs on bare `node` (v18.3+ — no `npm install`, no `tsx`, no build step) and uses symbolic names instead of raw UUIDs (`--state todo`, `--assignee frontend`, `--labels bug,frontend`, `--cycle current`).
+The fallback tooling is a single zero-dependency Node script, `bin/linear.mjs`. It runs on bare `node` (v18.3+ — no `npm install`, no `tsx`, no build step) and uses symbolic names instead of raw UUIDs (`--state backlog`, `--assignee frontend`, `--labels bug,frontend`).
 
 Invoke it as `node <skill>/bin/linear.mjs <command> [args] [--flags]`. Examples below write `node linear.mjs` for brevity — use the full path to the file, or `cd` into the skill's `bin/` directory first. Run `node linear.mjs help` for the full command list.
 
@@ -71,15 +71,13 @@ Don't silently skip these checks. A user who hits an MCP error mid-task without 
 | Status | Meaning | Move here when |
 |--------|---------|----------------|
 | **Triage** | Raw incoming request, not yet shaped into a real issue | Client-portal submissions land here automatically — work them with the `linear-triage` skill |
-| **Backlog** | Captured but not yet planned for a cycle | The issue is well-formed but not committed to a cycle; new requests go here, not straight into a cycle, unless truly urgent |
-| **Todo** | Committed to the current or next cycle | The issue is assigned to a cycle — required, since a Backlog issue doesn't work in a cycle |
+| **Backlog** | Captured, being fleshed out, not yet ready for work | Default for every issue an agent creates |
+| **Todo** | Fully fleshed out and ready for work | Only when the user says so — never on the agent's own judgement |
 | **In Progress** | Actively being worked on | Work on it starts |
 | **In Review** | Code complete, awaiting review or client feedback | A PR is open for review, or the change is waiting on client sign-off |
 | **Done** | Shipped and verified | Merged/deployed and verified |
 | **Canceled** | Dropped or no longer relevant | The work is no longer wanted |
 | **Duplicate** | Same work as another issue | Another issue already covers it — mark it a duplicate of that issue rather than canceling |
-
-Linear rolls unfinished issues into the next cycle and closes completed cycles on its own — there's no cycle start/end step to perform. To redistribute work across cycles, use **Cycle Rebalance** below.
 
 ---
 
@@ -88,7 +86,7 @@ Linear rolls unfinished issues into the next cycle and closes completed cycles o
 | Priority | When to Use |
 |----------|-------------|
 | **Urgent** | Production issues, client-blocking bugs, deadline-critical items |
-| **High** | Current sprint commitments, important client deliverables |
+| **High** | Important client deliverables, work that should be picked up next |
 | **Medium** | Planned work, non-blocking improvements |
 | **Low** | Nice-to-haves, tech debt, internal tooling |
 
@@ -131,7 +129,7 @@ There is no `fullstack` label — an issue that touches several layers carries e
 | **L** | `5` | Large, may span multiple days | 2–3 days |
 | **XL** | `8` | Very large — consider breaking down | 3+ days, likely needs subtasks |
 
-The API, the MCP server, and `linear.mjs --estimate` all take the numeric **Value**, not the letter (e.g. `--estimate 3` for M); capacity math sums these values. If an issue is XL, break it into smaller sub-issues before starting work.
+The API, the MCP server, and `linear.mjs --estimate` all take the numeric **Value**, not the letter (e.g. `--estimate 3` for M). If an issue is XL, break it into smaller sub-issues before starting work.
 
 ---
 
@@ -140,12 +138,11 @@ The API, the MCP server, and `linear.mjs --estimate` all take the numeric **Valu
 **Default to the Linear MCP server (`mcp__linear__*` tools)** for all standard operations: creating/updating issues, listing projects/milestones/cycles/initiatives/labels/users, comments, etc. The MCP tools take strings directly — pass real markdown with real newlines, no JSON-escaping.
 
 **Use `linear.mjs` only for things MCP doesn't expose:**
-- `cycle-capacity` — velocity-based capacity % (used in cycle placement & rebalancing)
-- `batch-move-to-cycle` / `batch-move-to-milestone` — rate-limit-aware bulk moves
+- `batch-move-to-milestone` — rate-limit-aware bulk moves
 - `add-initiative-link` — adding external links to initiatives
 - `api` — raw GraphQL escape hatch
 
-**Verify every MCP write.** `mcp__linear__save_issue` has been seen returning success while silently not applying `cycle`, `labels`, or the milestone — and its response echo can omit fields it did apply. After each create/update, re-read the issue with `mcp__linear__get_issue` and confirm cycle, labels, project, and milestone are all set. Pass UUIDs rather than names for those fields; if one still won't stick, set it with `linear.mjs api` (`issueUpdate` with `cycleId` / `labelIds` / `projectMilestoneId`). Don't report the issue as done until it verifies.
+**Verify every MCP write.** `mcp__linear__save_issue` has been seen returning success while silently not applying `labels` or the milestone — and its response echo can omit fields it did apply. After each create/update, re-read the issue with `mcp__linear__get_issue` and confirm labels, project, and milestone are all set. Pass UUIDs rather than names for those fields; if one still won't stick, set it with `linear.mjs api` (`issueUpdate` with `labelIds` / `projectMilestoneId`). Don't report the issue as done until it verifies.
 
 ### The CLI
 
@@ -165,56 +162,52 @@ The CLI resolves friendly names against `workspace.json`, so you rarely need raw
 --assignee   frontend | backend                                               (or a UUID)
 --labels     bug,frontend,feature  (comma-separated label names)              (or UUIDs)
 --priority   0-4  or  none | urgent | high | medium | low
---cycle      current  (the active cycle)                                      (or a UUID)
 ```
 
 `--team` selects which team a team-scoped command runs against, and `--state`/`--labels` then resolve against **that team's** states and labels. When `--team` is omitted it falls back to `$LINCTL_DEFAULT_TEAM` (a per-repo default) and then to `workspace.json`'s `defaultTeam`; if none are set you'll get an error listing the registered team keys. Workspace-wide commands (initiatives) don't need a team. Any value that's already a UUID is passed through untouched. Label names match case-insensitively with `-` and space interchangeable (`tech-debt` → `Tech Debt`), but `init` only registers the type and domain labels (`discovery`, `tech-debt`, `bug`, `feature`, `improvement`, `frontend`, `backend`, `db`) — apply the status flags (`client-request`, `Needs Clarification`, `agent blocked`) via the MCP server or by UUID. Project and milestone IDs are still UUIDs (pass them with `--project` / `--milestone`).
 
 ### Creating Issues
 
-> **Important:** When assigning an issue to a cycle, always set `--state todo`. Issues default to Backlog, which doesn't work with cycles — they must be in Todo status.
+> **Create in Backlog, then ask about Todo.** Every issue an agent creates goes to **Backlog** — don't assign a cycle. After creating it, show the user the issue (link plus a short summary) and ask whether it's ready for **Todo**; move it only if they say yes.
 >
-> **Required placement rule:** Never create an issue without both `--project` and `--milestone`. **The project must already exist** — place the issue in the initiative's existing `M` project for the milestone it falls under, and never conjure a project to hold it (see "Never invent a project"). Creating a project is only correct for a confirmed out-of-scope revision. If the project exists but the right milestone does not, create the milestone first. Do not leave issues unscoped or unmilestoned.
+> **Required placement rule:** Never create an issue without both `--project` and `--milestone`. **The project must already exist** — place the issue in the initiative's existing `M` project for the milestone it falls under, and never conjure a project to hold it (see "Never invent a project"). Creating a project is only correct for a confirmed out-of-scope revision. The milestones in an `M` project are the proposal's deliverables and are fixed too — place the issue in the deliverable it falls under; if none fits, say so and ask whether it's a revision rather than creating a milestone. Do not leave issues unscoped or unmilestoned.
 >
-> **Never target a completed milestone.** New work never belongs in a milestone that is already done — it distorts the completed phase and hides the issue from the team's current view. Only place an issue in an **open** milestone. If no open milestone matches the issue, create a new one and use that; do not reopen or reuse a completed milestone.
+> **Work under a completed deliverable → ask.** If the work falls under a milestone that's already completed, don't place it silently and don't create a new milestone to dodge it. Tell the requester the deliverable is done and ask whether this is within its signed scope (place it in that milestone) or a revision (it goes to an `R` project).
 >
 > **Check for duplicates first.** Before creating an issue, search the team's open and recently completed issues for the same or overlapping work. If one exists, show the user its title, status, assignee, and link, and ask whether to skip, update/comment on the existing issue, or create the new one anyway because the scope differs. Never silently create a duplicate.
 >
 > **Closing a duplicate.** Comment on the duplicate explaining why and linking the original, then mark it with `duplicateOf` (MCP `save_issue`) — that moves it to the **Duplicate** status. Don't just cancel it.
 >
-> **Every issue is complete on creation.** Set priority, estimate, one type label plus every domain label it touches (see **Labels**), and an assignee (see **Assignment Guidelines**) — never leave any of them for later.
+> **Fill in everything you can.** Set priority, estimate, one type label plus every domain label it touches (see **Labels**), and an assignee (see **Assignment Guidelines**) as a best-effort draft — the user adjusts them while fleshing the issue out.
 >
-> **Confirm decisions with the requester — don't punt them into the issue.** When the person asking you to create the issue is right there in the conversation, ask the open decisions (scope, mechanism, data source, ownership, who/where it should land) *before* writing the issue — e.g. via a structured question prompt — and bake the confirmed answers into the body. Do **not** write an "Open questions" section full of decisions you could have just asked, and do **not** use that manufactured uncertainty as a rationale to leave the issue in Backlog or unassigned. Only genuinely external unknowns (something that needs a meeting, a client, or a spike to resolve) belong as open questions; everything the requester can answer on the spot should already be a confirmed decision with the issue placed and assigned accordingly.
+> **Confirm decisions with the requester — don't punt them into the issue.** When the person asking you to create the issue is right there in the conversation, ask the open decisions (scope, mechanism, data source, ownership, who/where it should land) *before* writing the issue — e.g. via a structured question prompt — and bake the confirmed answers into the body. Do **not** write an "Open questions" section full of decisions you could have just asked, and do **not** use that manufactured uncertainty as a rationale to leave fields blank or the issue unassigned. Only genuinely external unknowns (something that needs a meeting, a client, or a spike to resolve) belong as open questions; everything the requester can answer on the spot should already be a confirmed decision with the issue placed and assigned accordingly.
 
 ```bash
-# --state todo is required when using --cycle
 # --project and --milestone are always required
 node linear.mjs create-issue \
   --title 'Add user profile page' \
   --description 'Create /profile page with user info and settings' \
   --priority high \
-  --state todo \
+  --state backlog \
   --assignee frontend \
   --labels feature,frontend \
   --estimate 3 \
   --project 'project-uuid-here' \
-  --milestone 'milestone-uuid-here' \
-  --cycle current
+  --milestone 'milestone-uuid-here'
 
 # Create a bug report
 node linear.mjs create-issue \
   --title 'Fix: login redirect fails on Safari' \
   --description 'Users on Safari not redirected after login. Reproduced on Safari 17.' \
   --priority urgent \
-  --state todo \
+  --state backlog \
   --assignee frontend \
   --labels bug,frontend \
   --project 'project-uuid-here' \
-  --milestone 'milestone-uuid-here' \
-  --cycle current
+  --milestone 'milestone-uuid-here'
 
 # Long descriptions: pass a file instead of inline text (no shell-escaping)
-node linear.mjs create-issue --title 'Investigate perf issue' --state todo \
+node linear.mjs create-issue --title 'Investigate perf issue' --state backlog \
   --description-file ./issue-body.md \
   --project 'project-uuid' --milestone 'milestone-uuid'
 
@@ -222,10 +215,11 @@ node linear.mjs create-issue --title 'Investigate perf issue' --state todo \
 # (Prefer the MCP `get_initiative` with includeProjects; this lists them via the CLI.)
 node linear.mjs list-projects            # copy the [KEY] M<n> project's UUID
 PROJECT_ID='project-uuid-here'
-# Only the milestone may be created as part of intake
-MILESTONE_ID="$(node linear.mjs create-milestone "$PROJECT_ID" 'Phase 1' | node -e "process.stdin.once('data',d=>{const n=JSON.parse(d).data.projectMilestoneCreate.projectMilestone;console.log(n.id)})")"
-node linear.mjs create-issue --title 'Investigate performance issue' --state todo \
-  --project "$PROJECT_ID" --milestone "$MILESTONE_ID" --cycle current
+# Find the deliverable milestone the work falls under — do not create one in an M project.
+node linear.mjs list-milestones "$PROJECT_ID"   # copy the milestone's UUID
+MILESTONE_ID='milestone-uuid-here'
+node linear.mjs create-issue --title 'Investigate performance issue' --state backlog \
+  --project "$PROJECT_ID" --milestone "$MILESTONE_ID"
 ```
 
 ### Priority Values
@@ -242,9 +236,6 @@ node linear.mjs list-issues
 
 # Filter by state type: backlog, unstarted, started, completed, canceled
 node linear.mjs list-issues started
-
-# List issues in current cycle
-node linear.mjs list-cycle-issues
 
 # Raw JSON output (for piping) — add --json to any list command
 node linear.mjs list-issues --json
@@ -354,8 +345,6 @@ node linear.mjs list-initiatives --json
 node linear.mjs list-states        # Workflow states
 node linear.mjs list-members       # Team members
 node linear.mjs list-labels        # Labels
-node linear.mjs list-cycles        # All cycles
-node linear.mjs current-cycle-id   # Current active cycle UUID
 ```
 
 ---
@@ -531,7 +520,7 @@ Issues are assigned by role: the **Frontend/PM lead** or the **Backend lead**. `
 
 ## Post-Organization: Update Initiative in Linear
 
-**After organizing issues for a client (creating, triaging, updating statuses, or completing a sprint review), always update the corresponding initiative's `content` field in Linear.**
+**After organizing issues for a client (creating, triaging, or updating statuses), always update the corresponding initiative's `content` field in Linear.**
 
 ### What to Update
 
@@ -549,7 +538,6 @@ The initiative `content` field stores **client-level context only** — NOT data
 
 - After creating a batch of new issues for a client
 - After triaging/re-prioritizing a client's backlog
-- After a sprint review or cycle close
 - After marking significant issues as Done or Canceled
 - Any time the initiative's content would be stale after your changes
 
@@ -561,8 +549,6 @@ Use the Linear CLI to query the initiative and pull fresh issue data:
 node linear.mjs get-initiative-by-name "ClientName"
 # List all issues to see current statuses
 node linear.mjs list-issues
-# Or check cycle-specific progress
-node linear.mjs list-cycle-issues
 ```
 
 Then update the initiative's content in Linear (use a file for the markdown body):
@@ -639,31 +625,19 @@ are for), or because the initiative looked empty. If you cannot place the work a
 the requester is unavailable, leave it unplaced and say so — an invented project is
 harder to undo than an unplaced issue.
 
-### Milestone (= Phase / Epic)
+### Milestone (= One Proposed Deliverable)
 
-A **Milestone** is a phase or epic within a project — a meaningful chunk of progress that can be demoed or shipped incrementally.
+A **Milestone** is **one deliverable the proposal listed under that project's milestone** — the same alignment as projects, one level down. An `M` project's milestones *are* its signed deliverables, so they're fixed by the proposal just like the project row.
 
-A milestone is the level where grouping decisions actually belong — **unlike
-projects, milestones may be created freely as part of intake.** If a request needs
-a new home inside its `M` project, that home is a milestone, never a new project.
+- **In an `M` project, never create a milestone during intake.** Place the work in the deliverable it falls under. If none fits, that's a signal the work may be out of scope — say so and ask whether it's a revision.
+- **In a confirmed `R` project**, you may create milestones for the revision's deliverables as part of intake.
 
 **Examples within `[KEY] M2 — Billing`:**
 - `Core Billing` — create, edit, send invoices (done)
 - `Quotes` — quote workflow, create/edit/convert to invoice
 - `Payments` — payment methods, receipts, balance due display
 
-**Examples within `[KEY] M1 — Scheduling`:**
-- `Providers Module` — list, create, edit, deactivate providers
-- `Booking Requests` — request creation, accept/reject workflow
-- `Scheduling & Calendar` — availability, scheduling UI
-
-**When to create a milestone:**
-- A logical group of 5–15 related issues
-- Has a clear "phase complete" definition
-- Can be reviewed/demoed as a unit
-- Work within it is mostly sequential or tightly coupled
-
-**Naming convention:** Short, descriptive noun phrase (no client key prefix needed since milestones live inside a project)
+**Naming convention:** The deliverable's name from the proposal (no client key prefix needed since milestones live inside a project).
 
 ### Issue (= Task)
 
@@ -674,7 +648,7 @@ Individual work items live at the bottom of the hierarchy. Every issue belongs t
 ```
 Initiative: <Client> — Phase 1        ← one signed proposal
   ├── Project: [KEY] M1 — Scheduling      ← proposal milestone 1
-  │     ├── Milestone: Providers Module
+  │     ├── Milestone: Providers Module   ← proposal deliverable
   │     │     ├── KEY-101: Create providers list page
   │     │     ├── KEY-102: Add provider create/edit form
   │     │     └── KEY-103: Provider deactivation support
@@ -688,18 +662,18 @@ Initiative: <Client> — Phase 1        ← one signed proposal
 ```
 
 The project row is fixed by the proposal (`M1`, `M2`) plus whatever revisions have
-been agreed (`R1`). New requests land as **issues in a milestone** inside an
-existing project — the project row only grows when a revision is confirmed.
+been agreed (`R1`). New requests land as **issues in an existing deliverable milestone** inside an
+existing project — projects and milestones only grow when a revision is confirmed.
 
 ### Guidelines for the Team
 
-1. **Every issue must be placed into a cycle with Todo status.** **Do NOT default to the current/active cycle.** Follow this procedure: (a) Run `cycle-capacity` to see each cycle's capacity % (velocity-based, from last 3 completed cycles). (b) Starting from the earliest (current) cycle, find the first cycle that is **strictly under 100%** capacity. (c) If the current cycle is at or above 100%, **skip it** and use the next cycle with room. Assign the issue there via `--cycle`. **Always set `--state todo`** — issues in Backlog don't work with cycles. **Exception:** High priority or above (priority ≤ 2: Urgent, High) always go into the current active cycle regardless of capacity.
+1. **Every new issue starts in Backlog, with no cycle.** Ask the user whether it's ready for Todo, and move it only on a yes (see "Create in Backlog, then ask about Todo").
 2. **Every issue must belong to a project and a milestone.** Never create orphan issues and never leave an issue outside a milestone.
 3. **Place the issue in an existing project — never invent one.** The initiative's `M` projects are the signed proposal's milestones; find the one the work falls under. A new project is correct *only* for work the requester confirmed is out of scope, and then only as the next `[KEY] R<n> — <Name>` revision project (see "Never invent a project"). Don't park work in a generic team backlog either — if you truly cannot place it, say so rather than manufacturing a home for it.
-4. **If the correct milestone does not exist, create it before creating the issue.** Milestone creation is part of issue intake, not optional cleanup. **Never add an issue to a completed milestone** — only open milestones may receive new issues. If no open milestone matches the issue, create a new one; do not reuse a completed one.
+4. **Place the issue in the deliverable milestone it falls under.** Never create a milestone in an `M` project; only a confirmed `R` project may get new milestones during intake. If the matching milestone is completed, ask the requester whether the work is in scope or a revision (see "Work under a completed deliverable → ask").
 5. **Use milestones for sequencing.** Milestones can have target dates, making them useful for communicating delivery phases to clients.
 6. **Track progress in Linear.** After creating/updating projects or milestones, update the initiative's content in Linear to reflect the current structure (see "Post-Organization: Update Initiative in Linear" below).
-7. **When creating issues with the CLI**, use the `--project`, `--milestone`, and `--cycle` flags to place issues correctly in the hierarchy and cycle.
+7. **When creating issues with the CLI**, use the `--project` and `--milestone` flags to place issues correctly in the hierarchy.
 
 ### CLI Examples
 
@@ -710,354 +684,23 @@ node linear.mjs list-projects
 # List milestones within a project
 node linear.mjs list-milestones "$PROJECT_ID"
 
-# If the milestone is missing, create it inside the EXISTING M project (never a new project)
-MILESTONE_ID="$(node linear.mjs create-milestone "$PROJECT_ID" "Phase 1" | node -e "process.stdin.once('data',d=>console.log(JSON.parse(d).data.projectMilestoneCreate.projectMilestone.id))")"
+# Only inside a confirmed R project: create a milestone for one of the revision's deliverables
+MILESTONE_ID="$(node linear.mjs create-milestone "$R_PROJECT_ID" "Deliverable name" | node -e "process.stdin.once('data',d=>console.log(JSON.parse(d).data.projectMilestoneCreate.projectMilestone.id))")"
 
 # Creating a project is only for a CONFIRMED out-of-scope revision — next R<n>, same initiative
 node linear.mjs create-project --name "[KEY] R1 — Revision Name" --initiative "$INITIATIVE_ID" --description "Short description"
 
-# Create an issue within a project and milestone (with cycle)
+# Create an issue within a project and milestone
 node linear.mjs create-issue \
   --title 'Add provider create form' \
   --description '...' \
   --priority high \
-  --state todo \
+  --state backlog \
   --assignee frontend \
   --labels feature,frontend \
   --project 'project-uuid-here' \
-  --milestone 'milestone-uuid-here' \
-  --cycle current
+  --milestone 'milestone-uuid-here'
 ```
-
----
-
-## Project Refresh — Milestone Restructuring
-
-When a project's milestone structure becomes outdated (or was never set up), use the **project refresh** workflow to reorganize milestones without losing or changing any issues.
-
-### When to Refresh
-
-- Project was created without milestones and has grown to 10+ issues
-- Milestones were set up early but no longer match the actual work groupings
-- A project pivot changed priorities and the old phases don't apply
-- Too many issues are in "(No milestone)" and need proper grouping
-- Milestones are too broad (30+ issues each) or too granular (1-2 issues each)
-
-### Refresh Workflow
-
-**Step 1: Audit the current state**
-
-```bash
-# Get the project ID
-node linear.mjs list-projects
-
-# See current milestones
-node linear.mjs list-milestones "$PROJECT_ID"
-
-# See all issues grouped by milestone (includes unmilestoned)
-node linear.mjs list-project-issues "$PROJECT_ID" --limit 200
-
-# Get raw JSON for scripting (includes issue UUIDs and milestone UUIDs)
-node linear.mjs list-project-issues "$PROJECT_ID" --limit 200 --json
-```
-
-Review:
-- How many issues per milestone? (ideal: 5–15)
-- Are milestones thematically coherent?
-- Are there many unmilestoned issues?
-- Do completed milestones still have open issues?
-- Are milestone names clear and descriptive?
-
-**Step 2: Propose new milestone structure**
-
-Present the proposed changes to the user before making any modifications:
-- Which milestones to **keep** (unchanged)
-- Which milestones to **rename** (same issues, better name) — **never rename milestones with target dates**
-- Which milestones to **merge** (combine two sparse milestones)
-- Which milestones to **split** (break an overloaded milestone)
-- Which milestones to **create** (for unmilestoned issues or new groupings)
-- Which milestones to **delete** (empty after reshuffling) — **never delete milestones with target dates**
-- For each issue, which milestone it should end up in
-
-**Present this as a before/after table so the user can approve.**
-
-**Step 3: Execute the changes (after user approval)**
-
-Order of operations matters — follow this sequence:
-
-1. **Create new milestones** (need their IDs before moving issues)
-   ```bash
-   node linear.mjs create-milestone "$PROJECT_ID" "New Milestone Name" --target-date "2025-06-01"
-   ```
-
-2. **Rename existing milestones** (safe, doesn't affect issues)
-   ```bash
-   node linear.mjs update-milestone "$MILESTONE_ID" --name "Better Name"
-   ```
-
-3. **Move issues to their new milestones**
-   ```bash
-   # One at a time
-   node linear.mjs set-issue-milestone "$ISSUE_ID" "$NEW_MILESTONE_ID"
-
-   # Or batch move
-   node linear.mjs batch-move-to-milestone "$NEW_MILESTONE_ID" "$ISSUE_1" "$ISSUE_2" "$ISSUE_3"
-   ```
-
-4. **Delete empty milestones** (only after all issues are moved out)
-   ```bash
-   node linear.mjs delete-milestone "$EMPTY_MILESTONE_ID"
-   ```
-
-5. **Verify the result**
-   ```bash
-   node linear.mjs list-project-issues "$PROJECT_ID" --limit 200
-   ```
-
-**Step 4: Update the initiative in Linear**
-
-After restructuring, update the initiative's `content` field in Linear to reflect the new milestone structure.
-
-### Safety Rules
-
-- **No issue loss.** Every issue that existed before the refresh must exist after. Verify issue count before and after.
-- **No status changes.** Don't change any issue's status, priority, assignee, labels, or estimate during a refresh. Only the milestone assignment changes.
-- **No issue deletion.** Never delete or cancel issues as part of a refresh.
-- **Delete milestones last.** Only delete a milestone after confirming it has zero issues.
-- **Never delete or rename a dated milestone.** Milestones with target dates represent intentional commitments — they must stay intact (name and date unchanged). You may move issues out of them, but the milestone itself must not be deleted or renamed.
-- **User approval required.** Always present the proposed restructuring plan and get explicit approval before executing any changes.
-
-### CLI Reference (Milestone Operations)
-
-```bash
-# Create a milestone
-node linear.mjs create-milestone "$PROJECT_ID" "Milestone Name" [--target-date YYYY-MM-DD]
-
-# Rename / update a milestone
-node linear.mjs update-milestone "$MILESTONE_ID" --name "New Name"
-node linear.mjs update-milestone "$MILESTONE_ID" --target-date "2025-07-01"
-node linear.mjs update-milestone "$MILESTONE_ID" --sort-order 5
-
-# Delete a milestone (must be empty!)
-node linear.mjs delete-milestone "$MILESTONE_ID"
-
-# Move a single issue to a milestone
-node linear.mjs set-issue-milestone "$ISSUE_ID" "$MILESTONE_ID"
-
-# Remove issue from its milestone (set to unmilestoned)
-node linear.mjs set-issue-milestone "$ISSUE_ID" none
-
-# Batch move issues to a milestone
-node linear.mjs batch-move-to-milestone "$MILESTONE_ID" "$ISSUE_1" "$ISSUE_2" "$ISSUE_3"
-
-# Get raw JSON with issue/milestone UUIDs (for scripting)
-node linear.mjs list-project-issues "$PROJECT_ID" --limit 200 --json
-```
-
----
-
-## Cycle Rebalance — Redistributing Issues Across Cycles
-
-The **cycle rebalance** workflow redistributes issues so that cycles are filled **front-to-back**: the current cycle should be at **105% capacity**, overflow spills into the next cycle (also up to 105%), and so on. This applies in **both directions** — issues move later when a cycle is overloaded, and issues pull forward from later cycles when the current cycle has room.
-
-**Capacity** is calculated using `cycle-capacity`: total estimate points in the cycle / average completed estimate points from the last 3 completed cycles (velocity).
-
-### When to Rebalance
-
-- After a cycle ends with incomplete issues that rolled into the next cycle
-- When a cycle is over or under capacity
-- When the user says "rebalance cycles", "redistribute issues", or similar
-- During sprint planning when upcoming cycles look uneven
-
-### Rebalance Workflow
-
-**Step 1: Audit current cycle state**
-
-```bash
-# Check velocity-based capacity for all cycles
-node linear.mjs cycle-capacity
-
-# Overview: all active/upcoming cycles with issues grouped by project
-node linear.mjs rebalance
-
-# Raw data for analysis
-node linear.mjs rebalance --json
-```
-
-Collect this data and analyze:
-- **Velocity:** From `cycle-capacity` output (avg completed pts from last 3 cycles)
-- **Capacity per cycle:** Each cycle's estimate points as a % of velocity
-- **Target per cycle:** 105% of velocity (e.g., if velocity = 91, target = ~96 pts)
-- **Which cycles are under 105%:** These need issues pulled forward from later cycles
-- **Which cycles are over 105%:** These need issues pushed to later cycles
-
-**Step 2: Analyze and plan the redistribution**
-
-The goal is to **fill cycles front-to-back to 105%**:
-
-1. Start with the **current (active) cycle**. Calculate its capacity.
-2. If **under 105%** → pull movable issues forward from the next cycle(s) until at 105% (or no more movable issues exist).
-3. If **over 105%** → push lowest-priority movable issues to the next cycle until at 105%.
-4. Move to the **next cycle** and repeat.
-5. Continue until all cycles are processed. The last cycle absorbs whatever remains.
-
-**When pulling issues forward**, prefer (in order):
-1. **Urgent/High priority** issues first — get important work done sooner
-2. Issues whose **dependencies are already satisfied** (blocker is Done or in an earlier/same cycle)
-3. Issues from **underrepresented clients** in the target cycle (balance client mix)
-4. Issues in the **same milestone** as other issues already in the target cycle
-
-**When pushing issues later**, prefer (in order):
-1. **NEVER move High (2) or Urgent (1) priority issues to a later cycle** — they are time-sensitive and must stay in their current cycle or move earlier
-2. **NEVER move issues with a due date** — due dates represent commitments; these issues are pinned to their current cycle (or can move earlier, never later)
-3. **Low (4)** priority issues first — least impactful to delay
-4. **Medium (3)** priority next
-5. Issues with **no downstream dependents** (nothing blocked by them)
-6. Issues from **overrepresented clients** in the current cycle
-
-Apply these heuristics throughout:
-
-#### Heuristic 1: Respect status — never move active work
-- **Never move** issues that are `In Progress` or `In Review` — they stay in their current cycle
-- **Todo** issues are movable (both forward and backward)
-- **Backlog** issues in a cycle are movable (but should be set to Todo after moving)
-
-#### Heuristic 2: Respect dependencies
-- **Hard rule: a blocking issue must NEVER be in a later cycle than the issue it blocks.** If issue A blocks issue B, A must be in the same cycle as B or an earlier one. This is inviolable — never move a blocker to a later cycle than its dependent.
-- Check dependencies with `mcp__linear__get_issue` (`includeRelations: true`) for any issue you plan to move
-- When pulling an issue forward, also pull forward any of its blockers that are in a later cycle (or leave both)
-- When pushing an issue later, ensure none of the issues it blocks are in the current or an earlier cycle — if they are, you cannot push this issue. Either push the dependent issues too, or leave the blocker in place.
-
-#### Heuristic 3: Balance client work per cycle
-- Each cycle should have a **roughly proportional mix** of client work — avoid "all Globex" or "all Northwind" cycles
-- When choosing which issues to pull forward or push later, use client balance as a tiebreaker
-- This ensures progress across all clients every sprint
-
-#### Heuristic 4: Keep milestones together
-- Issues in the same milestone should stay in the same cycle when possible — they're often sequentially dependent even if not formally linked
-- If a milestone spans cycles, keep the split clean: don't scatter milestone issues across 3+ cycles
-- When pulling forward, prefer pulling entire milestone groups together
-
-#### Heuristic 5: Balance assignee load
-- Each cycle should have a reasonable split between the Frontend/PM lead and the Backend lead
-- Don't create a cycle where one person has 80% of the work and the other has 20%
-- Consider that backend issues (Backend lead) often block frontend issues (Frontend/PM lead) — schedule accordingly
-
-#### Heuristic 6: Estimate-aware balancing
-- Use estimate points (not just issue count) for capacity calculations via `cycle-capacity`
-- A cycle with 3 XL issues is heavier than one with 8 S issues
-- Unestimated issues don't count toward capacity — note this when presenting the plan
-
-**Step 3: Present the rebalance plan**
-
-Present a clear before/after comparison:
-
-```
-VELOCITY: 91 pts (avg from C1=96, C2=80, C3=96)
-TARGET PER CYCLE: ~96 pts (105%)
-
-BEFORE:
-  Cycle 4 (active):  67 pts —  74% capacity
-  Cycle 5:           62 pts —  68% capacity
-  Cycle 6:           65 pts —  72% capacity
-
-AFTER:
-  Cycle 4:  96 pts — 105% capacity (pulled 29 pts forward from C5)
-  Cycle 5:  96 pts — 105% capacity (lost 29 to C4, pulled 63 from C6)
-  Cycle 6:   2 pts —   2% capacity (pushed 63 to C5)
-
-MOVES:
-  ← ACME-342 "Build customer profiles list page" (est 3, Northwind) → Cycle 5 → Cycle 4
-  ← ACME-441 "Show dependency indicators" (est 3, Globex) → Cycle 5 → Cycle 4
-  → ACME-278 "Display audit log" (est 3, Globex) → Cycle 6 → Cycle 5
-  ...
-```
-
-Include:
-- Direction arrow: `←` for pulling forward, `→` for pushing later
-- Which issues move, with identifier, title, priority, estimate, and project
-- Why each issue was chosen to move
-- Client distribution per cycle (before and after)
-- Assignee balance per cycle (before and after)
-- Any issues you considered moving but kept in place, and why
-
-**Get explicit user approval before executing.**
-
-**Step 4: Execute the moves (after approval)**
-
-> **Important: Rate limiting.** The Linear API silently drops rapid-fire mutations. The `batch-move-to-cycle` command already inserts a 0.5s delay between calls and validates each response (reporting `success`/`fail` counts). For large rebalances (50+ moves), still process in groups of ~9 and verify between groups, since responses may report `success: true` while the mutation is silently discarded.
-
-```bash
-# Use the built-in batch command (includes delays and error reporting):
-node linear.mjs batch-move-to-cycle "$TARGET_CYCLE_ID" "$ISSUE_1" "$ISSUE_2" "$ISSUE_3"
-
-# "current" resolves to the active cycle:
-node linear.mjs batch-move-to-cycle current "$ISSUE_1" "$ISSUE_2"
-
-# For one-off moves:
-node linear.mjs move-issue-to-cycle "$ISSUE_ID" "$CYCLE_ID"
-```
-
-**Step 5: Verify the result**
-
-```bash
-# Confirm the new capacity distribution
-node linear.mjs cycle-capacity
-
-# Confirm issue-level details
-node linear.mjs rebalance
-```
-
-Review the output and confirm:
-- Current cycle is at or near 105% (or as close as possible given movable issues)
-- Each subsequent cycle is filled to 105% before spilling to the next
-- No In Progress/In Review issues were moved
-- Dependencies are still satisfied (blockers before blocked)
-- Client mix is balanced across cycles
-
-**Step 6: Update initiative in Linear if needed**
-
-After rebalancing, update the initiative's content in Linear if cycle assignments or progress notes are tracked there.
-
-### Safety Rules
-
-- **No status changes.** Only the cycle assignment changes — never touch status, priority, assignee, labels, estimate, milestone, or project.
-- **No issue deletion.** Never delete or cancel issues during a rebalance.
-- **Don't move active work.** Issues in `In Progress` or `In Review` are untouchable.
-- **Never push High or Urgent issues later.** High (priority 2) and Urgent (priority 1) issues must never be moved to a farther-out cycle — they are time-sensitive by definition. They can only stay put or be pulled forward.
-- **Never push due-dated issues later.** Issues with a due date are pinned to their current cycle (or earlier). Due dates represent commitments — never move these to a farther-out cycle.
-- **Respect dependencies.** A blocking issue must NEVER end up in a later cycle than the issue it blocks. Before moving any issue, check its dependencies — if it blocks something in cycle N, it cannot move to cycle N+1 or later.
-- **User approval required.** Always present the full rebalance plan and get explicit approval before executing any moves.
-- **105% target is a soft cap.** It's okay if a cycle lands at 103% or 107% because the next movable issue would overshoot. The goal is "each cycle as close to 105% as possible, filled front-to-back," not mathematical perfection.
-
-### CLI Reference (Cycle Rebalance Operations)
-
-```bash
-# Full overview of cycles with issues grouped by project
-node linear.mjs rebalance
-
-# Raw JSON for all active/upcoming cycles with incomplete issues
-node linear.mjs rebalance --json
-# (or: node linear.mjs list-cycle-issues-all)
-
-# Raw JSON for a specific cycle's incomplete issues
-node linear.mjs list-cycle-issues-by-id "$CYCLE_ID"
-
-# Move a single issue to a different cycle
-node linear.mjs move-issue-to-cycle "$ISSUE_ID" "$CYCLE_ID"
-
-# Batch move multiple issues to a cycle (includes 0.5s delay between calls)
-# Reports success/fail counts. Keep batches ≤9 for reliability.
-node linear.mjs batch-move-to-cycle "$CYCLE_ID" "$ISSUE_1" "$ISSUE_2" "$ISSUE_3"
-
-# Check dependencies before moving (or MCP get_issue with includeRelations: true)
-node linear.mjs list-dependencies "$ISSUE_ID"
-
-# Verify after rebalancing
-node linear.mjs rebalance
-```
-
-> **Rate limit note:** Linear's API can silently discard rapid mutations. The batch function includes a 0.5s delay between calls and validates each response. For large rebalances (50+ moves), process in groups of ~9 and verify between groups.
 
 ---
 
