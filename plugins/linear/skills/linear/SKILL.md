@@ -146,7 +146,7 @@ The API, the MCP server, and `linear.mjs --estimate` all take the numeric **Valu
 - `add-initiative-link` — adding external links to initiatives
 - `api` — raw GraphQL escape hatch
 
-**Mapping** of common CLI → MCP equivalents lives in `MEMORY.md`. The sections below document the CLI for the fallback paths and for reference; prefer the MCP tool whenever one exists.
+**Verify every MCP write.** `mcp__linear__save_issue` has been seen returning success while silently not applying `cycle`, `labels`, or the milestone — and its response echo can omit fields it did apply. After each create/update, re-read the issue with `mcp__linear__get_issue` and confirm cycle, labels, project, and milestone are all set. Pass UUIDs rather than names for those fields; if one still won't stick, set it with `linear.mjs api` (`issueUpdate` with `cycleId` / `labelIds` / `projectMilestoneId`). Don't report the issue as done until it verifies.
 
 ### The CLI
 
@@ -178,6 +178,10 @@ The CLI resolves friendly names against `workspace.json`, so you rarely need raw
 > **Required placement rule:** Never create an issue without both `--project` and `--milestone`. **The project must already exist** — place the issue in the initiative's existing `M` project for the milestone it falls under, and never conjure a project to hold it (see "Never invent a project"). Creating a project is only correct for a confirmed out-of-scope revision. If the project exists but the right milestone does not, create the milestone first. Do not leave issues unscoped or unmilestoned.
 >
 > **Never target a completed milestone.** New work never belongs in a milestone that is already done — it distorts the completed phase and hides the issue from the team's current view. Only place an issue in an **open** milestone. If no open milestone matches the issue, create a new one and use that; do not reopen or reuse a completed milestone.
+>
+> **Check for duplicates first.** Before creating an issue, search the team's open and recently completed issues for the same or overlapping work. If one exists, show the user its title, status, assignee, and link, and ask whether to skip, update/comment on the existing issue, or create the new one anyway because the scope differs. Never silently create a duplicate.
+>
+> **Closing a duplicate.** Comment on the duplicate explaining why and linking the original, then mark it with `duplicateOf` (MCP `save_issue`) — that moves it to the **Duplicate** status. Don't just cancel it.
 >
 > **Every issue is complete on creation.** Set priority, estimate, one type label plus every domain label it touches (see **Labels**), and an assignee (see **Assignment Guidelines**) — never leave any of them for later.
 >
