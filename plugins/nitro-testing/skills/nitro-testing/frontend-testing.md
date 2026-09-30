@@ -512,7 +512,22 @@ const DialogStub = { props: ["visible"], template: "<div v-if='visible'><slot />
 A global route middleware that redirects unauthenticated navigations (to a public
 `/login`) means `mountSuspended(Comp, { route: "/private?foo=1" })` lands on the
 public path and **drops the query** — so a `useRouteQuery`-bound ref reads empty.
-Two ways around it:
+Three ways around it, in order of preference:
+
+- **Mock the session so the middleware lets the navigation through.** If the
+  middleware calls `useUserSession()`, mock it *before* mounting with a logged-in
+  user and a no-op `fetch`; the page then mounts on its real route with `params`
+  and `query` intact. This is the fix for page tests (`pages/**/[id].test.ts`)
+  that otherwise render nothing because the router landed on `/login`:
+
+```typescript
+mockNuxtImport("useUserSession", () => () => ({
+  loggedIn: ref(true),
+  user: ref({ id: 1, email: "test@example.com" }),
+  fetch: async () => {},
+  clear: async () => {},
+}));
+```
 
 - **Carry the params on the public route:** `route: "/login?foo=1"`. `useRouteQuery`
   binds to `route.query` regardless of the path.
@@ -589,9 +604,54 @@ registerEndpoint("/api/search", {
 });
 ```
 
+`vi.stubGlobal("$fetch", vi.fn())` does not intercept a component's `$fetch`
+either: the call reaches the real fetch and the test hangs until it times out.
+`registerEndpoint` is the only reliable seam for both `useFetch` and `$fetch`.
+
 If the component calls a local service/composable that wraps `$fetch`, mock that
 service/composable instead. Mock the boundary you own; use `registerEndpoint` for
 Nuxt's fetch path.
+
+### 12. Teleported dialog content is outside the wrapper
+
+UI-lib dialogs (PrimeVue `Dialog`, `ConfirmDialog`) teleport their body to
+`document.body`, so `wrapper.text()` and `wrapper.find()` cannot see it. Stub the
+teleport so the content renders in place:
+
+```typescript
+const wrapper = await mountSuspended(EditDialog, {
+  props: { modelValue: true },
+  global: { stubs: { teleport: true } },
+});
+expect(wrapper.text()).toContain("Save"); // now visible
+```
+
+### 13. Wait for the network with `vi.waitFor`, not `nextTick`
+
+A `registerEndpoint` response arrives on a real macrotask, so `await nextTick()`
+after a click that triggers `$fetch` is too early. Poll the DOM instead:
+
+```typescript
+await wrapper.find("button.save").trigger("click");
+await vi.waitFor(() => expect(wrapper.text()).toContain("Saved"));
+```
+
+The same applies to a dialog that fetches its options on open: opening a select
+inside it before the fetch resolves shows "No available options", and a second
+click just closes the panel. Wait for the loaded text first, then open the select.
+
+### 14. PrimeVue `Select` commits an option on `mousedown`, not `click`
+
+`trigger("click")` on an option `li` does nothing. Open the panel, then fire
+`mousedown` on the option:
+
+```typescript
+await wrapper.find('[data-pc-name="select"]').trigger("click");   // open
+await vi.waitFor(() => expect(document.querySelector('[role="option"]')).toBeTruthy());
+await wrapper.find('[role="option"]').trigger("mousedown");       // commit
+```
+
+If the option list is teleported, combine with gotcha 12 or query `document`.
 
 ## File Organization
 
