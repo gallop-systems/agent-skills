@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.29.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.28.0...agent-skills-v1.29.0) (2026-09-30)
+
+
+### Features
+
+* **doctl:** check account status first when deployments fail inexplicably ([#104](https://github.com/gallop-systems/agent-skills/issues/104)) ([b4b3b6d](https://github.com/gallop-systems/agent-skills/commit/b4b3b6da5b8ecd81938e9d0d4da852a3f362afa6))
+* **git-github:** map stacked-PR merge errors to gh stack merge ([#102](https://github.com/gallop-systems/agent-skills/issues/102)) ([ff960af](https://github.com/gallop-systems/agent-skills/commit/ff960affa052db43a532f75a40c56e2544d70b97))
+
 ## [1.28.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.27.0...agent-skills-v1.28.0) (2026-09-29)
 
 
