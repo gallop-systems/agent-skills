@@ -1,0 +1,8 @@
+{
+  "name": "knowledge-docs",
+  "description": "Author and update per-client and per-project knowledge documents in Linear (Who / How they operate / Our thinking), keeping the four concepts strictly separated",
+  "version": "1.0.0",
+  "author": {
+    "name": "arisilber"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "codex-review",
+  "description": "Run OpenAI's codex review CLI against the current branch's draft-PR base for a second-opinion code review on the working diff",
+  "version": "1.0.0",
+  "author": {
+    "name": "arisilber"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "github",
+  "description": "Team GitHub conventions: Linear-issue-first branching and naming, PR targeting and stacking, backend/frontend layered PRs, backend labels, and PR/comment writing style",
+  "version": "1.0.0",
+  "author": {
+    "name": "arisilber"
+  }
+}
