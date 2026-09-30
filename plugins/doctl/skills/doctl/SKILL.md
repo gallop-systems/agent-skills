@@ -22,7 +22,7 @@ doctl supports named auth contexts for managing multiple accounts/teams.
 
 ```bash
 doctl auth list                          # list contexts; (current) marks the active one
-doctl account get --context <name>       # cheap probe: is this context valid, which account is it?
+doctl account get --context <name>       # cheap probe: is this context valid, which account is it, is it locked?
 ```
 
 **Prefer the `--context` flag over switching.** Every doctl command accepts `--context <name>` (before or after the subcommand). This targets one account for one command without mutating global state — important when a session touches multiple accounts:
@@ -88,6 +88,24 @@ for i in $(seq 1 90); do
   sleep 20
 done
 ```
+
+### Deployments failing for no visible reason: check account status first
+
+A billing- or abuse-locked team leaves **running** resources up, but can't start **new** containers. App Platform doesn't say "locked" in any deployment error. Before digging into logs, code or the platform, run one command:
+
+```bash
+doctl account get --context <ctx> -o json | jq '{status, status_message}'
+# {"status": "locked", "status_message": "Your team has been locked due to lack of payment or improper use ..."}
+```
+
+Symptoms of a locked team, all at once:
+- Every deployment stalls in a step that needs a new instance, such as a `PRE_DEPLOY` job. It stalls for about 30 minutes, then fails with `An internal error occurred. Contact support if this persists.`
+- That component has no logs at all. `--type run` fails with `websocket: close 1011`, and the deploy log says `No further logs available`. The job never connects to its database.
+- DigitalOcean's automated rollback to a previously good commit hangs the same way. That rules out a code regression.
+- Mutations fail even for people who normally have access. `create-deployment` and `apps update` return 403 `forbidden`; the dashboard shows `You don't have permission` or `Something went wrong`.
+- The live app keeps serving, and the status page is all green.
+
+A locked team can only be fixed by its billing owner, who pays and opens a support ticket to unlock. Balance and invoice commands (`doctl balance get`, `doctl invoice list`) return 403 for non-billing members, so `account get` may be the only signal you can see. Failed deployments aren't retried after the unlock, so push or redeploy once the team is active again.
 
 ## Logs
 
