@@ -21,6 +21,7 @@ Then install the skills you want:
 /plugin install volt-primevue@gallop-systems-agent-skills
 /plugin install vue-nuxt@gallop-systems-agent-skills
 /plugin install frontend-design@gallop-systems-agent-skills
+/plugin install carry-plan@gallop-systems-agent-skills
 ```
 
 ## Updating
