@@ -1,0 +1,8 @@
+{
+  "name": "carry-plan",
+  "description": "Maintain a per-feature implementation plan in docs/<slug>.md that survives across chats but stays out of intermediate commits, then rewrite it as "what was done" and commit it in the final PR",
+  "version": "1.0.0",
+  "author": {
+    "name": "arisilber"
+  }
+}
