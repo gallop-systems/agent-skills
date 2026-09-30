@@ -76,6 +76,30 @@
       "source": "./plugins/frontend-design",
       "description": "Apply the team's frontend design conventions (visual hierarchy, layout, spacing, typography, color, component structure, UX patterns) whenever creating or modifying UI",
       "version": "1.0.0"
+    },
+    {
+      "name": "carry-plan",
+      "source": "./plugins/carry-plan",
+      "description": "Maintain a per-feature implementation plan in docs/<slug>.md that survives across chats but stays out of intermediate commits, then rewrite it as \"what was done\" and commit it in the final PR",
+      "version": "1.0.0"
+    },
+    {
+      "name": "codex-review",
+      "source": "./plugins/codex-review",
+      "description": "Run OpenAI's codex review CLI against the current branch's draft-PR base for a second-opinion code review on the working diff",
+      "version": "1.0.0"
+    },
+    {
+      "name": "database",
+      "source": "./plugins/database",
+      "description": "Query and inspect databases directly from the command line (psql etc.) for lookups, schema, and counts rather than going through the app",
+      "version": "1.0.0"
+    },
+    {
+      "name": "github",
+      "source": "./plugins/github",
+      "description": "Team GitHub conventions: Linear-issue-first branching and naming, PR targeting and stacking, backend/frontend layered PRs, backend labels, and PR/comment writing style",
+      "version": "1.0.0"
     }
   ]
 }
