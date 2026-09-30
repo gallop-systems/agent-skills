@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.30.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.29.0...agent-skills-v1.30.0) (2026-09-30)
+
+
+### Features
+
+* **linear:** add issue-writing house style and examples ([#99](https://github.com/gallop-systems/agent-skills/issues/99)) ([dafa2dd](https://github.com/gallop-systems/agent-skills/commit/dafa2ddc3ddc9fea89ad73ae46b31f9d1089413c))
+
+
+### Documentation
+
+* **linear:** align the skill with the live workspace and current workflow ([#98](https://github.com/gallop-systems/agent-skills/issues/98)) ([31a2df0](https://github.com/gallop-systems/agent-skills/commit/31a2df0b2b03306f905787670378c269c8560e18))
+
 ## [1.29.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.28.0...agent-skills-v1.29.0) (2026-09-30)
 
 
