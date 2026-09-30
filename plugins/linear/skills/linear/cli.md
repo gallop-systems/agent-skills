@@ -12,7 +12,7 @@ It wraps the Linear GraphQL API and reads `LINEAR_API_KEY` from the environment 
 
 ### Workspace bootstrap config
 
-Before running any `linear.mjs` command, verify that the per-user workspace config exists at `~/.config/linctl/workspace.json` (override path with `$LINCTL_WORKSPACE_FILE`). This file holds **every team** in the workspace (each with its own UUID plus its workflow-state and label UUIDs — states differ per team), an optional `defaultTeam`, and the Linear member UUIDs that play the Frontend/PM and Backend roles. Without it, every command that needs the team, members, states, or labels will refuse to run.
+Before running any `linear.mjs` command, verify that the per-user workspace config exists at `~/.config/linctl/workspace.json` (override path with `$LINCTL_WORKSPACE_FILE`). This file holds **every team** in the workspace (each with its own UUID plus its workflow-state and label UUIDs — states differ per team), an optional `defaultTeam`, and the Linear member UUIDs that play the Frontend/PM and Backend roles. Without it, every command that needs the team, members, states, or labels fails.
 
 > **Multi-team workspaces:** `workspace.json` registers all teams, but `states`/`labels` are per-team (each team's `Todo` is a distinct UUID). Which team a command targets is resolved in this order: the **`--team <key|name|uuid>`** flag → the **`LINCTL_DEFAULT_TEAM`** env var (a per-repo default — set it via direnv/`.envrc` or your shell so every command in a repo targets that team) → the **`defaultTeam`** field in `workspace.json`. If none resolve, `--team` is **required** on team-scoped commands; workspace-wide commands (e.g. `list-initiatives`) work without a team. A legacy config (predating per-team support, i.e. with no `defaultTeam` key and top-level `states`/`labels`) still works — it falls back to the first registered team — but re-run `init` to migrate it to the per-team schema.
 
@@ -83,7 +83,7 @@ node linear.mjs create-issue \
 
 # Create a bug report
 node linear.mjs create-issue \
-  --title 'Fix: login redirect fails on Safari' \
+  --title 'Login redirect fails on Safari' \
   --description 'Users on Safari not redirected after login. Reproduced on Safari 17.' \
   --priority urgent \
   --state backlog \
@@ -204,7 +204,7 @@ node linear.mjs create-project --name "[KEY] R1 — Revision Name" --initiative 
 
 ## Bulk Moves (MCP has no equivalent)
 ```bash
-# Move many issues to a milestone — 0.5s delay between calls to avoid silent drops.
+# Move many issues to a milestone — 0.5s delay between calls so Linear doesn't drop writes.
 # Keep batches to ~9 issues and verify (list-project-issues) between batches.
 node linear.mjs batch-move-to-milestone "$MILESTONE_ID" "$ISSUE_ID_1" "$ISSUE_ID_2" "$ISSUE_ID_3"
 ```

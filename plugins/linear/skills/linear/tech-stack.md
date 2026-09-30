@@ -270,4 +270,4 @@ The `NUXT_` prefix auto-binds to `runtimeConfig` in `nuxt.config.ts`.
 |------|---------|
 | **pre-commit** | Format (oxfmt) + lint fix (oxlint) on staged `.ts/.vue/.js` files |
 | **pre-push** | Backend tests, frontend tests, typecheck, lint (in parallel) |
-| **post-merge** | Auto `yarn install` if `package.json`/`yarn.lock` changed; warns if new migrations detected |
+| **post-merge** | Auto `yarn install` if `package.json`/`yarn.lock` changed; prints a warning if new migrations are detected |
