@@ -229,6 +229,31 @@ export function useService() {
 }
 ```
 
+## Slack: Link Unfurls on the App's Own Messages
+
+Slack sends `link_shared` (your unfurl handler's trigger) for an app's own
+messages **only when they're posted**, never when they're **streamed**. The
+domain must also be listed under the app's "App Unfurl Domains".
+
+| How the app sends the message | `link_shared` fires? | Who attaches the card |
+|---|---|---|
+| `chat.postMessage` | Yes | Your `link_shared` handler (`chat.unfurl`), as for anyone's message |
+| `chat.startStream` / `appendStream` / `stopStream` | No | The reply itself, via `chat.stopStream({ blocks })` |
+
+```typescript
+// Streamed reply: Slack won't unfurl it, so append the cards when closing the stream.
+await client.chat.stopStream({ channel, ts, blocks: cardBlocks });
+
+// Posted reply: attach nothing. link_shared fires and your handler unfurls it.
+// Attaching cards here as well shows every card twice.
+await client.chat.postMessage({ channel, thread_ts, text });
+```
+
+When one bot both streams (say, channel replies) and posts (say, DM replies),
+decide per send path. Testing a link a person pasted proves nothing about the
+app's own messages, so test the exact way the app sends. Slack caches unfurls
+per URL, so add a throwaway query string (`?t=2`) when re-testing.
+
 ## Key Gotchas
 
 1. **Config at module level** - `useRuntimeConfig()` works at module scope
@@ -236,3 +261,4 @@ export function useService() {
 3. **Composition order** - Call use*() inside functions, not module level
 4. **Error transformation** - Convert SDK errors to HTTP errors
 5. **Transaction scope** - Pass `trx` when in transaction
+6. **Slack unfurls depend on how you send** - Posted messages get `link_shared`, streamed ones don't (see above)
