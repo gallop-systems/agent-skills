@@ -65,6 +65,19 @@ gh repo deploy-key add - --repo <owner>/<repo> --title "<host>" <<< "$PUBKEY"
 gh repo deploy-key list --repo <owner>/<repo>
 ```
 
+## Attaching images to PRs and issues
+
+There is no REST endpoint for embedding images in a body, but `gh` 2.99+ uploads them itself. `--attach` works on `gh pr create`, `gh pr edit`, `gh pr comment`, `gh issue create`, `gh issue edit` and `gh issue comment` (not `gh pr review`), up to 50 files per command. A relative reference in the body is rewritten to the uploaded `github.com/user-attachments/assets/...` URL; attached files the body doesn't reference are appended at the end.
+
+```bash
+# body.md contains: ![The login error state](./login.png)
+gh pr edit <n> --body-file body.md --attach ./login.png      # run from the dir the refs are relative to
+gh pr comment <n> --attach './after.png#Alt text after the hash'
+gh pr view <n> --json body --jq .body | grep '!\['          # confirm refs now point at user-attachments
+```
+
+Uploads are GitHub user attachments, so on a private repo they stay private to people with access. Third-party uploaders don't have that property: some host images in a public repo, others work by reading the browser's GitHub session cookie.
+
 ## Token and version gotchas
 
 - **Fine-grained PATs can't access some endpoints at all** (e.g. `/notifications`): 403 "Resource not accessible by personal access token". The tell: the response **lacks the `x-accepted-github-permissions` header**, meaning no grantable permission fixes it — you need a classic PAT with the right scope for that one call.
