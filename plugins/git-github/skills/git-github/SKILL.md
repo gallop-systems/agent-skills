@@ -47,7 +47,7 @@ EOF
 ```
 
 - **Keep the PR description current.** After material scope changes, `gh pr edit <n> --body "$(cat <<'EOF' ... EOF)"`.
-- **UI changes get before/after screenshots in the body**, uploaded with `gh`'s native `--attach` (gh 2.99+), which keeps them private on private repos. Capture them with a headless browser, not a GUI screenshot tool: [pr-screenshots.md](pr-screenshots.md).
+- **Attaching images or video:** `gh` 2.99+ uploads them natively with `--attach` on `pr create/edit/comment` and `issue create/edit/comment`. See [gh-api-recipes.md](gh-api-recipes.md#attaching-images-to-prs-and-issues).
 - Merge style: `gh pr merge <n> --squash --delete-branch`; verify with `gh pr view <n> --json state,mergedAt`.
 - After merge: `git switch main && git pull --ff-only`, clean up `[gone]` branches, start the next branch from fresh main.
 - One concern per PR — hotfixes and review findings go in separate PRs unless told otherwise.
@@ -83,7 +83,6 @@ Do not bypass failing hooks with `--no-verify` unless the user says to.
 - **Debugging failed Actions runs** (the full playbook): [actions-debugging.md](actions-debugging.md)
 - **Repair ladders** — rejected pushes, blocked checkouts, rebase/conflict recovery, shallow clones, worktrees: [getting-unstuck.md](getting-unstuck.md)
 - **Stacked PRs with `gh stack`**: build, adopt, rebase, merge, and fix the errors it throws: [stacked-prs.md](stacked-prs.md)
-- **Screenshots in PRs/issues** — `gh --attach`, headless capture, before shots from the base branch: [pr-screenshots.md](pr-screenshots.md)
 - **gh api recipes** — PR comments, reading files without checkout, repo settings, PAT gotchas: [gh-api-recipes.md](gh-api-recipes.md)
 - **Releases & publishing** — tags, gh release, npm Trusted Publishing, release-please: [releases.md](releases.md)
 - **External review loop** — using the codex CLI as an adversarial pre-merge reviewer: [external-review.md](external-review.md)
