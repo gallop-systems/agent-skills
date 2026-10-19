@@ -1,6 +1,6 @@
 ---
 name: tailwind-v4
-description: Work effectively with Tailwind CSS v4 (the CSS-first model) in a Nuxt/Vite + PrimeVue/Volt stack. Use when editing Tailwind CSS, configuring @theme/@source/@import, setting up dark mode, defining design tokens, or debugging classes that silently don't apply. Covers the v3→v4 traps an LLM trained on v3 falls into.
+description: Work effectively with Tailwind CSS v4 (the CSS-first model) in a Nuxt/Vite + gallop-ui stack. Use when editing Tailwind CSS, configuring @theme/@source/@import, setting up dark mode, defining design tokens, or debugging classes that silently don't apply. Covers the v3→v4 traps an LLM trained on v3 falls into.
 ---
 
 # Tailwind CSS v4
@@ -45,7 +45,7 @@ export default defineNuxtConfig({ vite: { plugins: [tailwindcss()] } });
 Do **not** add `@nuxtjs/tailwindcss`, a `postcss.config.js` with `tailwindcss: {}`,
 or `@tailwind base/components/utilities` — those are v3 and either no-op or break.
 `tailwindcss` itself must be a direct dependency (alongside `@tailwindcss/vite`),
-or `tailwindcss-primeui` raises peer-dependency warnings.
+or tooling that peers on it raises peer-dependency warnings.
 
 ## Design tokens: `@theme` vs `:root`
 
@@ -57,9 +57,9 @@ or `tailwindcss-primeui` raises peer-dependency warnings.
   `bg-surface-strong` with no matching token) **generates nothing, with no error**
   — the element just renders unstyled. First thing to check when a custom color
   "does nothing": does the token name match exactly?
-- **Inverse for PrimeUI:** PrimeVue's `--p-*` variables stay in `:root`. The
-  `tailwindcss-primeui` plugin turns those into utilities — don't move them into
-  `@theme`.
+- **gallop-ui reads a fixed token set** (`canvas`, `surface`, `fg`, `line`, `accent`, `field`…; the contract
+  is `layers/gallop-ui/TOKENS.md`). The app defines each in `@theme` with a dark override, so layer components
+  and your own markup flip together. Add a token the layer doesn't know and you also own its dark value.
 
 ## `@source` — v4 only generates classes from scanned files
 
@@ -100,8 +100,8 @@ default. Two consequences:
 ## More gotchas
 
 The full set mined from real debugging sessions — `@apply` in scoped `<style>`,
-JS-driven colors that can't read tokens, `@import url()` ordering, the PrimeUI
-surface ramp vs flipping tokens, and more — is in
+JS-driven colors that can't read tokens, `@import url()` ordering, why raw
+palette classes plus `dark:` don't mix with tokens, and more — is in
 [gotchas.md](gotchas.md). Read it when touching CSS in this stack.
 
 ## Optional tooling
