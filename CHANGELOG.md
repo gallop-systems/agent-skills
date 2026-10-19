@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.31.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.30.0...agent-skills-v1.31.0) (2026-10-19)
+
+
+### Features
+
+* **gallop-ui:** add the gallop-ui skill ([#108](https://github.com/gallop-systems/agent-skills/issues/108)) ([24b6f4a](https://github.com/gallop-systems/agent-skills/commit/24b6f4a5b02898700176e27bc29e70625b8de2f6))
+* retire the volt-primevue skill ([#109](https://github.com/gallop-systems/agent-skills/issues/109)) ([386bb33](https://github.com/gallop-systems/agent-skills/commit/386bb3319c14cc1962c3834dc107f6a76fde968e))
+
+
+### Documentation
+
+* scrub PrimeVue and Volt from the skills ([#111](https://github.com/gallop-systems/agent-skills/issues/111)) ([efff15d](https://github.com/gallop-systems/agent-skills/commit/efff15d8a4806381ceb520a5a1f89abee795f9a8))
+
 ## [1.30.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.29.0...agent-skills-v1.30.0) (2026-09-30)
 
 
