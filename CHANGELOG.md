@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.31.2](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.31.1...agent-skills-v1.31.2) (2026-10-19)
+
+
+### Documentation
+
+* **gallop-ui:** point at the layer's roadmap, upgrading guide and decisions ([#114](https://github.com/gallop-systems/agent-skills/issues/114)) ([8ad8bda](https://github.com/gallop-systems/agent-skills/commit/8ad8bdaf25c7e2ed939b19f57037e5c8ecd6d9ac))
+
 ## [1.31.1](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.31.0...agent-skills-v1.31.1) (2026-10-19)
 
 
