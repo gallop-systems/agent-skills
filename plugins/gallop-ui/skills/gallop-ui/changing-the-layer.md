@@ -5,7 +5,7 @@ Fixes and features for the layer are made **in the gallop-ui repo** (`gallop-sys
 app, so the bar is higher than for app code: backward compatible, documented, tested, and checked in every app.
 
 The layer's `CLAUDE.md` is the authority on its rules. Read it, `docs/decisions.md` (settled names) and
-`docs/review-queue.md` (open questions) before you start.
+`docs/roadmap.md` (what's planned and open) before you start.
 
 ## 1. Worktree
 
@@ -86,8 +86,8 @@ yarn tokens:check        # if you touched tokens
   the `Co-Authored-By` trailer you were given.
 - The PR body: what changed and why, the apps you checked with `impact.mjs` and what changed in each, and any naming
   call the owner still has to make. End it with the Claude Code line you were given.
-- Record a decision the owner made in `docs/decisions.md`. Add an open question to `docs/review-queue.md`, and delete
-  an item there when it is done.
+- Record a settled decision, with its reason, in `docs/decisions.md`. Add planned or open work to `docs/roadmap.md`,
+  and remove it there when it ships.
 - **Layer PRs are squash-merged**, with the PR title as the Conventional Commit. A merge commit hides the change
   from release-please.
 - Merge only when checks are green **and** `gh pr view <n> --json mergeStateStatus` says `CLEAN`, and only if you

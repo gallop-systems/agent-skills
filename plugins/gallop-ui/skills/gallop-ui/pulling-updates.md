@@ -36,12 +36,12 @@ yarn ui:pull v<X.Y.Z>        # git subtree pull --squash, committed as "chore(ga
 
 ```sh
 sed -n '/^## \[<X.Y.Z>\]/,/^## \[<current>\]/p' layers/gallop-ui/CHANGELOG.md
-ls layers/gallop-ui/migrations/ layers/gallop-ui/docs/migrating-to-*.md
+ls layers/gallop-ui/migrations/; cat layers/gallop-ui/docs/upgrading.md
 ```
 
 For each entry, decide: does this app call it (`git grep -n "<Component\|propName" -- app tests`), and does the call
 site need to change? Read the affected components' `.md` "Migrating" sections. A release that crosses a major
-version has a `docs/migrating-to-<version>.md` and a `migrations/<version>/` folder. Jumping several releases is
+version has a `migrations/<version>/` folder; `docs/upgrading.md` explains how to apply it. Jumping several releases is
 fine as long as you read every entry in between. The kit only knows the versions it has tables for, so check the
 migration doc for how far back it reaches.
 

@@ -27,8 +27,8 @@ colour tokens.
 | `CLAUDE.md` | The layer's rules for people and agents who change it. |
 | `README.md` | Adding the layer, taking versions, customizing (`pt`, `gallopUi`), restyling states. |
 | `TOKENS.md`, `FORMATTERS.md` | The colour-token contract; `formatDate`, `formatCurrency`… and time zones. |
-| `CHANGELOG.md`, `migrations/<version>/`, `docs/migrating-to-*.md` | What changed, and the codemod tables. |
-| `docs/decisions.md` | Settled API names and who decided them. Read before proposing a rename. |
+| `CHANGELOG.md`, `migrations/<version>/`, `docs/upgrading.md` | What changed, how to take a release, and the codemod tables. |
+| `docs/decisions.md` | Settled API names and the reasons for them. Read before proposing a rename. |
 | `docs/playground.md` | `/_ui` and `yarn ui:impact`. |
 
 `yarn ui:version` prints the app's layer version.
