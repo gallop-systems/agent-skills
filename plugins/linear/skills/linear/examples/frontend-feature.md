@@ -26,7 +26,7 @@ Dispatchers set the same job type on every visit of a job, which is repetitive a
 
 * Components: `app/components/JobEditor.vue` (job type picker), `app/components/VisitRow.vue`, `app/components/VisitRatePreview.vue` — checked in the repo.
 * Pages: `app/pages/jobs/[id]/edit.vue`, `app/pages/jobs/[id]/index.vue`.
-* VoltSelect for the job type, VoltInputText for the name, VoltDatePicker for the date.
+* `Select` for the job type, `Input` for the name, `InputDate` for the date (all gallop-ui, in a `FormField`).
 * Follow DESIGN_LANGUAGE.md — zinc palette, no decorative shadows.
 
 ## Acceptance criteria
