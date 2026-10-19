@@ -40,12 +40,23 @@ ls layers/gallop-ui/migrations/; cat layers/gallop-ui/docs/upgrading.md
 ```
 
 For each entry, decide: does this app call it (`git grep -n "<Component\|propName" -- app tests`), and does the call
-site need to change? Read the affected components' `.md` "Migrating" sections. A release that crosses a major
-version has a `migrations/<version>/` folder; `docs/upgrading.md` explains how to apply it. Jumping several releases is
+site need to change? Read the affected components' `.md` "Migrating" sections. Any release with renames has a
+`migrations/<major.minor>/` folder, minor releases included (1.1 has one); `docs/upgrading.md` explains how to apply it. Jumping several releases is
 fine as long as you read every entry in between. The kit only knows the versions it has tables for, so check the
 migration doc for how far back it reaches.
 
-## 3. Run the codemod on a breaking release
+## 3. Run the codemod whenever there's a newer table
+
+Run it whenever `layers/gallop-ui/migrations/` has a folder newer than the version you came from, minor or major.
+
+- **Minor releases (1.1, 1.2…) rename without breaking.** A renamed `pt` section keeps its old name as a deprecated
+  alias until the next major, and a renamed data attribute is rendered under both names. So the app renders the same
+  before the codemod, but logs one dev warning per old name: `[gallop-ui] <Component> pt "<old>" is deprecated`. Run
+  the codemod anyway so the warnings stop and the next major is a non-event.
+- **A minor release can also add settings for existing apps.** 1.1's `iconSet` row writes `iconSet: "lucide"` into
+  `app/app.config.ts` so an existing app keeps its icons. Commit that line with the codemod output, and keep it.
+- **Major releases break.** The old names are gone; the codemod and its checklist are how the app keeps working.
+- An app already on the newest table gets `nothing to migrate` (exit 0).
 
 ```sh
 yarn ui:migrate --dry            # the diff and counts; nothing written

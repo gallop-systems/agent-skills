@@ -69,6 +69,17 @@ a plain class chosen in script, so a caller's class always beats it. What that m
 - Overlays (Modal, Drawer, Popover, Tooltip, DropdownMenu) portal their box away: that box is `root`, so `class`
   still styles what you see. The backdrop is `overlay`.
 
+## Icons
+
+- **One icon set per app: `gallopUi.iconSet`** in `app/app.config.ts`, `"phosphor"` (the layer's default, and a new
+  app's) or `"lucide"` (apps from before 1.1; `ui:migrate` writes it so they keep their glyphs). The layer's own
+  icons (chevrons, close, check, search…) follow it. Write the app's own icons in the same set (`ph:*` or
+  `lucide:*`), never a mix.
+- The set's collection must be installed (`@iconify-json/ph` or `@iconify-json/lucide`) and listed in
+  `icon.serverBundle.collections`. The layer warns at build time when it isn't; otherwise the default icons would
+  silently be missing. `layers/gallop-ui/docs/icons.md` has the setup and a name map between the sets.
+- An `icon` prop takes any Iconify name and is never mapped: `icon="ph:users"` stays Phosphor whatever the setting.
+
 ## Tokens and dark mode
 
 - **Dark mode is required in every app.** No light-only option, no pinned light colours.
@@ -76,6 +87,8 @@ a plain class chosen in script, so a caller's class always beats it. What that m
   strategy: the OS (`:root { color-scheme: light dark }`, the template default), or an attribute on `<html>`
   (`data-color-scheme="light|dark"`, set from a cookie by `useColorScheme()`; no flash on first paint).
   `TOKENS.md` has the contract; `theme/neutral.css` has every value.
+- **A bare `border` is the `line` colour** (the layer's base style), not `currentColor`. Add a colour class only to
+  change it; `border-current` brings back the text colour.
 - In app code write token classes (`bg-surface`, `text-fg-muted`, `border-line`, `bg-danger-soft`), not
   `bg-white dark:bg-zinc-900`. Status colours are the `danger | warning | success | info` families.
 - `yarn ui:tokens` checks the app's theme CSS against the contract: what is missing, what still has an old name.
