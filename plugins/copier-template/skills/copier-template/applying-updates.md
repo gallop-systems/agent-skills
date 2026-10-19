@@ -120,7 +120,7 @@ grep -nE 'first_name|last_name|deactivated_at|Number\(' <adopted-file>
 git clone --depth 1 --branch v<NEW> <template-url> /tmp/tpl-<NEW>
 ```
 
-When a conflict reflects a deliberate template convention change (snake_case session fields, a renamed env var), migrating *toward* the template and updating the few consumers kills future churn — unless it's an intentional permanent fork (styled-PrimeVue vs Volt, a deliberately different env-var name), which you keep.
+When a conflict reflects a deliberate template convention change (snake_case session fields, a renamed env var), migrating *toward* the template and updating the few consumers kills future churn — unless it's an intentional permanent fork (a deliberately different auth provider, a deliberately different env-var name), which you keep.
 
 **`.rej` files** — copier couldn't apply a hunk because the local file diverged too far. A `.rej` is a unified diff of *just the rejected hunk*; the target file was left untouched there. Triage each:
 
