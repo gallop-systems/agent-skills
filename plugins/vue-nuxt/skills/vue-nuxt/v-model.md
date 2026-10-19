@@ -40,15 +40,15 @@ const [model, modifiers] = defineModel<string>({
 
 ## The computed-proxy — for forwarding an existing model
 
-When you wrap a component that already has its own `v-model` (a Volt/PrimeVue
-`Dialog`'s `visible`, say), or you need a named local handle or a value
+When you wrap a component that already has its own `v-model` (a gallop-ui
+`Modal`'s `open`, say), or you need a named local handle or a value
 transform, use a writable `computed` over `props` + `emit`:
 
 ```ts
-const props = defineProps<{ visible: boolean }>()
-const emit = defineEmits<{ 'update:visible': [v: boolean] }>()
-const visible = computed({ get: () => props.visible, set: (v) => emit('update:visible', v) })
-//   <Dialog v-model:visible="visible" />
+const props = defineProps<{ open: boolean }>()
+const emit = defineEmits<{ 'update:open': [v: boolean] }>()
+const open = computed({ get: () => props.open, set: (v) => emit('update:open', v) })
+//   <Modal v-model:open="open" />
 ```
 
 A `computed({ get, set })` transforms a *forwarded* value shape (date string ↔

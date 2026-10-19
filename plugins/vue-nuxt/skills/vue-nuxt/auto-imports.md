@@ -36,7 +36,7 @@ naming collision.
 
 ## What does NOT auto-import (import explicitly)
 
-- **Third-party composables/components:** `useToast` from `'primevue/usetoast'`, `Column` from `'primevue/column'`, `date-fns` helpers, etc.
+- **Third-party composables/components:** `date-fns` helpers, a Mapbox or Tiptap class, a composable from a package that is not a Nuxt module, etc. (gallop-ui's components, `useToast()`, `useConfirm()` and the `format*` helpers are auto-imported from the layer.)
 - **TypeScript types** — interfaces, enums, type aliases are never auto-imported. `import type { Foo } from '...'`.
 - **`server/utils`** — auto-imported on the *server* only, never into client code.
 - **Vitest unit tests** — plain `*.test.ts` files do NOT get Nuxt's auto-import context. Import the composable/util under test explicitly: `import { useFormatters } from './useFormatters'`. (Component tests via `@nuxt/test-utils/runtime` + `mountSuspended` DO have the context — see the `nitro-testing` skill.)
