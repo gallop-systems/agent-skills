@@ -179,36 +179,31 @@ Configure branch protection rules in GitHub:
    - `test`
    - `typecheck`
 
-## Local CI Simulation
+## Running the CI tests locally
 
-Test the CI workflow locally using [act](https://github.com/nektos/act):
-
-```bash
-# Install act
-brew install act
-
-# Run workflow
-act push
-```
-
-Or use Docker directly:
+Run the same tests against a disposable **native** Postgres (Postgres.app's binaries), not Docker. Don't start Docker
+(`docker run`, `docker compose`, `open -a Docker`, testcontainers, `act`) unless the user asks for it. Use your own
+port, never 5432, 5433 or 3306, so a test run can never reach a real local database:
 
 ```bash
-# Start test database
-docker run -d --name test-db \
-  -e POSTGRES_USER=postgres \
-  -e POSTGRES_PASSWORD=postgres \
-  -e POSTGRES_DB=myapp-test \
-  -p 5432:5432 \
-  postgres:15
+PG=/Applications/Postgres.app/Contents/Versions/latest/bin
+$PG/initdb --locale=en_US.UTF-8 -U postgres -D /tmp/myapp-pg
+$PG/pg_ctl -D /tmp/myapp-pg -l /tmp/myapp-pg.log -o "-p 54329 -c fsync=off -c synchronous_commit=off \
+  -c full_page_writes=off" start
+$PG/createdb -h 127.0.0.1 -p 54329 -U postgres myapp-test
 
-# Run tests
-TEST_POSTGRESQL_CONNECTION_STRING=postgresql://postgres:postgres@localhost:5432/myapp-test \
-  yarn test
+# Run tests (127.0.0.1, not localhost)
+TEST_POSTGRESQL_CONNECTION_STRING=postgresql://postgres@127.0.0.1:54329/myapp-test yarn test
 
 # Cleanup
-docker stop test-db && docker rm test-db
+$PG/pg_ctl -D /tmp/myapp-pg stop && rm -rf /tmp/myapp-pg
 ```
+
+Before running, check that the test URL is set and doesn't point at 5432. An unset test URL can fall back to the
+developer's real database.
+
+If the user wants the workflow itself replayed, [act](https://github.com/nektos/act) runs it, but act needs Docker,
+so only with their go-ahead.
 
 ## Secrets and Environment Variables
 
