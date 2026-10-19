@@ -78,9 +78,15 @@ colours: an app's extra button colour maps onto an existing `color`.
   `#empty` slot (slot props `{ searchTerm }` on Select, `{ lane }` on Board, nothing elsewhere). An empty *value*
   in a cell or description prints `fallback` (the em dash by default).
 - **Refusals are "a reason string, or nothing":** a string means "refused, and here is why" (shown to the user);
-  `null`/`undefined` means allowed. Board lane `disabled`, `cardDisabled(card)` (a reason or `true`), `canMove(move)`.
-  A predicate named for the positive (`selectable(row)`) returns a boolean. `locked` is only Modal and Drawer: can't
-  be dismissed.
+  `null`/`undefined`/`false` means allowed.
+- **Predicates are named for the negative, `…Disabled`, like the `disabled` prop** (owner, 1.0): they return `true`
+  or a reason string to refuse. DataTable `selectDisabled(row)`, column `disabled(row)`, Board `cardDisabled(card)`,
+  `moveDisabled(move)`, lane `disabled`. Never `selectable`/`canMove`/`enabled`. `locked` is only Modal and Drawer:
+  can't be dismissed.
+- **A function that runs when something is missing is `on…`**, never `fallback` (`fallback` is always text):
+  `defineSearchShortcut({ onNoSearchField })`.
+- **`show<Thing>` adds a control.** A prop that only moves where a control appears says so: PageHeader
+  `menuOnDesktop`.
 - **Choice items** take `labelKey` / `valueKey` (Select, RadioGroup, SegmentedControl, Tabs, Input suggestions,
   `useRemoteOptions`); `valueKey` defaults to `"value"`.
 - **Menu items** share one `MenuItem` shape: `label`, `icon`, `to`, `target`, `onSelect(event)`, `kbd`, `disabled`,

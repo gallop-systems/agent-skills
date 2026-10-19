@@ -71,7 +71,15 @@ mechanical.
 Check at 1280 that desktop is identical when a change was meant to be phone-only, and at 390 that fields in one row
 still match in height and text size.
 
-## 5. Tables
+## 5. `yarn ui:probe`: bugs screenshots miss
+
+With the app running, `yarn ui:probe --url http://127.0.0.1:<port>` drives every page at 1280 and 390, light
+and dark. It reports fields in one row that don't match, phone text under 16px, clipped focus rings, sideways
+scroll, contrast, stray `currentColor` borders, and flashes during sorting, paging, opening/closing and drags.
+It blocks every write request while it clicks. `--only static` is quick. See `layers/gallop-ui/docs/probe.md`.
+Run it after a pull and after a layer change; anything it marks as an error is a real bug until proven otherwise.
+
+## 6. Tables
 
 - **Inventory before replacing.** List every behaviour a table has in both layouts (sort, multi-sort, filter, paging,
   page size, selection, row link or click, actions, reorder, empty, loading, sticky header, keyboard). That list is
@@ -82,14 +90,19 @@ still match in height and text size.
   key, and prove it by turning the page with the state active.
 - Phone tables become cards by default. That is an improvement, not a regression.
 
-## 6. Throwaway databases only
+## 7. Throwaway databases only
 
-Never point a check at a real local database or a real `.env`. Run a disposable Postgres on your own port:
+Never point a check at a real local database or a real `.env`, and **never start Docker** (no `docker run`,
+`docker compose`, `open -a Docker` or testcontainers). Run a disposable native Postgres on your own port, from
+Postgres.app's binaries:
 
 ```sh
-docker run -d --rm --name <app>-check -p <port>:5432 -e POSTGRES_PASSWORD=postgres postgres:17 \
-  -c fsync=off -c synchronous_commit=off -c full_page_writes=off -c timezone=America/New_York
+PG=/Applications/Postgres.app/Contents/Versions/latest/bin
+$PG/initdb --locale=en_US.UTF-8 -U postgres -D <scratch>/pgdata
+$PG/pg_ctl -D <scratch>/pgdata -l <scratch>/pg.log -o "-p <port> -c fsync=off -c synchronous_commit=off \
+  -c full_page_writes=off -c timezone=America/New_York" start
 ```
 
-Point the app's DB URLs at that port in an env file inside your worktree (copied from `.env.example`), migrate and
-seed it, and remove the container when done. Never use ports 5432, 5433 or 3306, even if they are free.
+Point the app's DB URLs at `127.0.0.1:<port>` in an env file inside your worktree (copied from `.env.example`),
+migrate and seed it, and stop it with `$PG/pg_ctl -D <scratch>/pgdata stop` when done. Never use ports 5432, 5433
+or 3306, even if they are free. Before any test or push, check that both DB URLs are set and neither says 5432.

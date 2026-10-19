@@ -33,7 +33,7 @@ In this order:
 
 1. **A prop** the component already has (read the whole Props table; many options are off by default).
 2. **A `pt` section** for a look.
-3. **A slot** for content (`#empty`, `#item`, `#cell-<key>`, `#actions`, `#footer`…). Slot names are kebab-case.
+3. **A slot** for content (`#empty`, `#item`, `#<key>-cell`, `#actions`, `#footer`…). Slot names are kebab-case.
 
 Never:
 
