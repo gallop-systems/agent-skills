@@ -20,6 +20,7 @@ Then install the skills you want:
 /plugin install copier-template@gallop-systems-agent-skills
 /plugin install vue-nuxt@gallop-systems-agent-skills
 /plugin install frontend-design@gallop-systems-agent-skills
+/plugin install gallop-ui@gallop-systems-agent-skills
 ```
 
 ## Updating
@@ -166,6 +167,18 @@ Covers:
 - Testing template changes (`--vcs-ref HEAD`, generate-and-validate)
 - Releasing versions (tag + GitHub Release) and the update-checker workflow pattern
 - Applying `copier update` in descendants: conflict triage, `.rej` files, validation
+
+### gallop-ui
+
+Use and change gallop-ui, Gallop's shared Nuxt UI layer, vendored into each app at `layers/gallop-ui` by git subtree.
+Activates in any repo with `layers/gallop-ui`.
+
+Covers:
+- Using the layer in an app: auto-imports, `pt`, `class`, `gallopUi` in `app.config`, merge order, tokens and dark mode, `/_ui`
+- Finding the right component (exact, close or no match), primitives before composites, proposing a component
+- API principles and the bar for an API change (owner calls, semver, codemods)
+- Pulling a release: `yarn ui:pull`, `ui:migrate`, `ui:tokens`, `ui:check`, merge-commit subtree PRs
+- Changing the layer, checking every app with `ui:impact` and screenshot sweeps, and working rules learned the hard way
 
 ## Contributing a Lesson Back
 
