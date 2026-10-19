@@ -14,9 +14,9 @@ This document describes the standard tech stack used across all Gallop Systems p
 | **Query Builder** | Kysely (type-safe SQL) | ^0.28.9 |
 | **Auth** | nuxt-auth-utils (session-based) | ^0.5.27 |
 | **OAuth** | Google OAuth (optional) | via nuxt-auth-utils |
-| **UI Components** | PrimeVue (unstyled) + Volt | ^4.5.4 |
+| **UI Components** | gallop-ui (Nuxt layer at `layers/gallop-ui`, built on Reka UI) | vendored by git subtree |
 | **Styling** | Tailwind CSS v4 | ^4.1.18 |
-| **Icons** | PrimeIcons | ^7.0.0 |
+| **Icons** | `@nuxt/icon` with Iconify Lucide (`lucide:*`) | — |
 | **Validation** | Zod | ^4.3.5 |
 | **Date Handling** | date-fns | ^4.1.0 |
 | **Testing** | Vitest | ^4.0.17 |
@@ -33,13 +33,13 @@ This document describes the standard tech stack used across all Gallop Systems p
 
 ```
 app/                        # Frontend
-├── assets/css/main.css     # Tailwind + PrimeUI imports + CSS variables
+├── assets/css/main.css     # Tailwind + colour tokens (light and dark)
 ├── components/             # Vue components (auto-imported)
 ├── composables/            # Vue composables (auto-imported)
 ├── layouts/                # Layout templates
 ├── middleware/              # Client-side route middleware
 ├── pages/                  # File-based routing
-└── plugins/                # Vue plugins (PrimeVue setup)
+└── plugins/                # Vue plugins
 
 server/                     # Backend (Nitro)
 ├── api/                    # API routes (file-based: users/index.get.ts → GET /api/users)
@@ -189,22 +189,20 @@ Test file locations:
 - Backend: `server/**/*.test.ts` (co-located with handlers)
 - Frontend: `app/components/**/*.test.ts`, `app/pages/**/*.test.ts`, `app/composables/**/*.test.ts`
 
-### UI Components (Volt + PrimeVue)
+### UI Components (gallop-ui)
 
-- Volt components are PrimeVue unstyled components styled with Tailwind
-- Registered with `Volt` prefix: `VoltButton`, `VoltCard`, `VoltDataTable`, etc.
-- Customize via `pt:section:class` pass-through syntax (NOT via Tailwind `class` prop)
-- See `DESIGN_LANGUAGE.md` for the complete design system
-
-Available Volt components:
-`VoltButton`, `VoltSecondaryButton`, `VoltCard`, `VoltDataTable`, `VoltDialog`, `VoltConfirmDialog`, `VoltInputText`, `VoltPassword`, `VoltSelect`, `VoltTextarea`, `VoltAvatar`, `VoltTag`, `VoltMessage`, `VoltToast`
+- Components come from the **gallop-ui** layer at `layers/gallop-ui`. They are auto-imported by their plain names: `Button`, `Card`, `DataTable`, `Modal`, `Input`, `Select`, `FormField`, `Pill`, `Alert`, and so on. No prefix.
+- `layers/gallop-ui/CATALOGUE.md` lists every component with a "use it for" column. Read it before building any UI. Restyle with `class` or `pt`; don't edit the layer.
+- Feedback goes through composables: `useToast()` with `<Toaster />`, `useConfirm()` with `<ConfirmDialog />`, each mounted once.
+- Never name a component after a layer component in `app/components` (it would shadow the layer).
+- Use the **gallop-ui** skill for how to use and change the layer.
 
 ### Design System Essentials
 
 - **Zinc-first palette** — zinc for almost everything, color only for semantic meaning
 - **No decorative shadows** — shadows only on hover for interactivity
 - **Rounding:** `rounded-xl` for inputs/buttons, `rounded-2xl` for cards
-- **Icons:** PrimeIcons (`pi pi-*` classes)
+- **Icons:** Iconify Lucide names (`lucide:search`)
 - **Refer to `DESIGN_LANGUAGE.md`** for full component styling reference
 
 ---

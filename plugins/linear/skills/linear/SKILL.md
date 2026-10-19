@@ -131,7 +131,7 @@ Always use `@` mentions when referring to team members in comments. Use the Line
 
 ## Writing Issues
 
-> **Tech stack context:** All projects use Nuxt 4 + Nitro + Kysely + PostgreSQL + PrimeVue/Volt + Tailwind CSS v4. See `tech-stack.md` for full details.
+> **Tech stack context:** All projects use Nuxt 4 + Nitro + Kysely + PostgreSQL + gallop-ui + Tailwind CSS v4. See `tech-stack.md` for full details.
 
 Read the examples before writing an issue — they show the voice and level of detail better than any rule:
 
@@ -171,7 +171,7 @@ A plain, sentence-case statement of the outcome — "Send a quote by email from 
 | Type | Sections after Context |
 |------|------------------------|
 | **Backend** (incl. data model) | `## Functionality` — bullets of behavior, rules, edge cases, out-of-scope |
-| **Frontend** | `## Requirements` (checkboxes) · `## UI Notes` — repo-verified pages/components, Volt components, "Follow DESIGN_LANGUAGE.md". If the repo can't be checked, leave paths out — no "To Determine" / TBD section. |
+| **Frontend** | `## Requirements` (checkboxes) · `## UI Notes` — repo-verified pages/components, gallop-ui components, "Follow DESIGN_LANGUAGE.md". If the repo can't be checked, leave paths out — no "To Determine" / TBD section. |
 | **Bug** | `## Bug` (what happens vs. what should) · `## Root cause` · `## Steps to reproduce` · `## Likely location` — replaces Context |
 | **Discovery** | `## Open question` — the options, each with its trade-off. AC: settled with the client, recorded in "Our thinking", dependent issues updated. |
 | **Tech Debt** | `## Requirements` · optional `## Files affected` |
@@ -218,11 +218,11 @@ Issues are assigned by role: the **Frontend/PM lead** or the **Backend lead**. T
 |-----------|-----------------|
 | Kysely migrations, schema design, complex DB queries | Backend lead |
 | Complex Nitro API handlers (transactions, multi-table) | Backend lead |
-| Vue pages, Volt components, Tailwind styling, UX | Frontend/PM lead |
+| Vue pages, gallop-ui components, Tailwind styling, UX | Frontend/PM lead |
 | Simple CRUD API endpoint (single table, straightforward) | Either (Frontend/PM lead can handle) |
 | Client requirement gathering, design | Frontend/PM lead |
 | Bug — Kysely/DB/server middleware | Backend lead |
-| Bug — Vue/PrimeVue/Tailwind/client-side | Frontend/PM lead |
+| Bug — Vue/gallop-ui/Tailwind/client-side | Frontend/PM lead |
 | Bug — fullstack | Discuss, assign based on root cause |
 
 ---

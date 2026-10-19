@@ -109,7 +109,7 @@ a dialog clipped inside a scrolling panel):
 <Teleport to="body"><div class="modal">…</div></Teleport>
 ```
 
-`<Teleport>` is auto-imported. (Volt/PrimeVue overlays already teleport
+`<Teleport>` is auto-imported. (gallop-ui's `Modal`, `Drawer` and `Popover` already teleport
 internally; this is for your own hand-rolled overlays.)
 
 ## `<KeepAlive>` caches toggled-component state

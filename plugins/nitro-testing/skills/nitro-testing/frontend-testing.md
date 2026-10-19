@@ -61,17 +61,7 @@ export default isNuxtEnv
 
 ## Nuxt Test Configuration
 
-Create a minimal Nuxt config for testing:
-
-```typescript
-// nuxt.config.test.ts
-export default defineNuxtConfig({
-  modules: [
-    "@primevue/nuxt-module", // Include UI libraries your components need
-  ],
-  ssr: false, // Simplifies component testing
-});
-```
+No extra config file. With `VITEST_ENV=nuxt` (`environment: "nuxt"`) vitest boots the app's own `nuxt.config.ts`, so the gallop-ui layer and every auto-import are available, and `hookTimeout` should stay at 30s (each file boots Nuxt; 10s fails under pre-push load).
 
 ## Package.json Scripts
 
@@ -265,43 +255,27 @@ describe("Task Detail Page", () => {
 });
 ```
 
-### Testing with UI Libraries (PrimeVue)
+### Testing with the UI Layer (gallop-ui)
 
-Stub complex components and register required services:
+Mount the real layer components. There is nothing to register or stub, and no service plugins:
 
 ```typescript
 import { describe, it, expect } from "vitest";
 import { mountSuspended } from "@nuxt/test-utils/runtime";
-import ToastService from "primevue/toastservice";
-import ConfirmationService from "primevue/confirmationservice";
 import ProjectForm from "./ProjectForm.vue";
 
 describe("ProjectForm", () => {
   it("renders form fields", async () => {
     const wrapper = await mountSuspended(ProjectForm, {
-      props: {
-        project: { id: 1, name: "", status: "draft" },
-      },
-      global: {
-        plugins: [ToastService, ConfirmationService],
-        stubs: {
-          // Stub complex PrimeVue components
-          DataTable: true,
-          Column: true,
-          Dialog: true,
-          Calendar: true,
-          Dropdown: true,
-          // Keep simple components
-          InputText: false,
-          Button: false,
-        },
-      },
+      props: { project: { id: 1, name: "", status: "draft" } },
     });
 
-    expect(wrapper.exists()).toBe(true);
+    expect(wrapper.find("input").exists()).toBe(true);
   });
 });
 ```
+
+`useToast()` and `useConfirm()` set up their own state when called in setup. To assert on them, mock the composable with `mockNuxtImport` or render `<Toaster />` / `<ConfirmDialog />` in the test. Prop and `pt` details: the **gallop-ui** skill.
 
 ### Testing User Interactions
 

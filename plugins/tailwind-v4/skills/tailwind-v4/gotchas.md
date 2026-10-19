@@ -1,7 +1,7 @@
 # Tailwind v4 Gotchas
 
 Mined from real debugging sessions in this stack (Nuxt/Vite + Tailwind v4 +
-PrimeVue/Volt). Each is a place where a class silently did nothing, a v3 habit
+gallop-ui). Each is a place where a class silently did nothing, a v3 habit
 broke, or the fix was non-obvious.
 
 ## `@apply` of custom tokens in a `<style>` block needs `@reference` to YOUR css
@@ -53,18 +53,15 @@ at render and won't follow `prefers-color-scheme`. A `colors: ["#18181b"]`
 `window.matchMedia("(prefers-color-scheme: dark)")` match and recompute on its
 `change` event (VueUse's `usePreferredDark` does this in Vue).
 
-## Two surface systems: PrimeUI's ramp is fixed, your `@theme` tokens flip
+## Tokens flip, raw palette classes don't
 
-- PrimeUI's `--p-surface-0 … --p-surface-950` ramp is defined **once** and does
-  **not** change with the theme. `bg-surface-0` is always white — to go dark you
-  need an explicit `dark:bg-surface-900` pair. Vendored Volt components rely on
-  this full 0–950 ramp.
-- Your `@theme` semantic tokens (`--color-surface`, `--color-fg`) **flip their
-  value** in the dark `@media` block, so `bg-surface` needs no `dark:`.
+- Your `@theme` semantic tokens (`--color-surface`, `--color-fg`, `--color-line`) change value in the dark
+  block, so `bg-surface` needs no `dark:`. gallop-ui components are written the same way.
+- A raw palette class (`bg-white`, `text-zinc-700`) is fixed. It needs a `dark:` pair, and forgetting it gives
+  white stripes on dark.
 
-Rule: tokenize only the markup you own (pages, your components). Leave vendored
-Volt components on the `surface-*` ramp + `dark:` pairs so they stay
-upstream-compatible. Mixing the two is what produces white-striped tables on dark.
+Rule: use tokens in app markup, so there is no `dark:` half to forget. Keep raw palette classes for meaning-carrying
+hues (red for an error, green for success). Don't restyle layer components with `dark:` pairs: change the token.
 
 ## Don't port a v3 `tailwind.config.js` into a v4 app
 
@@ -85,7 +82,6 @@ trigger an infinite dev-server regeneration loop. Use `@tailwindcss/vite`.
 
 ## Benign noise
 
-Under Yarn (esp. PnP), `@tailwindcss/vite` and `tailwindcss-primeui` may emit
-"doesn't provide vite/tailwindcss" unmet-peer-dependency warnings even though the
-deps resolve transitively. These are safe to ignore — they are not a config bug.
-(Adding `tailwindcss` as a direct dependency silences the `tailwindcss-primeui` one.)
+Under Yarn (esp. PnP), `@tailwindcss/vite` may emit a "doesn't provide vite/tailwindcss"
+unmet-peer-dependency warning even though the deps resolve transitively. It is safe to ignore,
+and not a config bug. (Adding `tailwindcss` as a direct dependency silences the `tailwindcss` one.)
