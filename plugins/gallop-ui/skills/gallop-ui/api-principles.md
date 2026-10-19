@@ -14,6 +14,9 @@ agent guess it without the docs? Would they misuse it?
 - **One concept, one name; one behaviour, one prop.** Two components that differ only by a behaviour are one
   component with a prop. The same idea on two components has the same prop name and values.
 - **Flat, plain props over shaped objects:** InputDate `time`, not `granularity="minute"`.
+- **Leave room for what's coming.** Don't take a name that a component we'll want later needs: the date grid is
+  `DateCalendar` because `Calendar` belongs to a future scheduling calendar. Before you choose a name, ask what
+  else it could mean in a UI kit.
 - **Nuxt UI's vocabulary is the default, not a rule.** Use its name when it is clear to a caller; drop it when the
   name or split reflects implementation. Never copy PrimeVue/Volt's API (`severity`, `fluid`, PrimeVue `pt` keys).
 - **Fix a bad name before a release ships it**, rather than keeping it because apps use it. That is what the codemod
@@ -84,6 +87,17 @@ colours: an app's extra button colour maps onto an existing `color`.
   `class`. DropdownMenu, Sidebar, TopBar and CommandPalette extend it (CommandPalette identifies an item by `id`).
 - **Looks:** `ghost` is no box and no rule (Card, Stat); `ruled` is Card's ruled band; `elevated` a raised card;
   `divided` puts rules between parts.
+
+- **Never show one thing and save another.** A field whose typed text isn't a valid value (a date, a time, a number)
+  reverts to the saved value on blur or Enter and briefly shows the invalid border. It never keeps the text on
+  screen while the model holds something else, and never drops the input silently.
+
+## What belongs in the layer
+
+- **One look across apps.** When one app does something differently from all the others (a floating label, its
+  own field style), redesign that app to match the rest rather than add an option to keep the oddity.
+- **No shallow wrappers around a library an app already uses well** (a chart library, say). A layer component earns
+  its place through shared behaviour and a shared look, not by renaming another library's props.
 
 ## `pt` sections and slots
 

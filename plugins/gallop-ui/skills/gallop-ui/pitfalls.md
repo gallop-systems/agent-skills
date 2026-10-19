@@ -67,5 +67,16 @@ Rules learned the hard way while building the layer and moving every app onto it
 - **DataTable cell state follows the position** on a page turn unless the stateful component has `:key="row.id"`.
 - **Don't copy an old phone table** with `layout="table"`: phones get cards.
 - **`/_ui` shows the wrong font?** The app sets its font from a layout. Move it to `--font-sans` in `@theme`.
-- **Don't trust a subagent's "done".** Check the diff, the CI state and the screenshots yourself before reporting or
-  merging.
+
+## Verifying and reporting
+
+- **A subagent's report isn't proof.** Before you report or merge its work, read the diff, check CI yourself
+  (`gh pr checks`, `gh pr view --json mergeStateStatus`), and open the screenshots.
+- **Inspect every migrated app in a browser.** Run it, open the pages you changed, and look at them in light and
+  dark at desktop and phone width. Passing tests and a clean build don't show you what the screen looks like.
+- **Prefer eyes over slow pixel diffs.** For a judgement on looks, a state-matrix page (every size, variant and state
+  side by side, old against new, with hover and focus forced) that the owner can open beats a long pixel-diff run.
+  Don't add a screenshot-baseline suite without a stated reason. Keep `ui:impact`, which is built for layer changes.
+- **Log pre-existing bugs; don't fix them in the migration.** A bug the app already had on `origin/main` (a wrong
+  join, a broken address field) goes in the PR body and a ticket, not into the migration diff. That keeps the
+  migration's before/after comparison honest.
