@@ -71,7 +71,7 @@ a plain class chosen in script, so a caller's class always beats it. What that m
 
 ## Icons
 
-- **One icon set per app: `gallopUi.iconSet`** in `app/app.config.ts`, `"phosphor"` (the layer's default, and a new
+- **One icon set per app: `gallopUi.icons`** in `app/app.config.ts`, `"phosphor"` (the layer's default, and a new
   app's) or `"lucide"` (apps from before 1.1; `ui:migrate` writes it so they keep their glyphs). The layer's own
   icons (chevrons, close, check, search…) follow it. Write the app's own icons in the same set (`ph:*` or
   `lucide:*`), never a mix.
@@ -79,6 +79,8 @@ a plain class chosen in script, so a caller's class always beats it. What that m
   `icon.serverBundle.collections`. The layer warns at build time when it isn't; otherwise the default icons would
   silently be missing. `layers/gallop-ui/docs/icons.md` has the setup and a name map between the sets.
 - An `icon` prop takes any Iconify name and is never mapped: `icon="ph:users"` stays Phosphor whatever the setting.
+- To change single layer icons, give `gallopUi.icons` a map of roles instead of a preset name: `icons: { close: "ph:x-circle" }`
+  overrides that role over Phosphor. The roles are in `layers/gallop-ui/docs/icons.md`.
 
 ## Tokens and dark mode
 

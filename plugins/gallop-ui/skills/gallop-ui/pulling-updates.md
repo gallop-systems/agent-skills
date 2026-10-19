@@ -53,7 +53,7 @@ Run it whenever `layers/gallop-ui/migrations/` has a folder newer than the versi
   alias until the next major, and a renamed data attribute is rendered under both names. So the app renders the same
   before the codemod, but logs one dev warning per old name: `[gallop-ui] <Component> pt "<old>" is deprecated`. Run
   the codemod anyway so the warnings stop and the next major is a non-event.
-- **A minor release can also add settings for existing apps.** 1.1's `iconSet` row writes `iconSet: "lucide"` into
+- **A minor release can also add settings for existing apps.** 1.1's `icons` row writes `icons: "lucide"` into
   `app/app.config.ts` so an existing app keeps its icons. Commit that line with the codemod output, and keep it.
 - **Major releases break.** The old names are gone; the codemod and its checklist are how the app keeps working.
 - An app already on the newest table gets `nothing to migrate` (exit 0).

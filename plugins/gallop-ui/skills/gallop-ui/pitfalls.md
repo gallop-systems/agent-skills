@@ -66,8 +66,8 @@ Rules learned the hard way while building the layer and moving every app onto it
   open must read it again.
 - **DataTable cell state follows the position** on a page turn unless the stateful component has `:key="row.id"`.
 - **Don't copy an old phone table** with `layout="table"`: phones get cards.
-- **Default icons missing after a pull?** The app has no `gallopUi.iconSet` and no `@iconify-json/ph`, so the layer
-  draws Phosphor from a collection that isn't there. Run `yarn ui:migrate` (it writes `iconSet: "lucide"`), or install
+- **Default icons missing after a pull?** The app has no `gallopUi.icons` and no `@iconify-json/ph`, so the layer
+  draws Phosphor from a collection that isn't there. Run `yarn ui:migrate` (it writes `icons: "lucide"`), or install
   Phosphor on purpose. The layer prints a `[gallop-ui]` warning at build time for this.
 - **A dev warning `[gallop-ui] <Component> pt "<old>" is deprecated`** means the app uses a name a minor release
   renamed. It still works; run `yarn ui:migrate` to rename it before the next major removes it.
