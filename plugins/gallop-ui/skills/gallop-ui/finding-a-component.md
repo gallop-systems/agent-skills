@@ -88,5 +88,5 @@ The owner decides names and whether the layer grows. Bring a short proposal, not
   `docs/decisions.md` so you don't reopen a settled name.
 - **What it replaces**, and whether adopting it is a scripted rewrite.
 
-`docs/composite-candidates.md` in the gallop-ui repo lists what earlier surveys found and what was declined. Check
-it first. An idea that isn't built yet goes in `docs/review-queue.md` as an open item.
+In the gallop-ui repo, `docs/roadmap.md` ("Later") lists ideas not built yet, and `docs/decisions.md` ("Considered
+and not built") lists what was declined and why. Check both first. A new idea goes in `docs/roadmap.md`.
