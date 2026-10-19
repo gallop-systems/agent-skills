@@ -301,13 +301,7 @@ export default isNuxtEnv
 }
 ```
 
-**Nuxt test config** (`nuxt.config.test.ts`):
-```typescript
-export default defineNuxtConfig({
-  modules: ["@primevue/nuxt-module"], // Include UI libraries
-  ssr: false, // Disable SSR for simpler component testing
-});
-```
+The `nuxt` environment boots the app's real `nuxt.config.ts`, so the gallop-ui layer, `@nuxt/icon` and every auto-import are already there. No separate test config, no module list.
 
 ### File Organization
 
@@ -428,26 +422,9 @@ describe("Task Detail Page", () => {
 });
 ```
 
-### Stubbing UI Library Components
+### UI Layer Components
 
-For PrimeVue or other UI libraries, stub complex components:
-
-```typescript
-import { mountSuspended } from "@nuxt/test-utils/runtime";
-import ToastService from "primevue/toastservice";
-import ConfirmationService from "primevue/confirmationservice";
-
-const wrapper = await mountSuspended(MyComponent, {
-  global: {
-    plugins: [ToastService, ConfirmationService],
-    stubs: {
-      DataTable: true,
-      Column: true,
-      Dialog: true,
-    },
-  },
-});
-```
+Mount the real gallop-ui components; don't stub them and don't register services. `useToast()` and `useConfirm()` provide their state on the app the first time they run in setup, so a component that calls them mounts as is. To assert a toast or a confirmation, mock the composable (`mockNuxtImport("useToast", ...)`) or render `<Toaster />` / `<ConfirmDialog />` next to the component. Component props and `pt`: see the **gallop-ui** skill.
 
 ### Testing Utility Functions
 
