@@ -26,8 +26,7 @@ There is **no `tailwind.config.js`/`.ts`**. The whole config is in your CSS entr
 
 ```css
 @import "tailwindcss";          /* NOT @tailwind base/components/utilities */
-@import "tailwindcss-primeui";
-@source "../../../src/volt";     /* scan sources Tailwind won't auto-detect */
+@source "../../../layers";      /* scan sources Tailwind won't auto-detect */
 
 @theme {
   --color-surface: #ffffff;      /* defines the bg-surface / text-surface utilities */
@@ -66,8 +65,8 @@ or `tailwindcss-primeui` raises peer-dependency warnings.
 
 v4 auto-detects content, but skips files outside the project's default roots (and
 anything gitignored). Classes used **only** inside a vendored/library directory
-(e.g. Volt components in `src/volt`) get purged and silently go missing. Point
-Tailwind at them: `@source "../../../src/volt";`. If a vendored component's
+(e.g. a Nuxt layer's components) get purged and silently go missing. Point
+Tailwind at them with `@source`. If a vendored component's
 classes aren't generating, check this line first.
 
 ## Dark mode
@@ -114,9 +113,8 @@ class discovery, but it does not encode the stack-specific gotchas above.
 
 ## Related
 
-- **PrimeVue/Volt component styling** (`pt:` pass-through, `ptViewMerge`,
-  `data-pc-*`, `@apply` + `@reference` in SFC `<style>`, reactive chart palettes):
-  see the **volt-primevue** skill — it owns the component layer; this skill owns
+- **Component styling** (the gallop-ui layer's components, `pt` and `class`, colour
+  tokens): see the **gallop-ui** skill. It owns the component layer; this skill owns
   the Tailwind-v4 fundamentals.
 
 ## Contributing Back

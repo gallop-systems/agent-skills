@@ -48,12 +48,6 @@
       "version": "1.0.0"
     },
     {
-      "name": "volt-primevue",
-      "source": "./plugins/volt-primevue",
-      "description": "Volt (unstyled PrimeVue + Tailwind) UI: adding components, pt: pass-through styling, the surface-* vs semantic-token color model, and prefers-color-scheme dark mode",
-      "version": "1.0.0"
-    },
-    {
       "name": "tailwind-v4",
       "source": "./plugins/tailwind-v4",
       "description": "Tailwind CSS v4 CSS-first model: @import/@theme/@source config, no tailwind.config.js, prefers-color-scheme dark mode, design tokens, and the v3->v4 traps that silently break classes",

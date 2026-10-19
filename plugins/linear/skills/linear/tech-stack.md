@@ -60,7 +60,7 @@ server/                     # Backend (Nitro)
 shared/                     # Shared between frontend + backend
 └── types/                  # Type declarations (auth.d.ts)
 
-src/volt/                   # Volt UI components (PrimeVue unstyled + Tailwind)
+layers/gallop-ui/           # gallop-ui layer (shared UI components, git subtree)
 ```
 
 ---

@@ -30,8 +30,7 @@ variables directly — `color: var(--color-fg)` always works with no `@reference
 
 Note: a full `yarn build` validates `@apply` in `<style>`; a bare
 `@tailwindcss/cli` compile does **not** — the CLI can pass while the real build
-fails. Include `build` in your check. (The SFC-specific details live in the
-**volt-primevue** skill's gotchas.)
+fails. Include `build` in your check.
 
 ## `@import url(...)` must come before `@import "tailwindcss"`
 
@@ -52,7 +51,7 @@ written from script) can't use `bg-surface`/`var(--color-fg)` — the value is b
 at render and won't follow `prefers-color-scheme`. A `colors: ["#18181b"]`
 (near-black) chart line is invisible on dark. Compute a palette from a
 `window.matchMedia("(prefers-color-scheme: dark)")` match and recompute on its
-`change` event. (The volt-primevue skill has the Vue composable version.)
+`change` event (VueUse's `usePreferredDark` does this in Vue).
 
 ## Two surface systems: PrimeUI's ramp is fixed, your `@theme` tokens flip
 

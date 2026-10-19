@@ -8,7 +8,7 @@ description: Author Vue 3 components inside a Nuxt 4 app. Covers Nuxt auto-impor
 Patterns for writing Vue 3 `<script setup>` components inside a Nuxt 4 app. This
 is the **frontend authoring** slice — the data layer (`useFetch`/`$fetch`, SSR
 storage, hydration, `definePageMeta`/auth) lives in the `nuxt-nitro-api` skill;
-Volt/PrimeVue styling and dark mode live in `volt-primevue`. This skill
+components, styling and dark mode live in `gallop-ui`. This skill
 cross-links to those rather than restating them.
 
 ## When to Use This Skill
@@ -51,7 +51,7 @@ instead of testing those pieces as plain Vue functions.
 3. **`computed` for derivation, `watch` for escaping the graph.** If a watcher body just assigns one reactive value from others, it's a `computed`. Need to write a value back? A `computed` can have a setter — reach for a writable `computed` or `defineModel` before a sync watcher. Keep computed getters pure (no fetch, no mutation, no DOM).
 4. **Tie effects to lifecycle.** DOM measurement, listeners, observers, and timers go in `onMounted` and are torn down in `onUnmounted`. A computed reading live DOM geometry needs an explicit re-measure signal (DOM size isn't reactive). Before hand-rolling that effect-plus-teardown, check whether a **VueUse** composable already wraps it (`vueuse.md`) — they bundle the cleanup.
 5. **Call composables at the top of `<script setup>`** — never inside a callback or a template expression (both lose Nuxt's request scope). Derive display state with `computed`, guarding for possibly-null data.
-6. **Defer to the right skill.** Fetch/SSR/auth/middleware → `nuxt-nitro-api`. Volt components, `pt:` styling, color tokens, dark mode → `volt-primevue`. Don't duplicate them here.
+6. **Defer to the right skill.** Fetch/SSR/auth/middleware → `nuxt-nitro-api`. UI components, `pt` styling, color tokens, dark mode → `gallop-ui`. Don't duplicate them here.
 
 ## Contributing Back
 
