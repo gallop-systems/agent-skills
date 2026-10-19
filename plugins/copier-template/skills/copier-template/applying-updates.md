@@ -39,7 +39,7 @@ find . -name '*.rej'               # hunks copier couldn't apply
 grep _commit .copier-answers.yml   # confirm the new (latest) version
 ```
 
-- **`--skip-tasks`**: `_tasks` (migrations, `npx volt-vue add`, seeds) only run on initial `copy`, but skip them explicitly so an update never fires surprise scaffold work (a stray migration, a regenerated component). Run any genuinely-needed task by hand afterward.
+- **`--skip-tasks`**: `_tasks` (migrations, seeds) only run on initial `copy`, but skip them explicitly so an update never fires surprise scaffold work (a stray migration, a regenerated component). Run any genuinely-needed task by hand afterward.
 - **Dirty-tree refuses on untracked dirs/files too**, not just staged changes — `git stash` alone misses them. Use `--include-untracked`, or move local-tooling dirs (`.agents/`, `.claude/`, `.do/`, editor swap files) aside and restore them after.
 - **The landed version is almost always higher than the bot PR advertised** — `copier update` targets the latest tag. Read the real version from `_commit` *after* the run and title the commit/PR from that. A multi-version jump means several releases land at once — budget for more conflicts.
 

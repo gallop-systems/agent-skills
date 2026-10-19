@@ -22,7 +22,7 @@ PascalCased filename:
 - **Guessing the bare filename fails silently.** `<FileUpload>` for `form/FileUpload.vue` resolves to nothing — no error, just an unrendered tag. If a component "isn't showing up," check the prefix first.
 - **Want a clean unprefixed tag?** Either explicitly import it
   (`import EstimateHeader from '~/components/estimates/EstimateHeader.vue'`), or
-  register a directory with a prefix in `nuxt.config` (`components: [{ path: '../src/volt', prefix: 'Volt' }]` → `<VoltButton>`).
+  register a directory with a prefix in `nuxt.config` (`components: [{ path: '~/components/forms', prefix: 'Form' }]` → `<FormInput>`).
 
 ## What auto-imports (no `import` line)
 
