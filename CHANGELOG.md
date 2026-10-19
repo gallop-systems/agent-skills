@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.31.1](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.31.0...agent-skills-v1.31.1) (2026-10-19)
+
+
+### Documentation
+
+* **nitro-testing:** run CI tests locally on a native throwaway Postgres, not Docker ([#112](https://github.com/gallop-systems/agent-skills/issues/112)) ([adfad43](https://github.com/gallop-systems/agent-skills/commit/adfad43a3a8d81079a9f91759b2d791de82dfcab))
+
 ## [1.31.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.30.0...agent-skills-v1.31.0) (2026-10-19)
 
 
