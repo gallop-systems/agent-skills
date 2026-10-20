@@ -50,6 +50,11 @@ instead of a choice), it is a different component.
 While the layer change is pending, the app may carry a small, local workaround marked `TODO(gallop-ui): <what the
 layer should do>`. The next `ui:pull` removes it.
 
+**A list of rows you write yourself** (people with an avatar and actions, settings rows, a pick-one list, a list the
+user reorders) is `List` with `ListItem` and `ListGroup`: slots for leading, content and actions; selection with
+checkboxes or pick-one; reorder; ghost or outlined, ruled or gapped. Don't hand-roll a `<ul>` with borders and
+checkboxes. A list of records with columns is still `DataTable`.
+
 ## 4. No match: compose, then propose
 
 1. **Compose layer primitives in the app** (`Card` + `DescriptionList` + `Button`…), in an app component named for

@@ -68,7 +68,7 @@ Detail, and how to propose a component: [finding-a-component.md](finding-a-compo
 ## Pull an update (decision procedure)
 
 New worktree from `origin/main` → `yarn ui:pull vX.Y.Z` (its own commit; needs a clean tree) → read `CHANGELOG.md`
-and `migrations/` between the two versions → on a breaking release, `yarn ui:migrate --dry`, then `yarn ui:migrate`
+and `migrations/` between the two versions → whenever there's a newer `migrations/` table (minor releases too), `yarn ui:migrate --dry`, then `yarn ui:migrate`
 and work its checklist → `yarn ui:tokens`, `yarn ui:check` → remove workarounds the release makes unnecessary → full
 tests and a before/after visual sweep → PR, merged with a **merge commit**.
 Steps and commands: [pulling-updates.md](pulling-updates.md).

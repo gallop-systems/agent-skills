@@ -108,8 +108,8 @@ colours: an app's extra button colour maps onto an existing `color`.
 ## `pt` sections and slots
 
 - `class` is always `pt.root`. An overlay's `root` is its panel; its backdrop is `overlay`.
-- Inside a list, an item's parts are `item`, `itemLabel`, `itemDescription`, `itemIcon`; a group heading is
-  `groupLabel`.
+- Inside a list, an item's parts are `item`, `itemLabel`, `itemDescription`, `itemIcon`, and every other part of a
+  row is prefixed `item` too (`itemBadge`, `itemCount`, `itemKbd`, `itemMeta`); a group heading is `groupLabel`.
 - `icon` is only the component's own leading icon; other icons are named for their job (`toggleIcon`, `zoneIcon`,
   `checkIcon`).
 - A field's popup is `panel`; Tabs' panels are `tabPanel`; a title-plus-description block is `text`; an inner
@@ -150,6 +150,9 @@ colours: an app's extra button colour maps onto an existing `color`.
   without new evidence.
 - **Backward compatible by default:** a new prop or option must leave every existing call site rendering exactly as
   before. A look that changes without the caller touching `pt` is a breaking change.
+- **A rename can ship in a minor release** when the old name keeps working until the next major: a `pt` section
+  through `usePt`'s `renamed` map (a deprecated alias with one dev warning per old name), a data attribute rendered
+  under both names. It still gets a codemod row, so apps stop using the old name before the major removes it.
 - **Breaking changes after 1.0** need a major release, a `CHANGELOG.md` note, and a row per change in
   `migrations/<version>/<area>.json` with a `codemod` the kit can apply (`rename`, `invert-to`, `wrap-array`…) or
   `manual` with a `locate` and a note. `yarn ui:migrate` then rewrites apps and writes the checklist. Before 1.0,
