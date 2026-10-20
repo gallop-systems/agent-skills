@@ -222,6 +222,7 @@ Needs Nuxt/Vue context (useRuntimeConfig, useRoute, refs)?
 10. **Never use generic type params with useFetch/$fetch** - See below.
 11. **Never export a module-scope `ref` for shared state** - Leaks across SSR requests; use `useState`. See [state-management.md](./state-management.md).
 12. **Internal server `$fetch` doesn't forward cookies** - Pass `headers` explicitly or the callee sees no session. See [server-runtime.md](./server-runtime.md).
+13. **TS2589 "excessively deep" past ~200 API routes** - Nitro's route matcher overflows TypeScript at untyped `$fetch`/`useFetch` calls. Don't add generics (the error just moves); `yarn patch` nitropack's `MatchedRoutes`. See [fetch-patterns.md](./fetch-patterns.md#ts2589-once-the-app-passes-200-api-routes).
 
 ### Ambiguous Route Type Inference
 
