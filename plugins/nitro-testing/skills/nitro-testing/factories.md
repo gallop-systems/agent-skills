@@ -146,6 +146,12 @@ async project(data: Partial<{...}> = {}) {
 }
 ```
 
+> **Parallel files collide on "unique" values.** A module-level counter restarts in every test
+> file, and random suffixes can still repeat. When files run in parallel workers against one
+> database, two uncommitted inserts of the same value make one transaction wait for the other,
+> which can deadlock. See [Parallel Workers Sharing One Database](./transaction-rollback.md#gotcha-parallel-workers-sharing-one-database-deadlock):
+> give each worker its own database.
+
 ### 4. Use `this` for Composition
 
 Factories can call each other:

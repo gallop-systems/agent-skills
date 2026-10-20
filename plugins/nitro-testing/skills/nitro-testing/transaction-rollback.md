@@ -162,7 +162,7 @@ describe("POST /api/orders", () => {
 2. **Use `db` fixture for assertions** - Not the real db import
 3. **Nested transactions work** - Thanks to prototype patching
 4. **No cleanup needed** - Rollback happens automatically
-5. **Tests are isolated** - Can't affect each other
+5. **Tests can't see each other's rows** - But parallel workers sharing one database *can* block each other (see below)
 
 ## Gotcha: Unused Factories
 
@@ -181,3 +181,73 @@ test("returns empty list", async ({ factories: _ }) => {
   expect(result).toEqual([]);
 });
 ```
+
+## Gotcha: Parallel Workers Sharing One Database Deadlock
+
+Rollback hides rows, not locks. Vitest runs test files in parallel workers, and every test
+holds its transaction open until it rolls back. If all workers share one test database:
+
+- Inserting a unique value that another **uncommitted** transaction already inserted *waits*
+  for that transaction to finish. Two waits in opposite directions are a deadlock
+  (`deadlock detected`), which shows up as a rare, unreproducible test failure.
+- Collisions are more common than they look. A module-level factory counter (`let seq = 0`)
+  restarts in every test file, so parallel files all insert `code_1` or `test1@example.com`.
+  Tests that insert seed-owned codes or reuse literal emails collide the same way.
+- Long-held advisory locks (e.g. a seed lock taken for a whole test) queue everyone else.
+- DDL in a test (`CREATE TRIGGER`, `ALTER TABLE`) takes a table lock that blocks every other
+  transaction touching that table.
+
+Reordering individual inserts or randomizing values only thins the collisions. The fix that
+removes them is **one database per worker**: global setup migrates the base test database
+once, and each worker clones it (as a template) before its first file.
+
+```typescript
+// setup.ts (runs per test file, in the worker)
+import { inject } from "vitest";
+import { Pool } from "pg";
+
+const base = (process.env.DATABASE_URL_TEST_BASE ??= process.env.DATABASE_URL_TEST!);
+const url = new URL(base);
+const baseName = url.pathname.slice(1);
+const name = `${baseName}__w${process.env.VITEST_POOL_ID ?? 1}`;
+const runId = inject("testDbRunId"); // provided once per run by globalSetup (randomUUID())
+
+// CREATE DATABASE ... TEMPLATE refuses while anyone is connected to the template,
+// so connect to the maintenance database, not the test database.
+const admin = new Pool({ connectionString: base.replace(`/${baseName}`, "/postgres"), max: 1 });
+const { rows } = await admin.query(
+  "select shobj_description(oid, 'pg_database') as run from pg_database where datname = $1",
+  [name],
+);
+if (rows[0]?.run !== runId) {
+  // First file of this run in this worker: replace any clone from an earlier run.
+  await admin.query(`DROP DATABASE IF EXISTS "${name}" WITH (FORCE)`);
+  await admin.query(`CREATE DATABASE "${name}" TEMPLATE "${baseName}" STRATEGY FILE_COPY`);
+  await admin.query(`COMMENT ON DATABASE "${name}" IS '${runId}'`);
+}
+await admin.end();
+
+url.pathname = `/${name}`;
+process.env.DATABASE_URL_TEST = url.toString(); // everything below connects here
+```
+
+```typescript
+// global-setup.ts
+export async function setup(project) {
+  // ...reset + migrate the base test database as before...
+  project.provide("testDbRunId", randomUUID());
+  // teardown: drop every `<base>__w*` database
+  return () => dropWorkerDatabases(baseUrl);
+}
+```
+
+- A worker runs one test at a time, so no two open test transactions share a database.
+  Parallelism is unchanged.
+- Only the workers a run uses create a clone. `STRATEGY FILE_COPY` (Postgres 15+) keeps
+  cloning fast. In practice this cost about 1s per run and took lock waits over 20ms from
+  ~1,500 per 20 runs to 0.
+- The test role needs `CREATEDB` (`ALTER ROLE <user> CREATEDB`). CI's superuser already has it.
+- Each clone's identity sequences start fresh. A test that compared ids across tables without
+  checking their type can start failing; that's a latent bug the shared database hid.
+- Diagnose before fixing: set `log_lock_waits = on` and `deadlock_timeout = '20ms'` for the
+  test server, run the suite a few times, and read which statements waited on which.
