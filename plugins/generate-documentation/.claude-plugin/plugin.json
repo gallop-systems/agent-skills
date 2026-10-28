@@ -1,0 +1,8 @@
+{
+  "name": "generate-documentation",
+  "description": "Write a client-facing guide with screenshots of the app (PDF, HTML, email or WhatsApp): answer a client's questions, or announce what shipped. Screenshots come from fictional demo data only; includes Playwright capture helpers and a PDF renderer with a page-review contact sheet.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Gallop Systems"
+  }
+}

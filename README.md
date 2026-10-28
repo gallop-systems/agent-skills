@@ -21,6 +21,7 @@ Then install the skills you want:
 /plugin install vue-nuxt@gallop-systems-agent-skills
 /plugin install frontend-design@gallop-systems-agent-skills
 /plugin install gallop-ui@gallop-systems-agent-skills
+/plugin install generate-documentation@gallop-systems-agent-skills
 ```
 
 ## Updating
@@ -179,6 +180,18 @@ Covers:
 - API principles and the bar for an API change (owner calls, semver, codemods)
 - Pulling a release: `yarn ui:pull`, `ui:migrate`, `ui:tokens`, `ui:check`, merge-commit subtree PRs
 - Changing the layer, checking every app with `ui:impact` and screenshot sweeps, and working rules learned the hard way
+
+### generate-documentation
+
+Write a client-facing guide with real screenshots of the app, as a PDF, HTML page, email draft or WhatsApp messages.
+Run it as `/generate-documentation <format> <what to document>`.
+
+Covers:
+- Two modes: **answer** (turn a client's questions into "you can already do this", "we changed it", "here's the fix") and **announce** (turn merged work into an unsolicited "you can now…" note)
+- Checking each answer in the code and the running app before writing it
+- Screenshots from a scratch copy of the app's fictional demo data only, never real data
+- `bin/shots.mjs` Playwright helpers (sign-in, still captures, highlight rings, region and element shots) and `bin/render.mjs` (HTML to PDF, plus a contact sheet for reviewing page breaks)
+- A guide template, writing rules for non-technical readers, and per-format rules
 
 ## Contributing a Lesson Back
 
