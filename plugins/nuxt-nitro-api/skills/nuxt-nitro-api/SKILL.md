@@ -37,7 +37,7 @@ For detailed patterns, see these topic-focused reference files:
 - [caching.md](./caching.md) - defineCachedFunction/EventHandler, SWR, per-key invalidation (Nitro v2)
 - [storage.md](./storage.md) - useStorage / unstorage KV layer, mounts
 - [route-rules.md](./route-rules.md) - declarative cache/headers/redirect/proxy/CORS per path
-- [server-runtime.md](./server-runtime.md) - **Nitro v2 vs v3 version pin**, middleware order, useEvent, internal-$fetch auth, WebSockets
+- [server-runtime.md](./server-runtime.md) - **Nitro v2 vs v3 version pin**, middleware order, useEvent, internal-$fetch auth, virtual modules, WebSockets
 - [layers.md](./layers.md) - sharing components/composables/config across repos via extends
 - [nitro-tasks.md](./nitro-tasks.md) - Background jobs, scheduled tasks, job queues
 - [sse.md](./sse.md) - Server-Sent Events for real-time streaming
@@ -222,6 +222,7 @@ Needs Nuxt/Vue context (useRuntimeConfig, useRoute, refs)?
 10. **Never use generic type params with useFetch/$fetch** - See below.
 11. **Never export a module-scope `ref` for shared state** - Leaks across SSR requests; use `useState`. See [state-management.md](./state-management.md).
 12. **Internal server `$fetch` doesn't forward cookies** - Pass `headers` explicitly or the callee sees no session. See [server-runtime.md](./server-runtime.md).
+13. **Nitro's build-time replace reaches into virtual-module strings** - Embedded text mentioning `process.env.NODE_ENV` / `import.meta.dev` breaks the module; base64 the payload. See [server-runtime.md](./server-runtime.md).
 
 ### Ambiguous Route Type Inference
 

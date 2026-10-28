@@ -89,6 +89,33 @@ export default defineWebSocketHandler({
 });
 ```
 
+## Virtual modules with raw text: base64 the payload
+
+A build-time snapshot (docs, source files, markdown) is easy to ship as a Nitro
+virtual module. But Nitro's build-time replace still runs over the generated
+code, **including inside string literals**. Any `process.env.NODE_ENV`,
+`import.meta.dev` or `import.meta.server` in the embedded text is rewritten to a
+bare `"development"` or `true`, the module stops being valid JS, and the first
+request that imports it returns a 500: `Unexpected identifier 'development'`. It
+works right up until the embedded text happens to mention one of those tokens.
+
+```typescript
+// nuxt.config.ts
+hooks: {
+  "nitro:config"(nitroConfig) {
+    nitroConfig.virtual ||= {};
+    // ❌ export default ${JSON.stringify(data)}  — replace rewrites tokens inside the strings
+    nitroConfig.virtual["#<name>"] = () => {
+      const b64 = Buffer.from(JSON.stringify(buildData()), "utf8").toString("base64");
+      return `export default JSON.parse(Buffer.from("${b64}", "base64").toString("utf8"));`;
+    };
+  },
+},
+```
+
+Declare the module for TypeScript in a `.d.ts` the server tsconfig already
+includes (`shared/types/*.d.ts` works): `declare module "#<name>" { … }`.
+
 ## Two `useDatabase`s — don't confuse them
 
 Nitro ships its own `useDatabase()` (a `db0`-backed SQL layer, gated on
