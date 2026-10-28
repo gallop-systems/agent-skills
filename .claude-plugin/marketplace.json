@@ -76,6 +76,12 @@
       "source": "./plugins/gallop-ui",
       "description": "Use and change gallop-ui, Gallop's shared Nuxt UI layer (vendored at layers/gallop-ui by git subtree): finding the right component, pt and app.config styling, API principles, pulling releases and running the codemod, changing the layer, and checking that other apps don't break",
       "version": "1.0.0"
+    },
+    {
+      "name": "generate-documentation",
+      "source": "./plugins/generate-documentation",
+      "description": "Write a client-facing guide with screenshots of the app (PDF, HTML, email or WhatsApp): answer a client's questions, or announce what shipped, from fictional demo data only",
+      "version": "1.0.0"
     }
   ]
 }
