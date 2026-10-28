@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.32.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.31.2...agent-skills-v1.32.0) (2026-10-28)
+
+
+### Features
+
+* **generate-documentation:** add a skill for client-facing guides with screenshots ([#118](https://github.com/gallop-systems/agent-skills/issues/118)) ([6276523](https://github.com/gallop-systems/agent-skills/commit/62765230f85355ee91073819fa90c798f2120447))
+
+
+### Documentation
+
+* **gallop-ui:** gallop-ui 1.1, icon sets, List, item part names, codemod on minor releases ([#116](https://github.com/gallop-systems/agent-skills/issues/116)) ([a2a0b25](https://github.com/gallop-systems/agent-skills/commit/a2a0b251a6bd75612e99768e9146986bc9a43709))
+
 ## [1.31.2](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.31.1...agent-skills-v1.31.2) (2026-10-19)
 
 
