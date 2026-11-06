@@ -14,6 +14,7 @@ Battle-tested git and `gh` patterns for working in repos as an agent: the everyd
 - **Quote pathspecs containing brackets.** zsh globs `[id].get.ts` into `no matches found` — write `git add 'server/api/[id].get.ts'`. This bites on every bracketed-route codebase.
 - **Prefer `git -C <path>`** over `cd <path> && git ...` — compound cd commands trigger permission prompts and reset the shell cwd.
 - **Branch naming**: follow the repo's convention (`feat/`, `fix/`, `chore/`, `ci/`). If an issue tracker (e.g. Linear) suggests a branch name for the ticket, use it verbatim — it powers the tracker↔GitHub integration (auto-close on merge).
+- **On a Gallop client repo, every branch belongs to a Linear issue.** No issue, no branch: create the issue first. Before writing code, run the `linear` skill's **Scope Check** on that issue: the issue must be in the right `M`, `R` or `H` project and carry an estimate. Use the issue's Linear branch name, put `Fixes KEY-123` in the PR body, and keep to one issue per PR. When a review or conversation asks for something the signed proposal doesn't cover, do it as a new issue in the `R` project on its own branch and PR; don't add it to the current one. The full procedure is in the `linear` skill → *Working an Issue: Branch and PR*.
 - **Bounded polling, never unbounded watching.** `gh run watch` / `--watch` can die on network timeouts mid-wait; in agent contexts prefer a bounded loop with escalating sleeps (30/60/90s).
 
 ## The Branch → PR Loop
