@@ -119,6 +119,19 @@ iterating, state) while the caller decides *presentation*.
 - **Split** one incoming slot into two render positions by branching with `v-if`
   on a condition, each `<slot>` keeping its own fallback.
 
+## Slot names derived from a generic prop need literal values
+
+A component whose slot names come from a generic string prop (tabs, steppers:
+`generic="T extends string"`, one slot per item `value`) types its slots from `T`.
+If the call site writes plain strings, `T` widens to `string` and a named slot
+fails with `Property 'a' does not exist on type '__VLS_Slots'`. Only `vue-tsc`
+catches it; the dev server and tests run fine.
+
+```ts
+const items = [{ value: "a" as const }, { value: "b" as const }];
+// or: const items: Item<"a" | "b">[] = [...]
+```
+
 ## Slot transitions need keyed content
 
 Wrapping a `<slot>` in `<Transition>` only animates if the slotted content is
