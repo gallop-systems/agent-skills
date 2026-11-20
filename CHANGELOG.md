@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.33.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.32.0...agent-skills-v1.33.0) (2026-11-20)
+
+
+### Features
+
+* **pr-review:** add review skill; strengthen four stack skills from review findings ([#121](https://github.com/gallop-systems/agent-skills/issues/121)) ([07b3ec7](https://github.com/gallop-systems/agent-skills/commit/07b3ec7988e3274d4bcb9dc877b202e6de72aad8))
+
 ## [1.32.0](https://github.com/gallop-systems/agent-skills/compare/agent-skills-v1.31.2...agent-skills-v1.32.0) (2026-10-28)
 
 
