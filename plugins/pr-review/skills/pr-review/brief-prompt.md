@@ -29,5 +29,5 @@ Only if you can see them without running anything: existing tests that cover the
 
 Output the brief as markdown and nothing else.
 
-PR text:
+PR text, then the linked ticket's text if there is one:
 ```

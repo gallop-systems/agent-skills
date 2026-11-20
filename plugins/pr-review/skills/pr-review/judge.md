@@ -6,7 +6,7 @@ A reviewer's findings are claims, not facts. Before any finding is fixed or show
 
 1. **The code is as described.** The cited file and line exist and do what the finding says.
 2. **A concrete scenario reaches wrong behaviour.** Trace specific values or a sequence of events through the actual code. Look for the guard, lock, constraint, caller or test setup that already prevents it before you keep it.
-3. **The diff owns it.** The defect is in code the change adds or modifies, or the change newly exposes it (for example it deletes a route that an untouched button still calls). Behaviour that was already there and is untouched goes in a separate "pre-existing" list, not in the review.
+3. **The diff owns it.** The defect is in code the change adds or modifies, or the change newly exposes it (for example it deletes a route that an untouched button still calls). Behaviour that was already there and is untouched goes in a separate "pre-existing" list, not in the review. One exception: when the change adds a claim (a doc sentence, comment, label or test name) that the already-existing behaviour contradicts, the claim is the diff's and the finding is real.
 4. **It is a defect.** Not style, naming, wording or a preference.
 5. **It needs no unsupported assumption about deployment.** Several app instances, separate database roles, re-running a migration that is already applied, or code that a later PR in the stack removes: keep the finding only if the repository shows the assumption holds.
 

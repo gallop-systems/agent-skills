@@ -41,6 +41,7 @@ EOF
 - **Close stdin** (`< /dev/null`) whenever codex runs from an agent or in the background. Otherwise it waits for input that never comes and hangs without an error.
 - `--base` cannot be combined with a prompt, which is why the base is named inside the prompt.
 - The exit code is 0 even with findings. Read the text.
+- The output file holds the whole session log (thousands of lines of commands and file contents). The findings are the last block, after the final `codex` line, under "Full review comments:", and are printed twice. Pass only that block to the judge.
 - Reviews take from under a minute to several minutes. Run it in the background and read the file when it exits.
 - Do not paste a checklist of past mistakes into this prompt. In testing, a long checklist did not add confirmed findings to a single reviewer and lowered the share that were real. Checklists work when each reviewer gets one narrow concern: see deep mode below.
 
