@@ -163,6 +163,7 @@ describe("POST /api/orders", () => {
 3. **Nested transactions work** - Thanks to prototype patching
 4. **No cleanup needed** - Rollback happens automatically
 5. **Tests are isolated** - Can't affect each other
+6. **One expected DB error per test** - The first error aborts the whole test transaction, and the nested-transaction patch adds no savepoint, so later statements fail for that reason. See [proving-the-claim.md](./proving-the-claim.md#6-several-expected-failures-in-one-transaction)
 
 ## Gotcha: Unused Factories
 
