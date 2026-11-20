@@ -240,9 +240,14 @@ missed matches and duplicate accounts. Pick one form, store it, and index it:
 const email = input.email.trim().toLowerCase();
 
 // enforce: store only the normalized form, so the column itself can be compared.
-// `btrim(x)` strips spaces only, while JS `trim()` also strips tabs and newlines,
-// so don't rebuild the JS rule in an index expression: backfill, then forbid the rest.
-await sql`update "user" set email = lower(regexp_replace(email, '^\\s+|\\s+$', '', 'g'))`.execute(db);
+// SQL trimming is not JS trimming (`btrim(x)` strips spaces only; `\\s` in a regex
+// is ASCII-only in the C locale, while JS `trim()` also strips U+FEFF and others),
+// so backfill with the SAME function the write path uses, not a SQL lookalike:
+for (const u of await db.selectFrom("user").select(["id", "email"]).execute()) {
+  const email = u.email.trim().toLowerCase();
+  if (email !== u.email) await db.updateTable("user").set({ email }).where("id", "=", u.id).execute();
+}
+// a backstop for writers that skip the normalizer (catches case and ASCII whitespace)
 await sql`alter table "user" add constraint user_email_normalized
   check (email = lower(email) and email !~ '^\\s|\\s$')`.execute(db);
 await db.schema.createIndex("user_email_uq").on("user").unique().column("email").execute();
