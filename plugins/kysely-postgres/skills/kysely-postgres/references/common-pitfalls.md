@@ -239,13 +239,17 @@ missed matches and duplicate accounts. Pick one form, store it, and index it:
 // write: normalize before insert/update
 const email = input.email.trim().toLowerCase();
 
-// enforce: unique on the SAME normalization, so legacy rows with stray case or
-// whitespace are covered too (or backfill them first and index the plain column)
-await db.schema.createIndex("user_email_norm_uq").on("user").unique()
-  .expression(sql`lower(btrim(email))`).execute();
+// enforce: store only the normalized form, so the column itself can be compared.
+// `btrim(x)` strips spaces only, while JS `trim()` also strips tabs and newlines,
+// so don't rebuild the JS rule in an index expression: backfill, then forbid the rest.
+await sql`update "user" set email = lower(regexp_replace(email, '^\\s+|\\s+$', '', 'g'))`.execute(db);
+await sql`alter table "user" add constraint user_email_normalized
+  check (email = lower(email) and email !~ '^\\s|\\s$')`.execute(db);
+await db.schema.createIndex("user_email_uq").on("user").unique().column("email").execute();
+// (resolve rows that collide after the backfill before creating the index)
 
-// read: compare the same expression on both sides
-.where(sql<boolean>`lower(btrim(email)) = ${email}`)
+// read: a plain comparison now matches every row
+.where("email", "=", email)
 ```
 
 Apply the same normalization to both sides of a join key and to values you test
