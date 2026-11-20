@@ -229,3 +229,83 @@ or it infers `unknown` and the operator overload rejects it:
 .where("search_vector", "@@", sql<string>`to_tsquery('english', ${q})`)
 ```
 
+### 10. Normalize Identifiers Once, and Match the Same Way Everywhere
+
+Emails, codes and external ids arrive with mixed case and stray whitespace. If
+writes, lookups, joins and the unique index each normalize differently, you get
+missed matches and duplicate accounts. Pick one form, store it, and index it:
+
+```typescript
+// write: normalize before insert/update
+const email = input.email.trim().toLowerCase();
+
+// enforce: unique on the normalized expression (covers legacy rows too)
+await db.schema.createIndex("user_email_lower_uq").on("user").unique()
+  .expression(sql`lower(email)`).execute();
+
+// read: compare the same expression on both sides
+.where((eb) => eb(eb.fn("lower", [eb.ref("email")]), "=", email))
+```
+
+Apply the same normalization to both sides of a join key and to values you test
+for emptiness: a concatenation like `first || ' ' || last` is `' '`, not `''`, when
+both parts are empty, so trim before the check. If later code matches
+case-insensitively, the SQL predicate must too.
+
+### 11. CHECK Constraints Pass on NULL (and NaN)
+
+A CHECK is satisfied when its expression is true **or NULL**, so a condition that
+touches a NULL column silently allows the row:
+
+```typescript
+// WRONG - kind='district' with district_code NULL passes (NULL is not false)
+sql`check (kind <> 'district' or district_code between 1 and 32)`
+// RIGHT - say IS NOT NULL explicitly
+sql`check (kind <> 'district' or (district_code is not null and district_code between 1 and 32))`
+```
+
+`numeric` also accepts `'NaN'`, and PostgreSQL sorts NaN above every number, so
+`check (amount > 0)` passes for NaN. Reject `!Number.isFinite(x)` before writing.
+When a CHECK couples two columns (`status = 'failed'` requires `error` not null),
+every update of one must set the other in the same statement.
+
+### 12. Date and Time Boundaries
+
+- **Inclusive end date vs timestamp column:** `where created_at <= '2025-01-31'`
+  means midnight at the *start* of the 31st and drops that whole day. Use an
+  exclusive upper bound at the next day:
+  `.where("created_at", ">=", start).where("created_at", "<", dayAfterEnd)`.
+- **"Today" depends on the session time zone.** `CURRENT_DATE` and
+  `now()::date` use the connection's `TimeZone` (often UTC on servers), and
+  `CURRENT_DATE AT TIME ZONE 'X'` does not give X's date. Convert the instant
+  first, then take the date (or compute the boundary in TypeScript with the zone
+  and pass it as a parameter):
+  ```typescript
+  sql<string>`(now() at time zone 'America/New_York')::date`
+  ```
+  Cutoffs such as "before today" belong at that zone's midnight, not UTC midnight.
+- **Casting untrusted text to a date:** PostgreSQL does not evaluate `WHERE`/`AND`
+  terms in a defined order, so `col ~ '^\d{4}-\d{2}-\d{2}$' and col::date > ...`
+  can still cast the bad value and error. Guard with `CASE` (which does order
+  evaluation) or clean the value to NULL first. A regex shape check also accepts
+  `2025-02-30`; validate a real calendar date before inserting.
+
+### 13. LIKE Treats `_` and `%` as Wildcards
+
+`like 'user_%'` also matches `userX…`. Escape user-supplied or literal patterns
+(`value.replace(/[\\%_]/g, "\\$&")`), or compare a literal prefix without LIKE:
+`eb(eb.fn("left", [eb.ref("code"), eb.val(prefix.length)]), "=", prefix)`. When
+matching an identifier inside text, match a whole token, not a substring, so
+`12` does not match `1234`.
+
+### 14. Large ID Lists and Numeric Inputs
+
+- The wire protocol caps a statement at 65,535 bind parameters, so
+  `.where("id", "in", ids)` with a huge array fails. Send one array parameter
+  instead: `.where((eb) => eb("id", "=", eb.fn.any(eb.val(ids))))` emits
+  `"id" = any($1)`. (Batch bulk inserts by row count for the same reason.)
+- Text that will be compared to a `bigint`/`integer` column must be range-checked
+  first; an out-of-range literal raises an error instead of matching nothing.
+- Casting `numeric` to an integer type rounds (ties away from zero); `Math.floor`
+  or `floor()` first when you mean truncation.
+- Sort numeric parts of a code numerically, not as text (`'100' < '99'` as text).

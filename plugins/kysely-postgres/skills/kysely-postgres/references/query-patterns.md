@@ -233,3 +233,68 @@ import { jsonBuildObject } from "kysely/helpers/postgres";
 )
 ```
 
+
+### LIMIT, Counts and Filters: Cap Last
+
+`LIMIT` runs after `WHERE`, `GROUP BY` and `ORDER BY` of *its own* query, but a
+limit in a CTE, subquery, or a pre-fetch in TypeScript caps rows **before**
+whatever you do next. The bug is always the same: the cap is applied to a set
+that has not yet been filtered or aggregated.
+
+```typescript
+// WRONG - newest 50 messages, THEN keep the ones with attachments: may return 0
+const recent = await db.selectFrom("message").selectAll()
+  .orderBy("sent_at", "desc").limit(50).execute();
+const withFiles = recent.filter((m) => m.attachment_count > 0);
+
+// RIGHT - filter in SQL, then cap
+await db.selectFrom("message").selectAll()
+  .where("attachment_count", ">", 0)
+  .orderBy("sent_at", "desc").limit(50).execute();
+```
+
+- **Aggregate before you cap.** Per-group totals, minima ("next due date") and
+  "has any X" flags must be computed over all rows; apply the display limit to the
+  grouped result (or to a separate list query), never to the input rows.
+- **Exclude ineligible rows (superseded, cancelled, inactive) before the batch
+  cap**, or they fill every batch and starve real work.
+- **Count and list from one base query.** Build the filtered query once and derive
+  both, so a filter added to one cannot be missing from the other:
+  ```typescript
+  const base = db.selectFrom("invoice").where("org_id", "=", orgId)
+    .$if(status !== undefined, (qb) => qb.where("status", "=", status!));
+  const [rows, { total }] = await Promise.all([
+    base.selectAll().orderBy("created_at", "desc").orderBy("id", "desc")
+      .limit(pageSize).offset(offset).execute(),
+    base.select((eb) => eb.cast<number>(eb.fn.countAll(), "integer").as("total"))
+      .executeTakeFirstOrThrow(),
+  ]);
+  ```
+  The same goes for a ranking subquery or `EXISTS` that supports a match check:
+  it must use the same match condition.
+- **Exact match before fuzzy search.** Look up an exact identifier match directly
+  (or count exact matches over the full set) before running the limited candidate
+  search, or a limit can push the exact hit out of the candidates.
+- **Don't `executeTakeFirst()` on a non-unique match.** If a name or partial key
+  can match several rows, fetch `.limit(2)` and treat two rows as ambiguous
+  instead of silently picking one.
+- **A one-to-many join multiplies rows**, so `limit(n)` after the join caps
+  joined rows, not parents. Limit the parents in a subquery/CTE, or aggregate the
+  children with `jsonArrayFrom` (see [json-jsonb-arrays.md](json-jsonb-arrays.md)).
+- **An empty list is not "no filter".** `.where("id", "in", [])` compiles to
+  `"id" in ()`, a syntax error. Branch in code: return `[]` early when the list is
+  empty (and do not fall back to a default filter), or skip the predicate only when
+  the filter was genuinely not supplied.
+
+### Deterministic Ordering
+
+- **`DESC` puts NULLs first** in PostgreSQL (NULL sorts as larger than every
+  value). For "newest first" on a nullable column, say so:
+  `.orderBy("paid_at", (ob) => ob.desc().nullsLast())`.
+- **Add a unique tie-breaker** (`.orderBy("id")`) whenever you take the first row,
+  page, or pick one of several equal values; otherwise the choice can change
+  between runs.
+- **Order inside the aggregate.** An `ORDER BY` in the subquery feeding
+  `json_agg` does not guarantee aggregate order. Put it on the aggregate:
+  `eb.fn.jsonAgg("line").orderBy("line.position")` emits
+  `json_agg("line" order by "line"."position")`.

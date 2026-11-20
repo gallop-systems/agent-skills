@@ -44,3 +44,5 @@ db.selectFrom("job").selectAll()
 // Wait behavior: .skipLocked() (skip) or .noWait() (error instead of blocking)
 ```
 
+With a join, `.forUpdate()` locks rows of every joined table; pass the table (`.forUpdate("job")`). For which row to lock, re-reading after the lock, advisory locks and lock order, see [concurrency-and-transactions.md](concurrency-and-transactions.md).
+
