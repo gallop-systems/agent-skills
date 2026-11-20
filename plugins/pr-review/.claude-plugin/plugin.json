@@ -1,0 +1,8 @@
+{
+  "name": "pr-review",
+  "description": "Review a branch or pull request for defects before a human sees it: build a context brief, run codex review with the brief, then judge each finding against the code.",
+  "version": "1.0.0",
+  "author": {
+    "name": "yeedle"
+  }
+}

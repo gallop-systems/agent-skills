@@ -82,6 +82,12 @@
       "source": "./plugins/generate-documentation",
       "description": "Write a client-facing guide with screenshots of the app (PDF, HTML, email or WhatsApp): answer a client's questions, or announce what shipped, from fictional demo data only",
       "version": "1.0.0"
+    },
+    {
+      "name": "pr-review",
+      "source": "./plugins/pr-review",
+      "description": "Review a branch or pull request for defects before a human sees it: build a context brief, run codex review with the brief, then judge each finding against the code",
+      "version": "1.0.0"
     }
   ]
 }
