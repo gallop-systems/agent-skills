@@ -63,7 +63,7 @@ links to the rule and an example.
 
 1. **Stale local state.** A draft, selection, preview or flag copied from a prop or
    fetched data keeps the previous record's value when the dialog reopens or the id
-   changes. Seed on open and on id change (or remount with `:key="record.id"`), and
+   changes. Seed on open and on id change (or mount the form only while open, with `:key="record.id"`), and
    reset every transient with it. → [editing-forms.md](./editing-forms.md)
 2. **Stale async responses.** A request that resolves after the user switched
    record, reopened the dialog, typed again or left overwrites current state. Use

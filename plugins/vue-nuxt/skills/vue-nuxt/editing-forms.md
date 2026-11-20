@@ -26,10 +26,14 @@ record id, so every opening starts from a clean `setup`:
 
 ```ts
 const draft = ref<Draft>(emptyDraft())
+let seededFor: number | null = null       // which record this opening was seeded from
 watch(
   [open, () => props.record?.id],
   ([isOpen]) => {
-    if (!isOpen || !props.record) return
+    if (!isOpen) { seededFor = null; return }
+    // a refetch can drop the record and bring the same one back: don't re-seed then
+    if (!props.record || props.record.id === seededFor) return
+    seededFor = props.record.id
     draft.value = toDraft(props.record)   // every editable field, from the current record
     previewResult.value = null            // and every transient: preview, error, job, notice
   },
@@ -59,8 +63,11 @@ editing, keep their dirty fields and update only the untouched ones (or show a
 ```ts
 // ❌ re-picks the default whenever the list reloads, clobbering the user's choice
 watch(agencies, (list) => { selected.value = list[0]?.id })
-// ✅ default once per opening
-whenever(open, () => { selected.value ??= agencies.value?.[0]?.id })
+// ✅ default once per opening, as soon as the options exist; cleared on close
+watch([open, agencies], ([isOpen, list]) => {
+  if (!isOpen) { selected.value = undefined; return }
+  selected.value ??= list?.[0]?.id
+}, { immediate: true })
 ```
 
 ## Seed every field; send what changed

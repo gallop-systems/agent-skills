@@ -153,7 +153,8 @@ skill's `async-state.md`.
 
   ```typescript
   await refresh();
-  if (error.value) {
+  // also check status: a refresh superseded by a newer one resolves with no error
+  if (error.value || status.value !== "success") {
     reportError("Couldn't reload the invoice");  // your app's toast/alert
     return;                         // don't send, advance "as of", or redirect on stale data
   }

@@ -55,10 +55,15 @@ state. When assertions live in a callback or a loop that might run zero times, p
 
 ```typescript
 test("notifies each assignee", async ({ factories }) => {
-  expect.assertions(2); // fails unless exactly two assertions run
+  expect.assertions(3); // fails unless the callback ran exactly twice
   const [u1, u2] = [await factories.user(), await factories.user()];
   const task = await factories.task({ assigneeIds: [u1.id, u2.id] });
-  await notifyAssignees(task.id, (msg) => expect(msg.taskId).toBe(task.id));
+  const notified: number[] = [];
+  await notifyAssignees(task.id, (msg) => {
+    expect(msg.taskId).toBe(task.id);
+    notified.push(msg.userId);
+  });
+  expect(notified.sort()).toEqual([u1.id, u2.id].sort()); // each assignee, not one twice
 });
 ```
 

@@ -23,6 +23,9 @@ Two traps when you also highlight or re-check matches in TypeScript:
 - **Lexemes are normalized** (stemmed, lowercased, stop words removed). Do not
   use a lexeme as a raw-text prefix or regex; build highlight patterns from the
   user's words with the operator keywords (`or`, `and`, `-`) and stop words removed.
+  A literal pattern still misses stemmed matches (a search for `running` matches a
+  document that says `runs`); when highlights must agree with the matches, let
+  PostgreSQL produce them with `ts_headline` and the same configuration.
 
 ## Advanced Grouping (ROLLUP / CUBE / GROUPING SETS)
 

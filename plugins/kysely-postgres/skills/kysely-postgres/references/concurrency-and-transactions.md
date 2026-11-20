@@ -23,9 +23,15 @@ const row = await db.insertInto("user").values({ email })
 ```
 
 A row that must be unique needs a unique index (partial if it is "one *active*
-row per X": `.where(...)` on `createIndex`). If the identity can be matched by more
-than one key (an external id *or* an email), check every key before inserting, or
-the insert trips the other key's unique index.
+row per X": `.where(...)` on `createIndex`). The conflict target must then repeat
+the index predicate, or PostgreSQL finds no matching index and rejects the insert:
+`oc.column("email").where("deleted_at", "is", null).doNothing()`.
+
+If the identity can be matched by more than one unique key (an external id *or* an
+email), a conflict target on one key does not catch a collision on the other, and
+a pre-check of both is itself a race. Use an untargeted
+`.onConflict((oc) => oc.doNothing())`, which covers every unique index, then
+select the existing row by either key when nothing was inserted.
 
 On upsert, `doUpdateSet` overwrites with whatever you send. When the incoming
 source can be missing a value, keep the stored one instead of clearing it:
@@ -127,8 +133,9 @@ try {
   try {
     await sp.insertInto("tag").values(tag).execute();
     await sp.releaseSavepoint("try_optional").execute();
-  } catch {
+  } catch (e) {
     await sp.rollbackToSavepoint("try_optional").execute(); // trx usable again
+    if ((e as { code?: string }).code !== "23505") throw e; // only the expected failure is optional
   }
   await trx.commit().execute();
 } catch (e) {
@@ -137,8 +144,9 @@ try {
 }
 ```
 
-Prefer avoiding the error instead (an `onConflict`, a `where not exists`, or
-checking that an optional function or extension exists before calling it). Also,
+Prefer avoiding the error instead (an `onConflict`, or checking that an optional
+function or extension exists before calling it). A `where not exists` guard is not
+a substitute: two concurrent inserts both see no row. Also,
 when you do catch, catch narrowly: fall back on an expected error code only, and
 rethrow timeouts and other database errors instead of returning an empty result.
 Do not type the handle as `any`; that is how a missing `.savepoint()` reaches

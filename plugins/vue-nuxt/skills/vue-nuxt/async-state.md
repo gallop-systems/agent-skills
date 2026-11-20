@@ -58,9 +58,12 @@ passed `default`). A `try/catch` around `await refresh()` never catches anything
 await refresh()
 send(invoice.value!)
 
-// ✅
+// ✅ (check status too: a refresh superseded by a newer one resolves with no error)
+const id = props.invoiceId
 await refresh()
-if (error.value) return toast({ title: "Couldn't reload the invoice", color: 'error' })
+if (error.value || status.value !== 'success' || id !== props.invoiceId) {
+  return toast({ title: "Couldn't reload the invoice", color: 'error' })
+}
 send(invoice.value!)
 ```
 
@@ -70,7 +73,7 @@ step counters, polling cursors): only advance when `status.value === 'success'`.
 ## After a mutation: success only on success, refresh outside the try
 
 ```ts
-const { toast } = useToast()   // or your app's notifier
+const { toast } = useToast()   // stands for your app's notifier; the call shape differs per UI library
 async function save() {
   if (saving.value) return                     // in-flight guard (see Double submit)
   saving.value = true

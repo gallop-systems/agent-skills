@@ -198,7 +198,7 @@ throws, and call it first in every handler under the resource:
 ```typescript
 // server/utils/access.ts
 export async function requireProjectAccess(event: H3Event, projectId: number) {
-  const user = await getAuthenticatedUser(event);
+  const user = await getAuthenticatedUser(event); // your session user must carry its tenant (here `accountId`)
   const project = await useDatabase()
     .selectFrom("project")
     .selectAll()

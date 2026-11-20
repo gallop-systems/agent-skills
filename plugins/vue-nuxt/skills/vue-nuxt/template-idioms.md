@@ -93,7 +93,7 @@ for free. Anything else you make clickable is not. The recurring review findings
   ```ts
   function onKey(e: KeyboardEvent) {
     const t = e.target as HTMLElement
-    if (t.closest('input, textarea, select, [contenteditable="true"]')) return
+    if (t.isContentEditable || t.closest('input, textarea, select')) return
     // …handle the shortcut
   }
   ```

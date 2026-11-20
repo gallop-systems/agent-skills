@@ -161,7 +161,9 @@ commits, and one failure rolls the whole batch back.
   for new writes; `VALIDATE CONSTRAINT` then needs only `SHARE UPDATE EXCLUSIVE`.
   Kysely's `addCheckConstraint` has no `NOT VALID` option, so use `sql`, and put
   the `VALIDATE` in a later migration that ships in a separate deploy (in the same
-  batch, the first statement's lock is still held):
+  batch, the first statement's lock is still held). A database that missed the
+  first deploy (a preview, a restored copy) gets both in one batch, which is safe
+  but takes the long lock; where that matters, run it one migration at a time:
   ```typescript
   // migration A
   await sql`alter table "order" add constraint order_total_nonneg check (total >= 0) not valid`.execute(db);
@@ -173,9 +175,11 @@ commits, and one failure rolls the whole batch back.
 - **`CREATE INDEX CONCURRENTLY` cannot run inside a transaction**, so it fails in a
   default Kysely migration. If you run it outside (a script, or a migrator with
   transactions disabled), a failed build leaves an **INVALID** index behind, and a
-  retry with `IF NOT EXISTS` silently keeps the broken one. Drop it (or
-  `REINDEX INDEX CONCURRENTLY`) before retrying, and check
-  `pg_index.indisvalid`.
+  retry with `IF NOT EXISTS` silently keeps the broken one. Check
+  `pg_index.indisvalid`, drop the invalid index, then retry the create. Without a
+  transaction, earlier statements of a failed migration stay applied while the
+  migration is not recorded, so keep such a migration to that one statement or
+  make every statement safe to run again (`IF NOT EXISTS`, `IF EXISTS`).
 - **Deleting or merging rows:** find every foreign key that points at them and
   repoint or preserve those rows first. Rows that hold user-entered data are safer
   soft-retired (a `retired_at` column) than deleted when the state can reverse.

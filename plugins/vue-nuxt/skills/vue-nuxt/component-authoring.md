@@ -176,8 +176,10 @@ apply the action to every member, not just the first.
 - **Stale page numbers:** a `?page=7` from the URL that is past the end after a
   delete shows an empty page; clamp to the last page when `rows` is empty but
   `total > 0`.
-- **Fallback when the new shape is empty:** while migrating from a single field to
-  a list, fall back to the old field when the list is empty.
+- **Fallback when the new shape is absent:** while migrating from a single field to
+  a list, fall back to the old field only when the list was never written
+  (`null`/`undefined`). An empty list means the user cleared it; falling back
+  there brings the old value back.
 
 ## Type off the server contract, don't hand-write DTOs
 

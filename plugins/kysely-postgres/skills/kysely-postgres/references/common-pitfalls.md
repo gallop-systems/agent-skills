@@ -239,12 +239,13 @@ missed matches and duplicate accounts. Pick one form, store it, and index it:
 // write: normalize before insert/update
 const email = input.email.trim().toLowerCase();
 
-// enforce: unique on the normalized expression (covers legacy rows too)
-await db.schema.createIndex("user_email_lower_uq").on("user").unique()
-  .expression(sql`lower(email)`).execute();
+// enforce: unique on the SAME normalization, so legacy rows with stray case or
+// whitespace are covered too (or backfill them first and index the plain column)
+await db.schema.createIndex("user_email_norm_uq").on("user").unique()
+  .expression(sql`lower(btrim(email))`).execute();
 
 // read: compare the same expression on both sides
-.where((eb) => eb(eb.fn("lower", [eb.ref("email")]), "=", email))
+.where(sql<boolean>`lower(btrim(email)) = ${email}`)
 ```
 
 Apply the same normalization to both sides of a join key and to values you test
@@ -294,7 +295,7 @@ every update of one must set the other in the same statement.
 
 `like 'user_%'` also matches `userX…`. Escape user-supplied or literal patterns
 (`value.replace(/[\\%_]/g, "\\$&")`), or compare a literal prefix without LIKE:
-`eb(eb.fn("left", [eb.ref("code"), eb.val(prefix.length)]), "=", prefix)`. When
+`eb.fn<boolean>("starts_with", [eb.ref("code"), eb.val(prefix)])`. When
 matching an identifier inside text, match a whole token, not a substring, so
 `12` does not match `1234`.
 
@@ -306,6 +307,7 @@ matching an identifier inside text, match a whole token, not a substring, so
   `"id" = any($1)`. (Batch bulk inserts by row count for the same reason.)
 - Text that will be compared to a `bigint`/`integer` column must be range-checked
   first; an out-of-range literal raises an error instead of matching nothing.
-- Casting `numeric` to an integer type rounds (ties away from zero); `Math.floor`
-  or `floor()` first when you mean truncation.
+- Casting `numeric` to an integer type rounds (ties away from zero); `Math.trunc`
+  or `trunc()` first when you mean truncation toward zero (`floor` rounds
+  negatives down: `floor(-1.7)` is `-2`).
 - Sort numeric parts of a code numerically, not as text (`'100' < '99'` as text).

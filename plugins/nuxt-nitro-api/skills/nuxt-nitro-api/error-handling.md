@@ -13,7 +13,11 @@ handle locally:
 
 ```typescript
 // page setup — show the full-screen error page for a missing resource
-const { data } = await useFetch(`/api/invoices/${id}`);
+const { data, error } = await useFetch(`/api/invoices/${id}`);
+if (error.value) {
+  // keep the real status: a 500 or 403 is not "not found"
+  throw createError({ statusCode: error.value.statusCode ?? 500, statusMessage: error.value.statusMessage, fatal: true });
+}
 if (!data.value) {
   throw createError({ statusCode: 404, statusMessage: "Invoice not found", fatal: true });
 }
@@ -39,6 +43,9 @@ throw createError({
   data: { conflictingId: other.id },
 });
 ```
+
+In a production build Nitro sends `message` and `data` only for handled, non-fatal
+errors: a server `createError` with `fatal: true` is redacted like an unhandled one.
 
 A plain `throw new Error(...)` (or any non-`createError` throw) is **unhandled**: the
 client gets a 500 and, in a production build, `message: "Server Error"` with no `data` (the real message shows only in dev). Expected failures

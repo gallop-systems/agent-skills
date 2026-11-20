@@ -226,7 +226,9 @@ minutes. `Promise.race` against a timer **does not cancel** the call; it keeps
 running and holding whatever it holds. Put the timeout on the call itself:
 
 ```typescript
-await $fetch(url, { timeout: 5_000 });                 // ofetch; ignored if you also pass `signal`
+await $fetch(url, { timeout: 5_000 });                 // ofetch; ignored if you also pass `signal`, and it stops
+                                                       // at the response headers: a stalled body is not covered
+await $fetch(url, { signal: AbortSignal.timeout(5_000) }); // covers the body read too
 await fetch(url, { signal: AbortSignal.timeout(5_000) }); // native fetch
 // SDKs: use the client's own timeout option
 ```
@@ -256,6 +258,8 @@ rolled back with the DB transaction:
 3. **Record intent before delivery** (an outbox/guard row inserted first, delivery
    marked done after). The guard that stops re-runs must not also stop a **retry** of a
    delivery that failed: track delivery state separately from "already processed".
+   A retry after "sent but not yet marked done" sends twice, so pass the provider a
+   stable idempotency key (the outbox row's id) where it accepts one.
 4. **Idempotency keys cover the whole payload.** When a replay is detected by key,
    compare every field that affects the result and reject a replay whose payload
    differs, instead of returning the first result for a different request.
