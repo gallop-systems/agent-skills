@@ -10,8 +10,8 @@ const querySchema = z.object({
 });
 
 export default defineEventHandler(async (event) => {
-  // h3 v2+ - pass schema directly (Standard Schema)
-  const query = await getValidatedQuery(event, querySchema);
+  // h3 v1 (Nuxt 4): pass the schema's parse function; a throw becomes a 400
+  const query = await getValidatedQuery(event, querySchema.parse);
 
   // query is fully typed: { search?: string, page: number, limit: number, status: "active" | "inactive" | "all" }
 

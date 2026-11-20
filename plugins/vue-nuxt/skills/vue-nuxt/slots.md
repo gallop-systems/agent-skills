@@ -104,6 +104,22 @@ iterating, state) while the caller decides *presentation*.
   (In a template you can also test `$slots.footer` directly.) Without the guard
   you ship an empty `<footer>` whose padding/border still affects layout.
 
+## Conditions go on the content, not the slot
+
+Put `v-if` on the elements **inside** one `<template #actions>`, not on the
+`<template>` itself. A `v-if` on the slot template removes the whole slot
+(everything else you meant to put in it disappears too), and a slot name can have
+only one `<template>` (except as a `v-if`/`v-else` chain), so a second
+conditional `<template #actions>` is not a way to add one more button.
+
+```vue
+<!-- ❌ <template v-if="canEdit" #actions><EditButton /></template>  — help button lost when !canEdit -->
+<template #actions>
+  <EditButton v-if="canEdit" />
+  <HelpButton />
+</template>
+```
+
 ## Forwarding & splitting slots
 
 - **Forward** a slot through a wrapper so the inner component receives it:

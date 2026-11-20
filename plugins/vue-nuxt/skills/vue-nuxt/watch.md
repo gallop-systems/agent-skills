@@ -80,8 +80,12 @@ Only when the effect crosses **out of** the reactive graph:
   (see `vueuse.md`); a compound guard keeps its inner half —
   `watch(visible, (v) => { if (v && !props.x) reset() })` →
   `whenever(visible, () => { if (!props.x) reset() })`.
+  Key it on the record id too (`watch([visible, () => props.record?.id], …)`) and
+  reset every transient, not only the fields: see [editing-forms.md](./editing-forms.md).
 - **Clone a server prop into a locally-editable draft** —
-  `watch(() => props.record, (r) => { if (r) form.value = structuredClone(toRaw(r)) }, { immediate: true })`.
+  `watch(() => props.record?.id, () => { if (props.record) form.value = structuredClone(toRaw(props.record)) }, { immediate: true })`.
+  Watch the **id**, not the record: a refetch replaces the object for the same id and
+  would clone it over unsaved edits (see [editing-forms.md](./editing-forms.md)).
 
 > **Before hand-rolling the external-world cases, check VueUse.** Most of the
 > bullets above (DOM, timers, persist, URL) are exactly what VueUse wraps — and a

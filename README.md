@@ -22,6 +22,7 @@ Then install the skills you want:
 /plugin install frontend-design@gallop-systems-agent-skills
 /plugin install gallop-ui@gallop-systems-agent-skills
 /plugin install generate-documentation@gallop-systems-agent-skills
+/plugin install pr-review@gallop-systems-agent-skills
 ```
 
 ## Updating
@@ -192,6 +193,16 @@ Covers:
 - Screenshots from a scratch copy of the app's fictional demo data only, never real data
 - `bin/shots.mjs` Playwright helpers (sign-in, still captures, highlight rings, region and element shots) and `bin/render.mjs` (HTML to PDF, plus a contact sheet for reviewing page breaks)
 - A guide template, writing rules for non-technical readers, and per-format rules
+
+### pr-review
+
+Review a branch or pull request for defects before a human sees it.
+
+Covers:
+- Building a context brief with a cheap model: the change's goal, callers, sibling code and stated claims
+- Running `codex review` with the brief
+- Judging every finding against the code (five keep-rules) before fixing or reporting it
+- Deep mode: one focused reviewer per concern (tests, docs, migrations, UI state, races, agreeing paths, inputs, access)
 
 ## Contributing a Lesson Back
 

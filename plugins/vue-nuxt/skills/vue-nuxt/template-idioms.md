@@ -60,6 +60,50 @@ useHead({ title: 'Invoices' })            // page
 // app.vue: useHead({ titleTemplate: (t) => (t ? `${t} · Acme` : 'Acme') })
 ```
 
+**A title that depends on fetched data needs a getter.** A plain value is read once
+at setup, so it shows the fallback (or the previous record's name) and never
+updates when the data arrives or the route param changes:
+
+```ts
+const { data: project } = await useFetch(() => `/api/projects/${route.params.id}`)
+useHead({ title: () => project.value?.name ?? 'Project' })   // not: title: project.value?.name
+```
+
+## Keyboard and screen-reader access for custom controls
+
+Native `<button>`, `<a href>` and form controls are focusable and keyboard-operable
+for free. Anything else you make clickable is not. The recurring review findings:
+
+- **A clickable `<div>`/`<td>`/chart mark** (a calendar day, a row, a bar) needs a
+  keyboard path. Prefer a real `<button>` or `<NuxtLink>` inside it; otherwise add
+  `role="button"`, `tabindex="0"` and `@keydown.enter`/`@keydown.space.prevent`.
+  If a mouse click navigates, keyboard users need the same link.
+- **Tooltip triggers** on non-focusable elements (a truncated `<span>`, an icon)
+  need `tabindex="0"`, or keyboard users never see the tooltip.
+- **Icon-only buttons** need an accessible name: `aria-label="Refresh"`.
+- **Never remove the focus outline** (`outline-none`) without a
+  `focus-visible:` replacement, including on panels you focus programmatically.
+- **Don't cancel a popover's or dialog's initial focus** (e.g. `@open-auto-focus.prevent`)
+  without moving focus into the panel yourself.
+- **Visually hidden links** (skip links, `sr-only` lists) must become visible on
+  focus: `sr-only focus:not-sr-only`.
+- **Global keyboard shortcuts must ignore typing.** Return early when the event
+  comes from an input, textarea, select or contenteditable element:
+
+  ```ts
+  function onKey(e: KeyboardEvent) {
+    const t = e.target as HTMLElement
+    if (t.isContentEditable || t.closest('input, textarea, select')) return
+    // …handle the shortcut
+  }
+  ```
+
+Copy that adapts to the data: hide or pluralize count sentences for 0 and 1
+("All 0 other charges…" is a bug); when a list is capped, say how many were
+omitted; truncate only the variable text and keep qualifiers (a note, a badge) in a
+non-shrinking element (`shrink-0`) beside it; let filter rows wrap (`flex-wrap
+min-w-0`) instead of forcing `whitespace-nowrap` that overflows.
+
 ## Reset a file input after reading it
 
 `<input type="file">` won't re-fire `change` for the same file twice — clear it
@@ -79,6 +123,14 @@ argument):
 const SEV: Record<Status, string> = { paid: 'success', overdue: 'danger' }
 const sev = (s: Status) => SEV[s] || 'secondary'
 ```
+
+## `v-if` on a derived value doesn't narrow the original
+
+vue-tsc narrows `user.email` inside `v-if="user.email"`, but not inside
+`v-if="hasEmail"` where `hasEmail` is a `computed` over it: TypeScript can't see
+the link. Test the nullable value itself in the template (or use `?.`/`??`), and
+annotate computed object literals with their declared type so literal fields
+aren't widened to `string`.
 
 ## `v-bind` same-name shorthand
 

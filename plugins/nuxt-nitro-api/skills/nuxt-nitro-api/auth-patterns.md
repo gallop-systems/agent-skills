@@ -185,6 +185,56 @@ export async function requireAdmin(event: H3Event) {
 }
 ```
 
+## Per-resource authorization
+
+Middleware and `requireRole` answer "who is this?" and "what role?". They do not
+answer "may this caller touch **this** record?". Reviewers keep finding handlers
+that check it on one route and not its sibling, on read but not write, or on the
+obvious branch of an update but not the others.
+
+Put the check in one helper that loads the record **scoped to the caller** and
+throws, and call it first in every handler under the resource:
+
+```typescript
+// server/utils/access.ts
+export async function requireProjectAccess(event: H3Event, projectId: number) {
+  const user = await getAuthenticatedUser(event); // your session user must carry its tenant (here `accountId`)
+  const project = await useDatabase()
+    .selectFrom("project")
+    .selectAll()
+    .where("id", "=", projectId)
+    .where("account_id", "=", user.accountId)   // the scope IS the check
+    .executeTakeFirst();
+  // 404, not 403, so ids of other accounts' records aren't confirmed to exist
+  if (!project) throw createError({ statusCode: 404, statusMessage: "Not Found" });
+  return { user, project };
+}
+
+// server/api/projects/[id]/archive.post.ts, and [id].get.ts, [id].patch.ts, [id]/files/*...
+const { id } = await getValidatedRouterParams(event, z.object({ id: z.coerce.number().int().positive() }).parse);
+const { project } = await requireProjectAccess(event, id);
+```
+
+Rules:
+
+- **Every endpoint on the resource**, including nested ones (`/[id]/files`,
+  `/[id]/export`), list endpoints (filter by the same scope) and any generic
+  "raw read" helper you point restricted users at.
+- **Every branch of a write.** If an update can also reactivate, reassign or change
+  status, each branch needs the permission that action requires, not just the one
+  for the common edit.
+- **Ids in the body belong to the parent.** `{ documentIds: [...] }` or
+  `{ contactId }` sent to `/api/cases/12` must be checked to belong to case 12 (or
+  to the caller), not merely to exist. Otherwise a caller links or edits another
+  tenant's rows. Re-check on every transition that makes an old reference matter.
+- **Scope mutations to the kind of record they're for.** A `contacts` update must
+  `where` on the contact type too, so it can't change another kind of row that
+  shares the table.
+- **Sessions outlive account changes.** A session cookie stays valid after the user
+  is deactivated or their role is lowered. For sensitive actions, have the shared
+  guard re-read the user's status/role from the database instead of trusting the
+  session copy.
+
 ## Type Extension
 
 ```typescript

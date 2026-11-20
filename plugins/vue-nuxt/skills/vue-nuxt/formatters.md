@@ -82,6 +82,14 @@ renders as the *previous day* in any negative-offset timezone. Format date-only
 strings with `parseISO` (which treats them as local), never `new Date`, and don't
 let a blanket "convert all date fields to Date" transform touch DATE columns.
 
+**Today as a date-only string is a local date.** `new Date().toISOString().slice(0, 10)`
+is the **UTC** date, which is tomorrow for an evening user west of UTC. Use
+`format(new Date(), 'yyyy-MM-dd')` (date-fns formats in local time), or your
+app's time-zone-aware formatter. During SSR "local" is the **server's** zone, so a
+date computed there can differ from the browser's and mismatch on hydration: use an
+explicit time zone on both sides, or compute it after mount. Likewise, convert a UTC timestamp to the display
+time zone *before* taking its calendar day.
+
 ## Where to put the formatters
 
 Pick the location by what the formatter needs (the composable-vs-util decision

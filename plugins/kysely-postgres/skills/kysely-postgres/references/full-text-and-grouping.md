@@ -14,6 +14,19 @@ db.selectFrom("document").selectAll()
 // .where("search_vector", "@@", sql`plainto_tsquery('english', ${userInput})`)
 ```
 
+Two traps when you also highlight or re-check matches in TypeScript:
+
+- **Positions clamp at 16383.** Every word past that position is stored as
+  16383, so phrase/proximity queries (`<->`, `phraseto_tsquery`, quoted
+  `websearch_to_tsquery` phrases) are unreliable on long documents. Use plain term
+  presence as the SQL prefilter and verify word order on the text separately.
+- **Lexemes are normalized** (stemmed, lowercased, stop words removed). Do not
+  use a lexeme as a raw-text prefix or regex; build highlight patterns from the
+  user's words with the operator keywords (`or`, `and`, `-`) and stop words removed.
+  A literal pattern still misses stemmed matches (a search for `running` matches a
+  document that says `runs`); when highlights must agree with the matches, let
+  PostgreSQL produce them with `ts_headline` and the same configuration.
+
 ## Advanced Grouping (ROLLUP / CUBE / GROUPING SETS)
 
 No builder exists — pass the grouping spec to `.groupBy()` as a `sql` fragment; the SELECT list stays typed. See [aggregations.ts](references/aggregations.ts).

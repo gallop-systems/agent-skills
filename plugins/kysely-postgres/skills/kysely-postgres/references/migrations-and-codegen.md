@@ -147,6 +147,56 @@ with `ifExists`, so re-applying it after the others is a safe no-op). Verify the
 ledger is a contiguous prefix after the DELETE, and prefer letting the deploy's own
 migrate job re-apply rather than running migrations from a laptop against prod.
 
+## Migration Safety on Tables That Already Have Data
+
+**Kysely runs all pending migrations in one transaction** on PostgreSQL (unless
+the migrator is given `disableTransactions: true`, which applies to every
+migration). So every lock a migration takes is held until the *whole batch*
+commits, and one failure rolls the whole batch back.
+
+- **Constraints on existing tables: add `NOT VALID`, validate later.** A plain
+  `ADD CONSTRAINT ... CHECK`/`FOREIGN KEY` scans the whole table while holding a
+  lock that blocks writes (`ACCESS EXCLUSIVE` for a CHECK, which blocks reads too;
+  `SHARE ROW EXCLUSIVE` on both tables for a foreign key). `NOT VALID` skips the scan and still enforces the rule
+  for new writes; `VALIDATE CONSTRAINT` then needs only `SHARE UPDATE EXCLUSIVE`.
+  Kysely's `addCheckConstraint` has no `NOT VALID` option, so use `sql`, and put
+  the `VALIDATE` in a later migration that ships in a separate deploy (in the same
+  batch, the first statement's lock is still held). A database that missed the
+  first deploy (a preview, a restored copy) gets both in one batch, which is safe
+  but takes the long lock; where that matters, run it one migration at a time:
+  ```typescript
+  // migration A
+  await sql`alter table "order" add constraint order_total_nonneg check (total >= 0) not valid`.execute(db);
+  // migration B, a later deploy
+  await sql`alter table "order" validate constraint order_total_nonneg`.execute(db);
+  ```
+  `NOT VALID` is also how you add a rule while old rows still violate it: fix them,
+  then validate. Before adding a constraint, query for existing violations.
+- **`CREATE INDEX CONCURRENTLY` cannot run inside a transaction**, so it fails in a
+  default Kysely migration. If you run it outside (a script, or a migrator with
+  transactions disabled), a failed build leaves an **INVALID** index behind, and a
+  retry with `IF NOT EXISTS` silently keeps the broken one. Check
+  `pg_index.indisvalid`, drop the invalid index, then retry the create. Without a
+  transaction, earlier statements of a failed migration stay applied while the
+  migration is not recorded, so keep such a migration to that one statement or
+  make every statement safe to run again (`IF NOT EXISTS`, `IF EXISTS`). Kysely
+  0.29.0 to 0.29.2 take the migration lock with `pg_advisory_xact_lock`, which
+  ends with its own statement when transactions are disabled, so two deploy jobs
+  can run the same migration at once: on those versions upgrade (0.29.3 and later
+  hold a session-level lock) or make sure only one job migrates at a time.
+- **Deleting or merging rows:** find every foreign key that points at them and
+  repoint or preserve those rows first. Rows that hold user-entered data are safer
+  soft-retired (a `retired_at` column) than deleted when the state can reverse.
+- **`down()` must not destroy data created after `up()`.** A `down` that drops a
+  table or cascade-deletes rows users have since edited is data loss. Reverse
+  exactly what `up` did (including rows an earlier migration had seeded), and when
+  a safe reversal is impossible, throw with an explanation instead of deleting.
+- **Depend on an earlier migration only if yours sorts after it.** See the
+  ordering section above; re-stamp before merge when another branch landed a later
+  timestamp.
+- **Commit the regenerated types with the migration**, and update tests, factories
+  and seeds that reference a dropped or renamed column in the same change.
+
 ## Schema Comments — Document in the DB, Not Just in Migration Source
 
 Design notes written as `//` comments in a migration file are invisible the moment

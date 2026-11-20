@@ -16,7 +16,17 @@ Use this skill when:
 - Need real database testing (not mocks)
 - Want fast, isolated tests without truncation
 
+> **Before you finish any test, read [proving-the-claim.md](./proving-the-claim.md).**
+> Most review findings on tests are green tests that would stay green if the code were
+> wrong: a fixture that cannot tell right from wrong, an assertion narrower than the test
+> name, a stale object instead of a re-read row. It ends with a self-check, starting with
+> *"would this test fail if I deleted the line under test?"*
+
 ## Reference Files
+
+**Writing any test:**
+- [proving-the-claim.md](./proving-the-claim.md) - Tests that fail when the code is wrong, plus the self-check
+
 
 **Backend (API Handlers):**
 - [transaction-rollback.md](./transaction-rollback.md) - Core isolation pattern with Vitest fixtures
