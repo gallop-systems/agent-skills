@@ -1,6 +1,6 @@
 ---
 name: linear
-description: Create, triage, and manage Linear issues at Gallop Systems following the team's workflow conventions — issue status, issue templates, and the project/milestone hierarchy. Use whenever the user asks for Linear work (creating or updating issues, placing work in projects and milestones) on a Gallop client.
+description: Create, triage, and manage Linear issues at Gallop Systems following the team's workflow conventions — issue status, issue templates, the project/milestone hierarchy, and the scope check that places every issue in a proposal milestone (M), revision (R) or hourly (H) project with an estimate. Use whenever the user asks for Linear work (creating or updating issues, placing work in projects and milestones) on a Gallop client, and whenever you start coding on a Gallop client repo — every branch is tied to a Linear issue whose placement has been checked against the signed proposal.
 ---
 
 # Linear — Gallop Team Workflow
@@ -100,13 +100,49 @@ The MCP server and the CLI's `--estimate` both take the numeric **Value**, not t
 
 ---
 
+## Scope Check — Every Issue, Every Time
+
+Every issue sits in exactly one kind of project, and which one is decided by checking the work against the signed proposal. Don't decide it by habit, and don't decide it by where the issue happens to be now.
+
+| Project | Holds |
+|---|---|
+| `[KEY] M<n> — …` | Work the signed proposal describes, in the deliverable milestone that covers it |
+| `[KEY] R<n> — …` | A revision: anything the client asked for that the signed proposal doesn't describe |
+| `[KEY] H<n> — …` | Hourly clients' work (an initiative with no signed scope) |
+
+**Do the work either way.** A client asking for something out of scope is normal. Don't refuse it or hold it up. The only question is which project it goes in.
+
+1. **Read the signed proposal.** An initiative is one signed proposal. Read the initiative (`get_initiative` with `includeProjects: true`), its links and the `M` projects' milestones (they are the proposal's deliverables). Then read the proposal itself, including any out-of-scope or assumptions section. Milestone names are short summaries; the proposal's wording decides what's in scope.
+2. **Classify the issue:**
+   - **Clearly described in the proposal** → in scope. It goes in the `M` project and the deliverable milestone that covers it.
+   - **Not in the proposal**, or it goes beyond what the proposal describes (a new screen, an extra integration, a changed rule, "while you're in there…") → a revision. Put it in the open `R` project it belongs with, if there is one. Otherwise create the next `[KEY] R<n> — <Name>` (see "Never invent a project").
+   - **Unsure**, including when you can't find or read the proposal → **ask the person directing you** (the human running this session). Don't ask the client: deciding scope is our call. Never fall back to the `M` project because it's the easier option.
+3. **Split mixed requests.** When part of a request is in scope and part isn't, file two issues: the in-scope part in the `M` project, the rest in the `R` project. Don't pull extras into an in-scope issue.
+4. **Say which you chose and why.** Tell the person directing you, in one line, e.g. *"Filed in R3 — the proposal's reporting deliverable covers the monthly summary only, not CSV export."* That way they can overrule it.
+
+**Hourly clients** skip the proposal check. Every issue goes in an `H` project. Never leave one unplaced.
+
+**Bugs** in work we delivered go in the project that delivered that work: the `M` milestone, or the `R` project for revision work. A "bug" that is really a change in what the client wants is new work, so check it like any other request.
+
+**Every issue gets an estimate.** That includes issues in every kind of project (`M`, `R` and `H`), and every sub-issue (where the code is done). Estimate as described in **Estimation** when the issue is created. Don't move an issue to Done without one.
+
+### Checking Scope Again During the Work
+
+Scope gets checked when an issue is created, and again while it's being built. Requests change in conversation and in code review.
+
+- **Before starting an issue**, confirm its project still matches the proposal (step 2 above). An issue sitting in an `M` project doesn't prove it's in scope. Triage, a hurried intake or the client may have put it there.
+- **When you're asked for something new mid-issue** (extra behaviour, a follow-up from review, "can it also…"), check it against the proposal before building it. If it's out of scope, still do it, but as **a separate issue in the `R` project, with its own estimate, on its own branch and PR**.
+- **If an issue turns out to be out of scope partway through**, tell the person directing you. Then move the issue to the right `R` project, or split off the out-of-scope part, before opening the PR.
+
+---
+
 ## Creating Issues
 
 **Create in Backlog, then ask about Todo.** Every issue an agent creates goes to **Backlog** — don't assign a cycle. After creating it, show the user the issue (link plus a short summary) and ask whether it's ready for **Todo**; move it only if they say yes.
 
-**Required placement rule:** Never create an issue without both a project and a milestone. **The project must already exist** — place the issue in the initiative's existing `M` project for the milestone it falls under, and never conjure a project to hold it (see "Never invent a project"). Creating a project is only correct for a confirmed out-of-scope revision. The milestones in an `M` project are the proposal's deliverables and are fixed too — place the issue in the deliverable it falls under; if none fits, say so and ask whether it's a revision rather than creating a milestone. Do not leave issues unscoped or unmilestoned.
+**Required placement rule:** Never create an issue without both a project and a milestone. **The project must already exist** — place the issue in the existing project the **Scope Check** puts it in (the `M` project and deliverable milestone for in-scope work, an `R` project for a revision, an `H` project for hourly clients), and never conjure a project to hold it (see "Never invent a project"). Creating a project is only correct for a confirmed out-of-scope revision. The milestones in an `M` project are the proposal's deliverables and are fixed too — place the issue in the deliverable it falls under; if none fits, say so and ask whether it's a revision rather than creating a milestone. Do not leave issues unscoped, unmilestoned or unestimated.
 
-**Work under a completed deliverable → ask.** If the work falls under a milestone that's already completed, don't place it silently and don't create a new milestone to dodge it. Tell the requester the deliverable is done and ask whether this is within its signed scope (place it in that milestone) or a revision (it goes to an `R` project).
+**Work under a completed deliverable → ask.** If the work falls under a milestone that's already completed, don't place it silently and don't create a new milestone to dodge it. Check the proposal first (see **Scope Check**). If you're still unsure, tell the person directing you that the deliverable is done, and ask whether this is within its signed scope (place it in that milestone) or a revision (it goes to an `R` project).
 
 **Check for duplicates first.** Before creating an issue, search the team's open and recently completed issues for the same or overlapping work. If one exists, show the user its title, status, assignee, and link, and ask whether to skip, update/comment on the existing issue, or create the new one anyway because the scope differs. Never silently create a duplicate.
 
@@ -122,6 +158,17 @@ Use the MCP server for issue relations:
 - **Add:** `mcp__linear__save_issue` with `blocks` / `blockedBy` (issue identifiers, e.g. `["ACME-12"]`). Append-only — existing relations are kept.
 - **Remove:** `mcp__linear__save_issue` with `removeBlocks` / `removeBlockedBy`.
 - **List:** `mcp__linear__get_issue` with `includeRelations: true` — returns `blocks`, `blockedBy`, `relatedTo`, and `duplicateOf`.
+
+### Working an Issue: Branch and PR
+
+All code is written on a branch tied to one Linear issue, and every PR links back to that issue.
+
+1. **No issue, no branch.** If you're asked to change code that has no Linear issue, create one first. Run the scope check to place it, give it an estimate, and follow the rest of "Creating Issues". Don't start on a bare branch planning to file the issue later.
+2. **Run the scope check** on the issue before writing code (see "Checking Scope Again During the Work").
+3. **Use the issue's Linear branch name** (`gitBranchName` on `get_issue`) exactly as given.
+4. **Link the PR to the issue.** Use the Linear branch name, and also put the identifier in the PR body (`Fixes KEY-123`). Then confirm the PR shows up on the issue in Linear.
+5. **One issue per PR.** Out-of-scope requests that come up in review go in a new issue in the `R` project, with a new branch and PR. Don't add them to this PR.
+6. **Before marking it Done**, check that the issue is in the right project and milestone, that it has an estimate, and that its PR is linked.
 
 ### Comments
 
@@ -302,10 +349,13 @@ out-of-scope work into an `M` project — that changes the signed scope without 
 **The default is that the right project already exists.** Creating one is a
 structural change to a signed engagement, so it is never a side effect of intake.
 
-Before placing any work, answer this question — and **ask the requester if they
-are in the conversation, do not infer it**:
+Before placing any work, answer this question by checking the work against the
+signed proposal (see **Scope Check**):
 
 > Is this within the signed scope, or is it a revision?
+
+If the proposal doesn't settle it, **ask the person directing you. Don't guess, and
+never default to the `M` project.**
 
 - **Within scope** → **find the existing `M` project yourself.** List the
   initiative's projects (`get_initiative` with `includeProjects: true`), read what
@@ -313,14 +363,15 @@ are in the conversation, do not infer it**:
   which project if two genuinely both fit. Do **not** create a project because none
   of the names happens to match the request's wording — milestone names are broad
   by design.
-- **A revision** → determine the next `R<n>` (one past the highest existing `R`,
-  or `R1`), **confirm the name and the revision framing with the requester**, then
-  create it under the same initiative.
+- **A revision** → if an open `R` project already covers related revision work,
+  place the issue there. Otherwise determine the next `R<n>` (one past the highest
+  existing `R`, archived ones included, or `R1`), **confirm the name and the revision
+  framing with the person directing you**, then create it under the same initiative.
 
 Never create a project to hold work you were unsure how to place, to mirror a repo
 or deployment, to group work by theme or domain (that is what milestones and labels
 are for), or because the initiative looked empty. If you cannot place the work and
-the requester is unavailable, leave it unplaced and say so — an invented project is
+there is nobody to ask, leave it unplaced and say so — an invented project is
 harder to undo than an unplaced issue.
 
 ### Milestone (= One Proposed Deliverable)
@@ -366,9 +417,9 @@ existing project — projects and milestones only grow when a revision is confir
 ### Guidelines for the Team
 
 1. **Every new issue starts in Backlog, with no cycle.** Ask the user whether it's ready for Todo, and move it only on a yes (see "Create in Backlog, then ask about Todo").
-2. **Every issue must belong to a project and a milestone.** Never create orphan issues and never leave an issue outside a milestone.
-3. **Place the issue in an existing project — never invent one.** The initiative's `M` projects are the signed proposal's milestones; find the one the work falls under. A new project is correct *only* for work the requester confirmed is out of scope, and then only as the next `[KEY] R<n> — <Name>` revision project (see "Never invent a project"). Don't park work in a generic team backlog either — if you truly cannot place it, say so rather than manufacturing a home for it.
-4. **Place the issue in the deliverable milestone it falls under.** Never create a milestone in an `M` project; only a confirmed `R` project may get new milestones during intake. If the matching milestone is completed, ask the requester whether the work is in scope or a revision (see "Work under a completed deliverable → ask").
+2. **Every issue must belong to a project and a milestone, and carry an estimate.** Never create orphan issues, never leave an issue outside a milestone, and never leave one unestimated. Run the **Scope Check** to choose the project, every time.
+3. **Place the issue in an existing project — never invent one.** The initiative's `M` projects are the signed proposal's milestones; find the one the work falls under. A new project is correct *only* for work that is out of scope (per the proposal or the person directing you), and then only as the next `[KEY] R<n> — <Name>` revision project (see "Never invent a project"). Don't park work in a generic team backlog either — if you truly cannot place it, say so rather than manufacturing a home for it.
+4. **Place the issue in the deliverable milestone it falls under.** Never create a milestone in an `M` project; only a confirmed `R` project may get new milestones during intake. If the matching milestone is completed, check the proposal and, if still unsure, ask the person directing you whether the work is in scope or a revision (see "Work under a completed deliverable → ask").
 5. **Use milestones for sequencing.** Milestones can have target dates, making them useful for communicating delivery phases to clients.
 6. **Track progress in Linear.** After creating/updating projects or milestones, update the initiative's content in Linear to reflect the current structure (see "Post-Organization: Update Initiative in Linear").
 
