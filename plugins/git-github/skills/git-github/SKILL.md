@@ -47,6 +47,7 @@ EOF
 ```
 
 - **Keep the PR description current.** After material scope changes, `gh pr edit <n> --body "$(cat <<'EOF' ... EOF)"`.
+- **Attaching images or video:** `gh` 2.99+ uploads them natively with `--attach` on `pr create/edit/comment` and `issue create/edit/comment`. See [gh-api-recipes.md](gh-api-recipes.md#attaching-images-to-prs-and-issues).
 - Merge style: `gh pr merge <n> --squash --delete-branch`; verify with `gh pr view <n> --json state,mergedAt`.
 - After merge: `git switch main && git pull --ff-only`, clean up `[gone]` branches, start the next branch from fresh main.
 - One concern per PR — hotfixes and review findings go in separate PRs unless told otherwise.
