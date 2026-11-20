@@ -80,6 +80,8 @@ Only when the effect crosses **out of** the reactive graph:
   (see `vueuse.md`); a compound guard keeps its inner half —
   `watch(visible, (v) => { if (v && !props.x) reset() })` →
   `whenever(visible, () => { if (!props.x) reset() })`.
+  Key it on the record id too (`watch([visible, () => props.record?.id], …)`) and
+  reset every transient, not only the fields: see [editing-forms.md](./editing-forms.md).
 - **Clone a server prop into a locally-editable draft** —
   `watch(() => props.record, (r) => { if (r) form.value = structuredClone(toRaw(r)) }, { immediate: true })`.
 

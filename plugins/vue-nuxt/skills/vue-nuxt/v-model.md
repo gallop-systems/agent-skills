@@ -97,7 +97,8 @@ and give it no `withDefaults` default.
 
 To reset transient state or lazy-load when a dialog opens, **watch the bound
 flag** (it covers every close path — overlay click, ESC, programmatic) — see the
-"re-seed local state on dialog open" case in [watch.md](./watch.md).
+"re-seed local state on dialog open" case in [watch.md](./watch.md). For what to reset and when
+not to re-seed, see [editing-forms.md](./editing-forms.md).
 
 ## Consistency caveat
 

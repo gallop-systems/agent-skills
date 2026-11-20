@@ -24,6 +24,7 @@ cross-links to those rather than restating them.
 - Anything reactivity-shaped: `computed` vs `watch`, prop→state sync, DOM measurement
 - You see `watch` and want to know if it should be something else
 - About to hand-roll a `watch` + lifecycle teardown for a browser API (storage, timers, DOM, listeners, URL) — VueUse likely wraps it
+- Writing a form, dialog or drawer that edits a record, or any component that loads or saves data
 
 ## Reference Files
 
@@ -36,6 +37,8 @@ cross-links to those rather than restating them.
 - [watch.md](./watch.md) — **`watch` is the escape hatch, not the default**: when it's right, and the four smell shapes (with refactors) found auditing 159 real watchers
 - [vueuse.md](./vueuse.md) — reach for a VueUse composable before hand-rolling a `watch` + lifecycle teardown for an external-world effect (DOM, timers, storage, URL, listeners); the `@vueuse/nuxt` setup, the watch-sugar functions, and what to keep on Nuxt's own APIs
 - [template-idioms.md](./template-idioms.md) — duplicate-`@keyup` TS error, `:deep()`/`:slotted()`/`:global()`, click-outside marker class, `NuxtLink`/thin `app.vue`, `useHead`, `v-bind` shorthand, `useId`, `<Teleport>`/`<KeepAlive>`, `v-memo`/`v-once`, file-input reset
+- [async-state.md](./async-state.md) — loading/error/empty as separate states, `refresh()` doesn't throw, success only on success, refreshing every view after a mutation, discarding stale responses (request tokens), one `router.replace`, double-submit and IME guards
+- [editing-forms.md](./editing-forms.md) — forms/dialogs/drawers editing a record: seed on open and id change (or remount with `:key`), reset every transient, don't re-seed on refetch, seed every field and send what changed, selections whose options disappear, URL-mirrored state, reactive clocks
 - [page-structure.md](./page-structure.md) — keep pages thin: route-param parsing + layout in the page, data/logic/forms in components
 - [formatters.md](./formatters.md) — never inline a currency/date/number formatter; centralize in `useFormatters`, prefer Intl/date-fns
 
@@ -52,6 +55,32 @@ instead of testing those pieces as plain Vue functions.
 4. **Tie effects to lifecycle.** DOM measurement, listeners, observers, and timers go in `onMounted` and are torn down in `onUnmounted`. A computed reading live DOM geometry needs an explicit re-measure signal (DOM size isn't reactive). Before hand-rolling that effect-plus-teardown, check whether a **VueUse** composable already wraps it (`vueuse.md`) — they bundle the cleanup.
 5. **Call composables at the top of `<script setup>`** — never inside a callback or a template expression (both lose Nuxt's request scope). Derive display state with `computed`, guarding for possibly-null data.
 6. **Defer to the right skill.** Fetch/SSR/auth/middleware → `nuxt-nitro-api`. UI components, `pt` styling, color tokens, dark mode → `gallop-ui`. Don't duplicate them here.
+
+## The traps reviewers flag most
+
+These recur in review findings on components written with this skill loaded. Each
+links to the rule and an example.
+
+1. **Stale local state.** A draft, selection, preview or flag copied from a prop or
+   fetched data keeps the previous record's value when the dialog reopens or the id
+   changes. Seed on open and on id change (or remount with `:key="record.id"`), and
+   reset every transient with it. → [editing-forms.md](./editing-forms.md)
+2. **Stale async responses.** A request that resolves after the user switched
+   record, reopened the dialog, typed again or left overwrites current state. Use
+   `useFetch` with a reactive key, or a request token checked after every `await`.
+   → [async-state.md](./async-state.md#stale-responses-an-older-request-must-not-overwrite-newer-state)
+3. **Failures shown as empty or as success.** Render `error` before the empty state
+   with a Retry; `refresh()` resolves on failure, so check `error.value` after it;
+   emit `saved` and close only on success; reset loading flags in `finally`.
+   → [async-state.md](./async-state.md)
+4. **Other views not refreshed after a mutation.** Share one keyed fetch or refresh
+   every list showing the changed data. → [async-state.md](./async-state.md#refresh-every-view-of-the-data-you-changed)
+5. **The same rule computed twice.** Filters vs counts vs labels, preview vs action,
+   button state vs message: one helper, every consumer. → [component-authoring.md](./component-authoring.md#one-rule-one-helper)
+6. **Keyboard and copy gaps.** Clickable non-buttons, unfocusable tooltip triggers,
+   icon buttons with no name, "0 items" sentences. → [template-idioms.md](./template-idioms.md#keyboard-and-screen-reader-access-for-custom-controls)
+7. **Double submit.** Guard every mutating handler with an in-flight flag, not just
+   `:disabled`; ignore IME-confirm Enter. → [async-state.md](./async-state.md#double-submit)
 
 ## Contributing Back
 

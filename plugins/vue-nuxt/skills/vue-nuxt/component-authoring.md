@@ -136,6 +136,49 @@ and "or paste text" affordance. If you find yourself adding props just to toggle
 caller-specific chrome inside the shared component, that chrome belongs in the
 caller.
 
+## One rule, one helper
+
+When two places decide the same thing, they must call the same code. Reviewers
+keep finding pairs that were written separately and drifted:
+
+- a filter chip, its count and the status pill computed from **different fields**,
+  so the chips stop matching the rows;
+- a status check re-implemented inline in one branch of a template while the
+  others use the shared `isCompleted(status)` helper;
+- a preview ("this will send 4 lines") that subtracts different items than the
+  action that actually sends them;
+- a confirm button's `:disabled` and the warning text beside it using two
+  different preconditions;
+- a "Clear all" that resets a different list of filters than the "filters active"
+  check reads;
+- a local fallback search that matches fewer fields than the remote search it
+  stands in for.
+
+Put the rule in one `computed` or one function (in `app/utils` if several
+components need it) and have every consumer read it:
+
+```ts
+const FILTERS = ['status', 'customer', 'sku'] as const
+const hasActiveFilters = computed(() => FILTERS.some((k) => filters.value[k] != null))
+function clearAll() { for (const k of FILTERS) filters.value[k] = null }
+```
+
+Likewise, when a control claims to act on a group (a merged row, "select all"),
+apply the action to every member, not just the first.
+
+## Handle every shape of the data
+
+- **Nullable fields:** filters, sorts and display guards must handle `null`
+  (a missing name, an absent city in an address, a range with only one end).
+- **Exhaustive grouping:** when grouping rows by a parent (driver, owner, stage),
+  add a bucket for rows whose parent is missing or filtered out, or they vanish
+  from every group.
+- **Stale page numbers:** a `?page=7` from the URL that is past the end after a
+  delete shows an empty page; clamp to the last page when `rows` is empty but
+  `total > 0`.
+- **Fallback when the new shape is empty:** while migrating from a single field to
+  a list, fall back to the old field when the list is empty.
+
 ## Type off the server contract, don't hand-write DTOs
 
 Derive prop/state types from the data you fetch rather than redeclaring an
