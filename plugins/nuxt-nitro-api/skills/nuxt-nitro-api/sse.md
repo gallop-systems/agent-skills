@@ -191,7 +191,7 @@ const reconnect = () => {
 
 ```typescript
 // Server reads position
-const { position } = await getValidatedQuery(event, schema);
+const { position } = await getValidatedQuery(event, schema.parse);
 const chunks = await getChunksFromPosition(id, position);
 ```
 

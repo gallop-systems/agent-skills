@@ -139,6 +139,60 @@ For this to target precisely, give the fetches explicit keys
 `clearNuxtData(keys?)` drops cached payload + error state without refetching (e.g.
 reset a wizard's loaded data on cancel).
 
+## Errors, status and stale data
+
+These are the `useFetch`/`useAsyncData` semantics (read from the Nuxt 4 runtime)
+that generated code gets wrong most often. How to *render* them (loading, error
+with Retry, empty, data; double submit; stale responses) is in the `vue-nuxt`
+skill's `async-state.md`.
+
+- **Nothing throws.** A failed request sets `error`, resets `data` to its
+  `default()` (`undefined` unless you passed one) and sets `status` to `'error'`.
+  `await useFetch(...)`, `await refresh()` and `await execute()` all **resolve**. A
+  `try/catch` around them catches nothing, so check afterwards:
+
+  ```typescript
+  await refresh();
+  if (error.value) {
+    reportError("Couldn't reload the invoice");  // your app's toast/alert
+    return;                         // don't send, advance "as of", or redirect on stale data
+  }
+  ```
+
+- **`data` being empty is not an answer.** `data` is `undefined` while loading,
+  after a failure and when the server returned nothing, so `!data.value` can't mean
+  "no rows" or "no access". Branch on `status`/`error` first. A failed permission or
+  integration check is **unknown** (show an error and Retry), never "denied", and
+  don't pick a view from `data` until `status === 'success'`.
+- **`status` can start at `'idle'`.** With `server: false` the whole server render
+  and the first client render are `'idle'`, not `'pending'`, and with
+  `immediate: false` it stays `'idle'` until `execute()` runs. A skeleton gated on
+  `status === 'pending'` alone doesn't appear. Treat `'idle'` as loading when the
+  fetch is going to start by itself.
+- **A new key keeps the old data.** When a reactive URL/key changes, the new entry
+  starts with the **previous key's `data`** while `status` is `'pending'` (a plain
+  `refresh()` likewise keeps `data` until replaced). So the screen shows last month's
+  report under this month's heading, and buttons act on it. Hide the data and disable
+  actions until `status === 'success'` for the current key.
+- **Start every fetch before awaiting any.** In a custom composable, code after an
+  `await` can run without the Nuxt instance ("Nuxt instance unavailable"), and
+  sequential awaits are slower anyway. Start both, then await together:
+
+  ```typescript
+  const invoices = useFetch("/api/invoices");
+  const totals = useFetch("/api/invoices/totals");
+  await Promise.all([invoices, totals]);
+  ```
+
+  In a page, give `useHead`/`useSeoMeta` a getter (`title: () => data.value?.name ?? 'Project'`)
+  so the title follows the data; a plain value read once at setup goes stale.
+- **Polling:** a 401 from a background poll means the session ended; clear the
+  state, don't restore the old value. Tolerate a transient failure or two, but cap
+  the loop and then report "unknown", not "failed".
+- **Capped lists:** a picker or "upcoming vs past" split built from one `limit`-ed
+  page silently omits rows. Search server-side (with a stable order) or fetch every
+  page before splitting.
+
 ## Type Inference
 
 Template literals preserve type inference (fixed late 2024):
@@ -194,3 +248,5 @@ const result = await $fetch("/api/users/123");
 3. **Adding type params** - Types are inferred from Nitro
 4. **Using `watch` option for dynamic URLs** - Use getter function
 5. **Passing null/undefined in query** - Filter them out first
+6. **`try/catch` around `refresh()`** - It never throws; check `error.value` after it (see above)
+7. **Rendering `!data` as "nothing here"** - A failed load is an error state, not an empty one

@@ -1,7 +1,7 @@
 # Error Handling (client + server)
 
-The skill covers throwing `createError` in API handlers (see `auth-patterns.md`).
-This file is the **client/page** surface: triggering the error page, the
+What each `createError` field does on the server is in its own section below. The
+rest of this file is the **client/page** surface: triggering the error page, the
 `error.vue` root, recovering, and containing a failure to a subtree.
 
 ## `createError` — fatal vs non-fatal
@@ -21,6 +21,30 @@ if (!data.value) {
 
 `showError(...)` is the imperative equivalent (call it from a handler instead of
 throwing). Pass `data` on the error to carry structured detail to `error.vue`.
+
+## Server: what each `createError` field does
+
+| Field | Goes to | Notes |
+|---|---|---|
+| `statusCode` | HTTP status | The client branches on it (`err.statusCode` / `err.status`). |
+| `statusMessage` | the HTTP status line | h3 **strips anything outside printable ASCII**, so accents, curly quotes, dashes and emoji vanish. Keep it a short ASCII phrase. |
+| `message` | JSON body `message` | Human-readable text, any characters. Read client-side as `err.data?.message`. |
+| `data` | JSON body `data` | Structured detail (field errors, conflicting ranges). |
+
+```typescript
+throw createError({
+  statusCode: 409,
+  statusMessage: "Conflict",
+  message: "Overlaps the booking for 3–5 March",   // non-ASCII is fine here
+  data: { conflictingId: other.id },
+});
+```
+
+A plain `throw new Error(...)` (or any non-`createError` throw) is **unhandled**: the
+client gets a 500 and, in a production build, `message: "Server Error"` with no `data` (the real message shows only in dev). Expected failures
+(bad input, missing record, conflict, an upstream rejection) must be a
+`createError` with the right status. Don't catch them and return a success-shaped
+body (`{ ok: true }`, `[]`, `null`) either: the client can't tell it failed.
 
 ## `error.vue` — the app-root error page
 

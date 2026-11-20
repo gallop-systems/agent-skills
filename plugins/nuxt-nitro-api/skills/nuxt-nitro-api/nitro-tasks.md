@@ -241,3 +241,5 @@ export async function markJobFailed(jobId: number, error: Error) {
 4. **Dev API only in dev** - `/_nitro/tasks/*` not in production
 5. **Cron needs specific runtimes** - node-server, bun, deno-server, cloudflare
 6. **Fire-and-forget errors** - Must add `.catch()` or errors are swallowed
+7. **`runTask` returns `run()`'s value as-is** - No wrapper is added. If `run` returns `{ result: { queued: 3 } }`, the caller reads `res.result.queued`; don't guess a shape.
+8. **A run whose items failed is a failed run** - If `run` catches per-item errors and returns normally, return (and record) a failure status and counts, e.g. `{ result: { ok: false, failed: 2, succeeded: 8 } }`, so the scheduler, logs and any run table don't show success.

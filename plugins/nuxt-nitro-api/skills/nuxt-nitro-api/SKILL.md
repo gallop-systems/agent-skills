@@ -26,10 +26,10 @@ Use this skill when:
 
 For detailed patterns, see these topic-focused reference files:
 
-- [validation.md](./validation.md) - Zod validation with h3, Standard Schema, error handling
-- [fetch-patterns.md](./fetch-patterns.md) - useFetch vs $fetch vs useAsyncData, refreshNuxtData
-- [auth-patterns.md](./auth-patterns.md) - nuxt-auth-utils, OAuth, WebAuthn, middleware
-- [error-handling.md](./error-handling.md) - createError (fatal), error.vue, clearError, NuxtErrorBoundary
+- [validation.md](./validation.md) - Zod validation with h3 (`schema.parse`), blank strings, dates, strict objects, PATCH semantics
+- [fetch-patterns.md](./fetch-patterns.md) - useFetch vs $fetch vs useAsyncData, refreshNuxtData, error/status semantics
+- [auth-patterns.md](./auth-patterns.md) - nuxt-auth-utils, OAuth, WebAuthn, middleware, per-resource authorization
+- [error-handling.md](./error-handling.md) - createError (fatal, server fields), error.vue, clearError, NuxtErrorBoundary
 - [state-management.md](./state-management.md) - useState (never a module-scope ref), clearNuxtState, callOnce
 - [composables-utils.md](./composables-utils.md) - composables vs utils, runtimeConfig public/private, runWithContext
 - [ssr-client.md](./ssr-client.md) - SSR + localStorage, hydration, useRequestURL/Headers, useCookie, VueUse
@@ -41,7 +41,7 @@ For detailed patterns, see these topic-focused reference files:
 - [layers.md](./layers.md) - sharing components/composables/config across repos via extends
 - [nitro-tasks.md](./nitro-tasks.md) - Background jobs, scheduled tasks, job queues
 - [sse.md](./sse.md) - Server-Sent Events for real-time streaming
-- [server-services.md](./server-services.md) - Third-party service integration patterns
+- [server-services.md](./server-services.md) - Third-party services: failure classification, timeouts, side-effect ordering
 
 ## Example Files
 
@@ -57,7 +57,7 @@ Working examples from a Nuxt project:
 ## Core Principles
 
 1. **Let Nitro infer types** - Never add manual type params to `$fetch<Type>()` or `useFetch<Type>()`
-2. **Use h3 validation** - `getValidatedQuery()`, `readValidatedBody()` with Zod schemas
+2. **Use h3 validation** - `getValidatedQuery(event, schema.parse)`, `readValidatedBody(event, schema.parse)`; never raw `readBody` + destructure
 3. **Composables for context, utils for pure functions** - Composables access Nuxt context, utils are pure
 4. **SSR-safe code** - Guard browser APIs with `import.meta.client` or `onMounted`
 5. **Keep pages thin** - Pages = layout + route params + components. Components own data fetching and logic. (Page composition + display formatting now live in the `vue-nuxt` skill.)
@@ -94,20 +94,23 @@ Code auto-imported on both client AND server. Use for:
 
 ## Quick Patterns
 
-### Validation (h3 v2+ with Standard Schema)
+### Validation (h3 v1: pass `schema.parse`)
 
 ```typescript
-// Pass Zod schema directly (h3 v2+)
+// Nuxt 4 ships h3 v1: the validator is a FUNCTION. A throw becomes a 400.
 const query = await getValidatedQuery(event, z.object({
   search: z.string().optional(),
-  page: z.coerce.number().default(1),
-}));
+  page: z.coerce.number().int().positive().default(1),
+}).parse);
 
 const body = await readValidatedBody(event, z.object({
   email: z.email(), // Zod 4: top-level, not z.string().email()
-  name: z.string().min(1),
-}));
+  name: z.string().trim().min(1).max(200),
+}).parse);
 ```
+
+Passing the schema object itself is h3 v2 syntax (a type error here); passing
+`schema.safeParse` returns the `{ success, ... }` wrapper as your data.
 
 ### $fetch Type Inference
 
@@ -222,6 +225,14 @@ Needs Nuxt/Vue context (useRuntimeConfig, useRoute, refs)?
 10. **Never use generic type params with useFetch/$fetch** - See below.
 11. **Never export a module-scope `ref` for shared state** - Leaks across SSR requests; use `useState`. See [state-management.md](./state-management.md).
 12. **Internal server `$fetch` doesn't forward cookies** - Pass `headers` explicitly or the callee sees no session. See [server-runtime.md](./server-runtime.md).
+
+### Traps reviewers keep finding
+
+13. **Validate every input, ids and route params included** - `""` coerces to `0`, a shape regex accepts `2025-02-30` (use `z.iso.date()`), `z.object` silently drops unknown keys, and unbounded strings on public routes are a DoS. See [validation.md](./validation.md#validation-traps-that-keep-shipping).
+14. **Authorize the resource, on every route and every branch** - Logged-in isn't allowed. Load the record scoped to the caller in each handler for that resource (read *and* write, every branch of an update), and check that ids in the body belong to the parent. See [auth-patterns.md](./auth-patterns.md#per-resource-authorization).
+15. **`useFetch` and `refresh()` never throw** - A failure sets `error`, resets `data` to its default and resolves. Check `error`/`status` after `await refresh()`, and never render a failed load as the empty state or a failed permission check as "denied". See [fetch-patterns.md](./fetch-patterns.md#errors-status-and-stale-data).
+16. **Don't turn a third-party failure into "empty" or "done"** - Only a not-found means absent; a per-resource 401/403 is local; a 2xx missing the expected object is a failure; give every outbound call a real timeout. See [server-services.md](./server-services.md#failures-from-third-party-calls).
+17. **Validate everything before the first side effect** - A multi-step handler that writes externally (or to the DB) and then hits a validation error leaves partial changes. See [server-services.md](./server-services.md#multi-step-operations-with-side-effects).
 
 ### Ambiguous Route Type Inference
 

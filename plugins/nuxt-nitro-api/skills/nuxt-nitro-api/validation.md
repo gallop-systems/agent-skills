@@ -12,26 +12,30 @@
 
 Note: It's `getRouterParams` (plural), not `getRouterParam`.
 
-## Pattern 1: Direct Schema (h3 v2+ with Standard Schema)
+## Pattern 1: Pass `schema.parse` (the default)
 
-h3 v2+ supports Standard Schema, meaning you can pass Zod schemas directly:
+Nuxt 4 runs **h3 v1** (1.15.x), whose validated readers take a **function**
+`(data) => result`, not a schema object. Pass the schema's `parse`:
 
 ```typescript
 const querySchema = z.object({
-  search: z.string().min(1),
-  page: z.coerce.number().default(1),
+  search: z.string().min(1).optional(),
+  page: z.coerce.number().int().positive().default(1),
 });
 
-// Pass schema directly (recommended)
-const query = await getValidatedQuery(event, querySchema);
-
-// Also works for body and params
-const body = await readValidatedBody(event, bodySchema);
-const params = await getValidatedRouterParams(event, paramsSchema);
+const query = await getValidatedQuery(event, querySchema.parse);
+const body = await readValidatedBody(event, bodySchema.parse);
+const params = await getValidatedRouterParams(event, paramsSchema.parse);
 ```
 
-**Pros:** Simplest syntax, cleaner code
-**Cons:** ZodError thrown directly - not user-friendly
+When `parse` throws, h3 turns it into a **400** (`statusMessage: "Validation Error"`,
+the `ZodError` in `data`). The result is typed from the schema.
+
+- **Not the schema object:** `getValidatedQuery(event, querySchema)` is a type error
+  on h3 v1 (passing schemas directly is an h3 **v2** feature; Nuxt 4 isn't on it).
+- **Not `schema.safeParse`:** h3 returns whatever the validator returns, so you get
+  the `{ success, data | error }` wrapper back as your "body", and a failed parse is
+  not rejected.
 
 ## Pattern 2: Manual Validator Function
 
@@ -104,12 +108,107 @@ const createUserSchema = z.object({
 
 ```typescript
 const paramsSchema = z.object({
-  id: z.coerce.number().positive(),
+  id: z.coerce.number().int().positive(), // rejects "", "0", "abc", "1.5"
 });
 
 // In /api/users/[id].get.ts
-const { id } = await getValidatedRouterParams(event, paramsSchema);
+const { id } = await getValidatedRouterParams(event, paramsSchema.parse);
 ```
+
+## Validation traps that keep shipping
+
+Every one of these passed review once and was later fixed. Check them on every
+handler you write or touch.
+
+### 1. Never `readBody` / `getQuery` / `getRouterParams` and destructure
+
+The raw readers return `any`. `const { amount } = await readBody(event)` accepts
+any shape, and the first bad value surfaces as a **500** from deep in the handler
+(or a database error) instead of a 400. Every field a handler reads, from body,
+query **and** route params, goes through a schema, ids included.
+
+```typescript
+// ❌ unvalidated: wrong type, missing field and junk keys all reach the DB
+const { amount, invoiceId } = await readBody(event);
+
+// ✅ 400 on bad input, typed result
+const { amount, invoiceId } = await readValidatedBody(event, z.object({
+  amount: z.number().int().positive(),
+  invoiceId: z.number().int().positive(),
+}).parse);
+```
+
+### 2. Query and route values are strings, and `""` is not "absent"
+
+`?page=` sends `""`. `z.coerce.number()` turns `""` into **`0`**, and `.default()`
+only fires for `undefined`, so a blank param slips past the default. Rules:
+
+- Ids and page numbers: `z.coerce.number().int().positive()` (rejects `""`, `0`, `NaN`).
+- Optional filters a form may send blank: map `""` to `undefined` first.
+- Booleans: `z.coerce.boolean()` makes `"false"` **true**. Use `z.stringbool()` or
+  `z.enum(["true", "false"]).transform((v) => v === "true")`.
+
+```typescript
+const blankToUndefined = <T extends z.ZodType>(s: T) =>
+  z.preprocess((v) => (v === "" ? undefined : v), s);
+
+const querySchema = z.object({
+  page: blankToUndefined(z.coerce.number().int().positive().optional()).default(1),
+  status: blankToUndefined(z.enum(["open", "closed"]).optional()),
+});
+```
+
+### 3. Dates: validate the calendar, not the shape
+
+A `/^\d{4}-\d{2}-\d{2}$/` regex accepts `2025-02-30`, which then fails as a 500 in
+the Postgres cast, or compares wrongly as text. `z.iso.date()` checks real calendar
+days (it rejects `2025-02-30` and `2025-02-29`, accepts `2024-02-29`). Check
+ranges on the object, with a `path` so the error lands on the right field:
+
+```typescript
+const rangeSchema = z.object({
+  from: z.iso.date(),
+  to: z.iso.date(),
+}).refine((v) => v.from <= v.to, { error: "`to` must be on or after `from`", path: ["to"] });
+```
+
+(Canonical `YYYY-MM-DD` strings compare correctly as text; anything else doesn't.)
+
+### 4. `z.object` silently strips unknown keys
+
+A renamed or legacy field, a misspelled key, or a filter this mode doesn't support
+is **dropped without an error**, so the caller believes it was applied. When a
+dropped key would be a bug, use `z.strictObject({...})` (400 `Unrecognized key`),
+or map the old name explicitly. Likewise, reject a parameter a branch cannot honor
+(an `offset` on a mode that ignores it) instead of accepting and ignoring it.
+
+### 5. Bound every string and array, above all on unauthenticated routes
+
+Sign-up, contact and webhook-style endpoints that insert rows need `.max()` on
+every string and array (`z.string().trim().min(1).max(200)`,
+`z.array(...).max(50)`). Unbounded input from an anonymous caller is a storage and
+DoS problem, not just a validation one.
+
+### 6. Canonicalize once, in the schema
+
+If identifiers are compared downstream (lookups, dedupe, guards), normalize them in
+the schema with `.trim()` / `.toUpperCase()` / a `.transform()`, so every query
+and every guard sees the same form. Two code paths that normalize differently
+(the planner trims, the guard doesn't) disagree about the same record.
+
+### 7. Cross-field rules, and PATCH against the stored row
+
+Rules that involve two fields (start ≤ end, "B is required when A is X", a pair of
+columns that must both be set or both be null) belong in a `.refine`/`.superRefine`
+on the object. On a PATCH that sends only one of the pair, check the rule against
+**the stored row merged with the patch**, not just the fields that were sent.
+
+### 8. One schema per write, shared by every path that writes
+
+Import, bulk, retry and "sync from provider" paths must call the **same** schema or
+server util as the edit endpoint. A second hand-written path that skips a check is
+how invalid rows get in. Put the validation in `server/utils/` (or `shared/`) and
+call it from each path.
 
 ## Type Inference from Schemas
 
@@ -152,3 +251,10 @@ The model's prior is mostly Zod 3 — these are the idioms that changed. Get the
   const createSchema = z.object({ items: itemsSchema.default([]) });
   const patchSchema = z.object({ items: itemsSchema.optional() }); // undefined ⇢ "not sent"
   ```
+- **In a PATCH, "omitted", `null` and a value are three different requests.** Omitted
+  (`undefined`) means "leave it", `null` means "clear it". Don't let a transform turn a
+  missing key into `null` (`.optional().transform((v) => v ?? null)` does exactly that,
+  and the update then wipes the stored value), and don't treat an explicit `null` as
+  "not sent" when merging defaults (`body.x ?? derived` overrides the client's clear).
+  Test for presence with `body.x !== undefined` (or `"x" in body`), and use `.nullable().optional()`
+  for clearable fields.
