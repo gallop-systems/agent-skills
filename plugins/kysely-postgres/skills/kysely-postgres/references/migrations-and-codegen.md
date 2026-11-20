@@ -179,7 +179,11 @@ commits, and one failure rolls the whole batch back.
   `pg_index.indisvalid`, drop the invalid index, then retry the create. Without a
   transaction, earlier statements of a failed migration stay applied while the
   migration is not recorded, so keep such a migration to that one statement or
-  make every statement safe to run again (`IF NOT EXISTS`, `IF EXISTS`).
+  make every statement safe to run again (`IF NOT EXISTS`, `IF EXISTS`). Kysely
+  0.29.0 to 0.29.2 take the migration lock with `pg_advisory_xact_lock`, which
+  ends with its own statement when transactions are disabled, so two deploy jobs
+  can run the same migration at once: on those versions upgrade (0.29.3 and later
+  hold a session-level lock) or make sure only one job migrates at a time.
 - **Deleting or merging rows:** find every foreign key that points at them and
   repoint or preserve those rows first. Rows that hold user-entered data are safer
   soft-retired (a `retired_at` column) than deleted when the state can reverse.

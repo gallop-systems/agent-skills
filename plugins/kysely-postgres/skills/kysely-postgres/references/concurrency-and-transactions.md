@@ -31,7 +31,9 @@ If the identity can be matched by more than one unique key (an external id *or* 
 email), a conflict target on one key does not catch a collision on the other, and
 a pre-check of both is itself a race. Use an untargeted
 `.onConflict((oc) => oc.doNothing())`, which covers every unique index, then
-select the existing row by either key when nothing was inserted.
+select the existing rows by either key when nothing was inserted. If that returns
+two different rows (the external id belongs to one, the email to another), do not
+pick one: report a conflict for a person to resolve.
 
 On upsert, `doUpdateSet` overwrites with whatever you send. When the incoming
 source can be missing a value, keep the stored one instead of clearing it:
